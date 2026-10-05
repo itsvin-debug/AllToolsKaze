@@ -232,6 +232,24 @@ async function downloadTikTok(rawUrl) {
       const item = data.data;
       const downloadLinks = [];
       const base = 'https://www.tikwm.com';
+      const photos = [];
+      if (item.images && Array.isArray(item.images) && item.images.length > 0) {
+        item.images.forEach((imgUrl, idx) => {
+          const fullImg = imgUrl.startsWith('http') ? imgUrl : base + imgUrl;
+          const photoObj = {
+            id: idx + 1,
+            label: `Foto HD #${idx + 1}`,
+            quality: 'HD Image (No Watermark)',
+            url: fullImg,
+            type: 'image',
+            extension: 'jpg',
+            filename: `tiktok_${item.id || Date.now()}_${idx + 1}.jpg`
+          };
+          photos.push(photoObj);
+          downloadLinks.push(photoObj);
+        });
+      }
+
       if (item.hdplay) {
         downloadLinks.push({
           label: 'Resolusi HD 1080p',
@@ -266,9 +284,10 @@ async function downloadTikTok(rawUrl) {
         return {
           success: true,
           platform: 'TikTok',
-          title: item.title || 'TikTok Video',
+          title: item.title || 'TikTok Media',
           author: item.author?.nickname || item.author?.unique_id || 'Creator',
-          thumbnail: item.cover || item.origin_cover,
+          thumbnail: photos[0]?.url || item.cover || item.origin_cover,
+          photos,
           downloadLinks,
           musicInfo: {
             title: item.music_info?.title || 'Original Sound',
@@ -394,22 +413,24 @@ async function downloadInstagram(rawUrl) {
     }
 
     if (imageUrls.length > 0) {
+      const photos = imageUrls.map((imgUrl, idx) => ({
+        id: idx + 1,
+        label: `Foto HD #${idx + 1}`,
+        quality: 'HD Original',
+        url: imgUrl,
+        type: 'image',
+        extension: 'jpg',
+        filename: `instagram_${shortcode}_${idx + 1}.jpg`
+      }));
+
       return {
         success: true,
         platform: 'Instagram',
         title: caption,
         author: author,
         thumbnail: imageUrls[0],
-        downloadLinks: [
-          {
-            label: 'Foto HD (Original)',
-            quality: 'High Resolution',
-            url: imageUrls[0],
-            type: 'image',
-            extension: 'jpg',
-            filename: `instagram_${shortcode}.jpg`
-          }
-        ]
+        photos,
+        downloadLinks: photos
       };
     }
   } catch (e) {
@@ -445,7 +466,79 @@ async function downloadTwitter(rawUrl) {
     throw new Error('ID Tweet tidak ditemukan. Masukkan link postingan X (Twitter) yang valid.');
   }
 
-  // STRATEGI 1: Savenow V2 Engine
+  // STRATEGI 1: FxTwitter Fast Engine (Mendukung Foto HD uncompressed & Video)
+  try {
+    const fxRes = await axios.get(`https://api.fxtwitter.com/status/${tweetId}`, {
+      headers: { 'User-Agent': UA_DESKTOP },
+      timeout: 6000
+    });
+    const tweet = fxRes.data?.tweet;
+    if (tweet) {
+      const downloadLinks = [];
+      const photos = [];
+      const title = tweet.text || 'X (Twitter) Post';
+      const author = tweet.author?.screen_name || tweet.author?.name || 'X User';
+
+      if (tweet.media?.photos && Array.isArray(tweet.media.photos) && tweet.media.photos.length > 0) {
+        tweet.media.photos.forEach((photo, idx) => {
+          let hdUrl = photo.url;
+          if (hdUrl.includes('pbs.twimg.com')) {
+            hdUrl = hdUrl.replace(/name=\w+/, 'name=orig');
+            if (!hdUrl.includes('name=')) {
+              hdUrl += (hdUrl.includes('?') ? '&' : '?') + 'name=orig';
+            }
+          }
+          const photoObj = {
+            id: idx + 1,
+            label: `Foto HD #${idx + 1}`,
+            quality: 'HD Original (Master)',
+            url: hdUrl,
+            type: 'image',
+            extension: 'jpg',
+            filename: `twitter_${tweetId}_${idx + 1}.jpg`
+          };
+          photos.push(photoObj);
+          downloadLinks.push(photoObj);
+        });
+      }
+
+      if (tweet.media?.videos && Array.isArray(tweet.media.videos) && tweet.media.videos.length > 0) {
+        const vid = tweet.media.videos[0];
+        downloadLinks.push({
+          label: 'Resolusi HD 1080p',
+          quality: '1080p (Full HD)',
+          url: vid.url,
+          type: 'video',
+          extension: 'mp4',
+          filename: `twitter_${tweetId}_1080p.mp4`
+        });
+        downloadLinks.push({
+          label: 'Resolusi HD 720p',
+          quality: '720p (Standard HD)',
+          url: vid.url,
+          type: 'video',
+          extension: 'mp4',
+          filename: `twitter_${tweetId}_720p.mp4`
+        });
+      }
+
+      if (downloadLinks.length > 0) {
+        return {
+          success: true,
+          platform: 'X (Twitter)',
+          title,
+          author,
+          thumbnail: photos[0]?.url || tweet.media?.videos?.[0]?.thumbnail_url || null,
+          photos,
+          downloadLinks
+        };
+      }
+    }
+  } catch (e) {
+    lastError = e;
+  }
+
+  // STRATEGI 2: Savenow V2 Engine
   try {
     const snData = await scrapeViaSaveNow(url, ['1080', '720', 'mp3'], `X (Twitter) Video ${tweetId}`, 'X User');
     if (snData && snData.downloadLinks?.length > 0) {
@@ -459,7 +552,7 @@ async function downloadTwitter(rawUrl) {
     lastError = e;
   }
 
-  // STRATEGI 2: VxTwitter Fast Open Engine
+  // STRATEGI 3: VxTwitter Fast Open Engine
   try {
     const vxRes = await axios.get(`https://api.vxtwitter.com/Twitter/status/${tweetId}`, {
       headers: { 'User-Agent': 'Mozilla/5.0' },
@@ -511,7 +604,7 @@ async function downloadTwitter(rawUrl) {
     lastError = e;
   }
 
-  throw new Error(`Gagal mengambil video dari X (Twitter). Pastikan tweet bersifat publik dan mengandung video.`);
+  throw new Error(`Gagal mengambil media dari X (Twitter). Pastikan tweet bersifat publik dan mengandung video atau foto.`);
 }
 
 // ===== YOUTUBE SCRAPER =====
@@ -676,6 +769,13 @@ export default async function handler(req, res) {
       data.downloadLinks = data.downloadLinks.map(item => ({
         ...item,
         proxyUrl: `/api/proxy-download?url=${encodeURIComponent(item.url)}&filename=${encodeURIComponent(item.filename || 'kaze_media.mp4')}`
+      }));
+    }
+
+    if (data?.photos && Array.isArray(data.photos)) {
+      data.photos = data.photos.map((item, idx) => ({
+        ...item,
+        proxyUrl: `/api/proxy-download?url=${encodeURIComponent(item.url)}&filename=${encodeURIComponent(item.filename || `kaze_photo_${idx + 1}.jpg`)}`
       }));
     }
 

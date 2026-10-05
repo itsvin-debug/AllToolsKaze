@@ -1,13 +1,20 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import downloadRoutes from './routes/download.route.js';
+import toolsRoutes from './routes/tools.route.js';
+import waReactRoutes from './routes/wareact.route.js';
 
 // load konfigurasi env
 dotenv.config();
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 // settingan CORS biar frontend React kita bisa leluasa nembak API
 app.use(cors({
@@ -16,12 +23,17 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// middleware parsing json dan form-urlencoded
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// middleware parsing json dan form-urlencoded dengan batas 50mb untuk upload media HD
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// pasang rute API downloader
+// sajikan file static uploads untuk direct image link
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
+// pasang rute API
 app.use('/api', downloadRoutes);
+app.use('/api', toolsRoutes);
+app.use('/api/wa-react', waReactRoutes);
 
 // rute dasar buat ngecek server idup atau kagak
 app.get('/', (req, res) => {

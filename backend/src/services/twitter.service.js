@@ -3,12 +3,228 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
+import { snapsave } from 'snapsave-media-downloader';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ytDlpPath = path.join(__dirname, '..', '..', 'bin', 'yt-dlp.exe');
 
-// STRATEGI 1: Ekstraksi lewat binary yt-dlp lokal
+function getTweetId(url) {
+  const match = url.match(/(?:status|statuses)\/(\d+)/i);
+  return match ? match[1] : null;
+}
+
+// STRATEGI 1: FxTwitter & Syndication API (Mendukung Foto HD uncompressed & Video)
+async function extractTwitterViaFxAndSyndication(url) {
+  const tweetId = getTweetId(url);
+  if (!tweetId) throw new Error('ID Tweet tidak valid.');
+
+  // Coba FxTwitter API terlebih dahulu
+  try {
+    const fxRes = await axios.get(`https://api.fxtwitter.com/status/${tweetId}`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+      },
+      timeout: 8000
+    });
+
+    const tweet = fxRes.data?.tweet;
+    if (tweet) {
+      const downloadLinks = [];
+      const photos = [];
+      const title = tweet.text || 'Postingan X (Twitter)';
+      const author = tweet.author?.screen_name || tweet.author?.name || 'X User';
+
+      // Ekstraksi Foto HD
+      if (tweet.media?.photos && Array.isArray(tweet.media.photos) && tweet.media.photos.length > 0) {
+        tweet.media.photos.forEach((photo, idx) => {
+          let hdUrl = photo.url;
+          if (hdUrl.includes('pbs.twimg.com')) {
+            hdUrl = hdUrl.replace(/name=\w+/, 'name=orig');
+            if (!hdUrl.includes('name=')) {
+              hdUrl += (hdUrl.includes('?') ? '&' : '?') + 'name=orig';
+            }
+          }
+          const photoObj = {
+            id: idx + 1,
+            label: `Foto HD #${idx + 1}`,
+            quality: 'HD Original (Master)',
+            url: hdUrl,
+            type: 'image',
+            extension: 'jpg',
+            filename: `twitter_${tweetId}_${idx + 1}.jpg`
+          };
+          photos.push(photoObj);
+          downloadLinks.push(photoObj);
+        });
+      }
+
+      // Ekstraksi Video HD
+      if (tweet.media?.videos && Array.isArray(tweet.media.videos) && tweet.media.videos.length > 0) {
+        const vid = tweet.media.videos[0];
+        downloadLinks.push({
+          label: 'Resolusi HD 1080p',
+          quality: '1080p (Full HD)',
+          url: vid.url,
+          type: 'video',
+          extension: 'mp4',
+          filename: `twitter_${tweetId}_1080p.mp4`
+        });
+        downloadLinks.push({
+          label: 'Resolusi HD 720p',
+          quality: '720p (Standard HD)',
+          url: vid.url,
+          type: 'video',
+          extension: 'mp4',
+          filename: `twitter_${tweetId}_720p.mp4`
+        });
+      }
+
+      if (downloadLinks.length > 0) {
+        return {
+          success: true,
+          platform: 'X (Twitter)',
+          title,
+          author,
+          thumbnail: photos[0]?.url || tweet.media?.videos?.[0]?.thumbnail_url || null,
+          photos,
+          downloadLinks
+        };
+      }
+    }
+  } catch (err) {
+    console.warn('FxTwitter gagal, mencoba syndication fallback... Detail:', err.message);
+  }
+
+  // Coba Syndication API
+  const syndRes = await axios.get(`https://cdn.syndication.twimg.com/tweet-result?id=${tweetId}&token=4`, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+    },
+    timeout: 8000
+  });
+
+  const data = syndRes.data;
+  if (data && (data.photos || data.video || data.entities?.media)) {
+    const downloadLinks = [];
+    const photos = [];
+    const title = data.text || 'Postingan X (Twitter)';
+    const author = data.user?.screen_name || data.user?.name || 'X User';
+
+    if (data.photos && Array.isArray(data.photos) && data.photos.length > 0) {
+      data.photos.forEach((photo, idx) => {
+        let hdUrl = photo.url;
+        if (hdUrl.includes('pbs.twimg.com')) {
+          hdUrl = hdUrl.replace(/name=\w+/, 'name=orig');
+          if (!hdUrl.includes('name=')) {
+            hdUrl += (hdUrl.includes('?') ? '&' : '?') + 'name=orig';
+          }
+        }
+        const photoObj = {
+          id: idx + 1,
+          label: `Foto HD #${idx + 1}`,
+          quality: 'HD Original (Master)',
+          url: hdUrl,
+          type: 'image',
+          extension: 'jpg',
+          filename: `twitter_${tweetId}_${idx + 1}.jpg`
+        };
+        photos.push(photoObj);
+        downloadLinks.push(photoObj);
+      });
+    }
+
+    if (data.video && data.video.variants) {
+      const mp4s = data.video.variants.filter(v => v.type === 'video/mp4' && v.src);
+      if (mp4s.length > 0) {
+        const sorted = mp4s.sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0));
+        downloadLinks.push({
+          label: 'Resolusi HD 1080p',
+          quality: '1080p (Full HD)',
+          url: sorted[0].src,
+          type: 'video',
+          extension: 'mp4',
+          filename: `twitter_${tweetId}_1080p.mp4`
+        });
+        if (sorted[1]) {
+          downloadLinks.push({
+            label: 'Resolusi HD 720p',
+            quality: '720p (Standard HD)',
+            url: sorted[1].src,
+            type: 'video',
+            extension: 'mp4',
+            filename: `twitter_${tweetId}_720p.mp4`
+          });
+        }
+      }
+    }
+
+    if (downloadLinks.length > 0) {
+      return {
+        success: true,
+        platform: 'X (Twitter)',
+        title,
+        author,
+        thumbnail: photos[0]?.url || data.video?.poster || null,
+        photos,
+        downloadLinks
+      };
+    }
+  }
+
+  throw new Error('Tidak dapat menemukan media X lewat Syndication.');
+}
+
+// STRATEGI 2: SnapSave Twitter
+async function extractTwitterViaSnapSave(url) {
+  const res = await snapsave(url);
+  if (res && res.success && res.data && res.data.media && res.data.media.length > 0) {
+    const downloadLinks = [];
+    const photos = [];
+    let pCount = 1;
+
+    res.data.media.forEach((item) => {
+      if (item.type === 'image') {
+        const photoObj = {
+          id: pCount,
+          label: `Foto HD #${pCount}`,
+          quality: 'HD Image',
+          url: item.url,
+          type: 'image',
+          extension: 'jpg',
+          filename: `twitter_${Date.now()}_${pCount}.jpg`
+        };
+        photos.push(photoObj);
+        downloadLinks.push(photoObj);
+        pCount++;
+      } else {
+        downloadLinks.push({
+          label: 'Resolusi HD Video',
+          quality: 'HD Video',
+          url: item.url,
+          type: 'video',
+          extension: 'mp4',
+          filename: `twitter_${Date.now()}_video.mp4`
+        });
+      }
+    });
+
+    if (downloadLinks.length > 0) {
+      return {
+        success: true,
+        platform: 'X (Twitter)',
+        title: res.data.description || 'X (Twitter) Media',
+        author: 'X Creator',
+        thumbnail: res.data.preview || photos[0]?.url || null,
+        photos,
+        downloadLinks
+      };
+    }
+  }
+  throw new Error('SnapSave tidak menemukan media Twitter.');
+}
+
+// STRATEGI 3: Ekstraksi lewat binary yt-dlp lokal
 async function extractTwitterViaYtDlp(url) {
   return new Promise((resolve, reject) => {
     execFile(ytDlpPath, ['-J', '--no-warnings', url], { maxBuffer: 10 * 1024 * 1024 }, (error, stdout, stderr) => {
@@ -57,6 +273,7 @@ async function extractTwitterViaYtDlp(url) {
             title,
             author,
             thumbnail,
+            photos: [],
             downloadLinks
           });
         }
@@ -69,12 +286,12 @@ async function extractTwitterViaYtDlp(url) {
   });
 }
 
-// STRATEGI 2: TwitSave scraper fallback
+// STRATEGI 4: TwitSave scraper fallback
 async function extractTwitterViaTwitSave(url) {
   const twitSaveUrl = `https://twitsave.com/info?url=${encodeURIComponent(url)}`;
   const response = await axios.get(twitSaveUrl, {
     headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
     },
     timeout: 12000
   });
@@ -109,6 +326,7 @@ async function extractTwitterViaTwitSave(url) {
       title,
       author: 'X User',
       thumbnail,
+      photos: [],
       downloadLinks
     };
   }
@@ -121,20 +339,36 @@ export async function downloadTwitter(url) {
   let lastError = null;
 
   try {
-    const res1 = await extractTwitterViaYtDlp(url);
+    const res1 = await extractTwitterViaFxAndSyndication(url);
     if (res1 && res1.downloadLinks.length > 0) return res1;
   } catch (err) {
-    console.warn('Strategi 1 Twitter (yt-dlp) gagal, mencoba fallback... Detail:', err.message);
+    console.warn('Strategi 1 Twitter (Fx/Syndication) gagal... Detail:', err.message);
     lastError = err;
   }
 
   try {
-    const res2 = await extractTwitterViaTwitSave(url);
+    const res2 = await extractTwitterViaSnapSave(url);
     if (res2 && res2.downloadLinks.length > 0) return res2;
   } catch (err) {
-    console.warn('Strategi 2 Twitter (TwitSave) gagal... Detail:', err.message);
+    console.warn('Strategi 2 Twitter (SnapSave) gagal... Detail:', err.message);
     lastError = err;
   }
 
-  throw new Error(`Gagal mengambil video dari X (Twitter). Pastikan tweet publik dan mengandung media video. (Detail: ${lastError?.message || 'Media tidak ditemukan'})`);
+  try {
+    const res3 = await extractTwitterViaYtDlp(url);
+    if (res3 && res3.downloadLinks.length > 0) return res3;
+  } catch (err) {
+    console.warn('Strategi 3 Twitter (yt-dlp) gagal... Detail:', err.message);
+    lastError = err;
+  }
+
+  try {
+    const res4 = await extractTwitterViaTwitSave(url);
+    if (res4 && res4.downloadLinks.length > 0) return res4;
+  } catch (err) {
+    console.warn('Strategi 4 Twitter (TwitSave) gagal... Detail:', err.message);
+    lastError = err;
+  }
+
+  throw new Error(`Gagal mengambil media dari X (Twitter). Pastikan tweet publik dan mengandung media video atau foto. (Detail: ${lastError?.message || 'Media tidak ditemukan'})`);
 }

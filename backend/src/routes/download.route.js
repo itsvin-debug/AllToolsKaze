@@ -83,6 +83,14 @@ router.post('/download', async (req, res) => {
       }));
     }
 
+    // tambahkan juga proxyUrl ke setiap foto di mediaData.photos
+    if (mediaData && mediaData.photos && Array.isArray(mediaData.photos)) {
+      mediaData.photos = mediaData.photos.map((item, idx) => ({
+        ...item,
+        proxyUrl: `/api/proxy-download?url=${encodeURIComponent(item.url)}&filename=${encodeURIComponent(item.filename || `kaze_photo_${idx + 1}.jpg`)}`
+      }));
+    }
+
     return res.status(200).json({
       success: true,
       message: 'Berhasil mengekstrak media.',
@@ -99,7 +107,7 @@ router.post('/download', async (req, res) => {
 });
 
 // Endpoint Proxy: GET /api/proxy-download
-// mengalirkan file video langsung ke browser agar otomatis terdownload ke disk/galeri
+// mengalirkan file video/foto langsung ke browser agar otomatis terdownload ke disk/galeri
 router.get('/proxy-download', async (req, res) => {
   try {
     const { url, filename } = req.query;
@@ -109,20 +117,36 @@ router.get('/proxy-download', async (req, res) => {
     }
 
     const safeFilename = (filename || 'download_media.mp4').replace(/[^a-zA-Z0-9_.-]/g, '_');
+    let targetUrl = decodeURIComponent(url);
+
+    // Tentukan referer yang cocok sesuai domain target agar tidak kena 403 Forbidden
+    let referer = undefined;
+    if (targetUrl.includes('tiktok') || targetUrl.includes('tikcdn')) {
+      referer = 'https://www.tiktok.com/';
+    } else if (targetUrl.includes('instagram') || targetUrl.includes('cdninstagram') || targetUrl.includes('fbcdn')) {
+      referer = 'https://www.instagram.com/';
+    } else if (targetUrl.includes('twimg') || targetUrl.includes('twitter') || targetUrl.includes('x.com')) {
+      referer = 'https://twitter.com/';
+    } else if (targetUrl.includes('googlevideo') || targetUrl.includes('youtube') || targetUrl.includes('ytimg')) {
+      referer = 'https://www.youtube.com/';
+    }
+
+    const headers = {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+    };
+    if (referer) headers['Referer'] = referer;
 
     // ambil stream file dari server sumber CDN
     const response = await axios({
       method: 'GET',
-      url: decodeURIComponent(url),
+      url: targetUrl,
       responseType: 'stream',
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-        'Referer': 'https://www.tiktok.com/'
-      },
+      headers,
       timeout: 30000
     });
 
     // set header buat trigger download file di browser
+    res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Content-Disposition', `attachment; filename="${safeFilename}"`);
     res.setHeader('Content-Type', response.headers['content-type'] || 'application/octet-stream');
     if (response.headers['content-length']) {

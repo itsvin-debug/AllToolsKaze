@@ -1,12 +1,32 @@
 import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
+import {
+  Download,
+  ChevronLeft,
+  ChevronRight,
+  Images,
+  DownloadCloud,
+  Play,
+  Pause,
+  Music2,
+  CheckCircle2,
+  Sparkles,
+  RefreshCw,
+  ArrowLeft,
+  Clock,
+  Volume2
+} from 'lucide-react';
 
-// komponen screen 5: Menampilkan hasil ekstraksi video/audio & tombol download
 export default function ResultsSection({ result, preferredFormat = '1080p', onReset, onBack }) {
   const [selectedQualityIndex, setSelectedQualityIndex] = useState(0);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+  const [downloadingAllPhotos, setDownloadingAllPhotos] = useState(false);
+  const [downloadAllProgress, setDownloadAllProgress] = useState(0);
+  const [detectedDuration, setDetectedDuration] = useState('');
   const audioRef = useRef(null);
+  const videoRef = useRef(null);
 
   if (!result || !result.downloadLinks || result.downloadLinks.length === 0) {
     return null;
@@ -17,7 +37,10 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
   const audioLinks = result.downloadLinks.filter((l) => l.type === 'audio');
   const imageLinks = result.downloadLinks.filter((l) => l.type === 'image');
 
-  // auto sesuaikan pilihan awal dengan preferensi dropdown user (1080p vs 720p)
+  const allPhotos = (result.photos && result.photos.length > 0)
+    ? result.photos
+    : imageLinks;
+
   useEffect(() => {
     if (preferredFormat === '720p' && videoLinks.length > 1) {
       setSelectedQualityIndex(1);
@@ -26,23 +49,41 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
     }
   }, [preferredFormat, result]);
 
-  // link video aktif yang dipilih user
+  useEffect(() => {
+    setCurrentPhotoIndex(0);
+  }, [result]);
+
   const activeVideo = videoLinks[selectedQualityIndex] || videoLinks[0];
+  const activePhoto = allPhotos[currentPhotoIndex] || allPhotos[0];
 
-  // fungsi download pakai fetch + blob agar file beneran tersimpan ke galeri HP / folder Downloads
-  const handleDownload = async (mediaItem) => {
+  // Ekstrak durasi menit & detik dari tag video asli
+  const handleVideoMetadata = (e) => {
+    const sec = e.target.duration;
+    if (sec && !isNaN(sec)) {
+      const m = Math.floor(sec / 60);
+      const s = Math.floor(sec % 60);
+      setDetectedDuration(`${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`);
+    }
+  };
+
+  const handleDownload = async (mediaItem, triggerConfetti = true) => {
     setDownloading(true);
-    confetti({ particleCount: 60, spread: 50, origin: { y: 0.7 } });
+    if (triggerConfetti) {
+      confetti({ particleCount: 60, spread: 50, origin: { y: 0.7 } });
+    }
 
-    const filename = mediaItem.filename || 'kaze_download.mp4';
+    const defaultFilename = mediaItem.type === 'image'
+      ? `kaze_photo_${Date.now()}.jpg`
+      : mediaItem.type === 'audio'
+      ? 'kaze_sound.mp3'
+      : 'kaze_download.mp4';
+    const filename = mediaItem.filename || defaultFilename;
 
-    // proxyUrl sudah pakai path relatif /api/proxy-download dari Vercel serverless function
     const proxyUrl = mediaItem.proxyUrl
-      ? mediaItem.proxyUrl  // sudah relatif: /api/proxy-download?url=...
+      ? mediaItem.proxyUrl
       : `/api/proxy-download?url=${encodeURIComponent(mediaItem.url)}&filename=${encodeURIComponent(filename)}`;
 
     try {
-      // fetch dulu biar dapat blob, baru trigger save — cara ini yang bikin file masuk galeri HP
       const response = await fetch(proxyUrl);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
@@ -56,18 +97,53 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
       tempLink.click();
       document.body.removeChild(tempLink);
 
-      // bersihkan blob URL setelah sedikit delay
       setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
     } catch (err) {
-      console.warn('Blob download gagal, fallback ke direct link:', err.message);
-      // fallback: buka link langsung di tab baru kalau blob gagal
+      console.warn('Blob download fallback:', err.message);
       window.open(mediaItem.url, '_blank');
     } finally {
-      setTimeout(() => setDownloading(false), 1500);
+      setTimeout(() => setDownloading(false), 1200);
     }
   };
 
-  // kontrol pemutar audio MP3
+  const handleNextPhoto = () => {
+    if (allPhotos.length <= 1) return;
+    setCurrentPhotoIndex((prev) => (prev + 1) % allPhotos.length);
+  };
+
+  const handlePrevPhoto = () => {
+    if (allPhotos.length <= 1) return;
+    setCurrentPhotoIndex((prev) => (prev - 1 + allPhotos.length) % allPhotos.length);
+  };
+
+  const handleDownloadAllPhotos = async () => {
+    if (!allPhotos || allPhotos.length === 0 || downloadingAllPhotos) return;
+    setDownloadingAllPhotos(true);
+    setDownloadAllProgress(1);
+
+    confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } });
+
+    for (let i = 0; i < allPhotos.length; i++) {
+      setDownloadAllProgress(i + 1);
+      const photo = allPhotos[i];
+      try {
+        await handleDownload(photo, false);
+      } catch (err) {
+        console.warn(`Gagal mengunduh foto #${i + 1}:`, err);
+      }
+      if (i < allPhotos.length - 1) {
+        await new Promise((resolve) => setTimeout(resolve, 400));
+      }
+    }
+
+    confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
+    setTimeout(() => {
+      setDownloadingAllPhotos(false);
+      setDownloadAllProgress(0);
+    }, 1500);
+  };
+
+  // Toggle pemutar audio
   const togglePlayAudio = () => {
     if (!audioRef.current) return;
     if (isPlayingAudio) {
@@ -79,24 +155,32 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
     }
   };
 
+  // Durasi final: prioritas metadata video, fallback result.duration
+  const displayDuration = detectedDuration 
+    ? `${detectedDuration} Menit` 
+    : result.duration 
+    ? `${result.duration}` 
+    : null;
+
   return (
-    <div className="w-full flex flex-col gap-6 sm:gap-8 animate-fadeIn mt-2 sm:mt-4">
+    <div className="w-full flex flex-col gap-6 animate-fadeIn mt-2">
       
-      {/* 1. Kartu Hasil Video (Jika ada video) */}
+      {/* 1. Kartu Hasil Video */}
       {videoLinks.length > 0 && (
-        <div className="w-full bg-surface-container/60 backdrop-blur-2xl border border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 shadow-2xl flex flex-col md:flex-row gap-6 md:gap-8 relative overflow-hidden">
+        <div className="w-full bg-white dark:bg-[#12151f] border border-black/10 dark:border-white/10 rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-xl flex flex-col md:flex-row gap-6 items-start relative overflow-hidden">
           
-          {/* Pratinjau Video / Player */}
-          <div className="w-full md:w-64 lg:w-72 aspect-[9/16] sm:aspect-[3/4] max-h-[340px] sm:max-h-[380px] rounded-xl sm:rounded-2xl bg-black/60 border border-outline-variant/20 overflow-hidden relative group shrink-0 flex items-center justify-center mx-auto md:mx-0">
+          {/* Pratinjau Video & Player dengan Suara Aktif */}
+          <div className="w-full md:w-72 aspect-[9/16] sm:aspect-[3/4] max-h-[380px] rounded-2xl bg-black/80 border border-black/10 dark:border-white/10 overflow-hidden relative group shrink-0 flex items-center justify-center mx-auto md:mx-0 shadow-lg">
             
-            {/* Live Video Player */}
             {activeVideo?.url ? (
               <video
+                ref={videoRef}
                 key={activeVideo.url}
                 src={activeVideo.url}
                 poster={result.thumbnail || undefined}
                 controls
                 playsInline
+                onLoadedMetadata={handleVideoMetadata}
                 className="w-full h-full object-contain"
               />
             ) : result.thumbnail ? (
@@ -107,96 +191,119 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
                 referrerPolicy="no-referrer"
               />
             ) : (
-              <div className="flex flex-col items-center justify-center text-on-surface-variant/40 p-4 text-center">
-                <span className="material-symbols-outlined text-4xl sm:text-5xl text-primary">play_circle</span>
-                <span className="text-xs text-on-surface-variant mt-2 font-medium">Video Siap Diputar</span>
+              <div className="flex flex-col items-center justify-center text-slate-400 p-4 text-center">
+                <Play className="w-10 h-10 text-indigo-400" />
+                <span className="text-xs mt-2">Video Siap Diputar</span>
               </div>
             )}
 
             {/* Badge Tanpa Watermark */}
-            <div className="absolute top-2.5 left-2.5 bg-primary/90 text-on-primary font-bold text-[10px] sm:text-[11px] px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full shadow-lg backdrop-blur-sm pointer-events-none">
-              ✨ No Watermark
+            <div className="absolute top-2.5 left-2.5 bg-black/70 backdrop-blur-md text-emerald-400 font-bold text-[10px] px-2.5 py-0.5 rounded-full shadow-md border border-emerald-400/30 pointer-events-none">
+              ✓ No Watermark
             </div>
+
+            {/* Indikator Menit di Pojok Video */}
+            {displayDuration && (
+              <div className="absolute bottom-2.5 right-2.5 bg-black/80 backdrop-blur-md text-white font-mono text-[10px] px-2 py-0.5 rounded-md shadow-md border border-white/20 pointer-events-none flex items-center gap-1">
+                <Clock className="w-3 h-3 text-cyan-400" />
+                <span>{displayDuration}</span>
+              </div>
+            )}
           </div>
 
           {/* Rincian Video & Pilihan Kualitas */}
-          <div className="flex-grow flex flex-col justify-between gap-5 sm:gap-6">
+          <div className="flex-grow flex flex-col justify-between gap-5 w-full">
             
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="px-2 sm:px-2.5 py-0.5 rounded-full text-[11px] sm:text-xs font-bold bg-primary/20 text-primary border border-primary/30">
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-mono">
                   {result.platform}
                 </span>
-                <span className="text-[11px] sm:text-xs text-primary font-semibold bg-primary/10 px-2 py-0.5 rounded-md">
+                <span className="text-xs text-emerald-500 font-bold bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full">
                   {activeVideo.quality || 'HD'}
                 </span>
-                {result.duration && (
-                  <span className="text-[11px] sm:text-xs text-on-surface-variant">
-                    • {result.duration}
+                {displayDuration && (
+                  <span className="text-xs text-slate-400 flex items-center gap-1 font-mono">
+                    <Clock className="w-3 h-3" />
+                    <span>{displayDuration}</span>
                   </span>
                 )}
               </div>
 
-              <h3 className="text-base sm:text-lg md:text-xl font-bold text-on-surface line-clamp-3 leading-snug">
-                {result.title}
+              <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white line-clamp-2 leading-snug">
+                {result.title || 'Video Siap Diunduh'}
               </h3>
 
               {result.author && (
-                <p className="text-xs text-primary-fixed-dim font-medium">
+                <p className="text-xs text-indigo-400 font-medium">
                   Kreator: @{result.author}
                 </p>
               )}
 
-              <p className="text-on-surface-variant/80 text-xs mt-1">
-                Pilih resolusi di bawah ini, video bebas watermark:
+              <p className="text-slate-500 dark:text-slate-400 text-xs">
+                Video siap ditonton dengan suara jernih dan diunduh tanpa watermark:
               </p>
             </div>
 
-            {/* Pilihan Resolusi (1080p HD vs 720p HD) */}
-            <div className="flex flex-col gap-3.5 sm:gap-4">
-              <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-2.5 w-full">
+            {/* Pilihan Resolusi */}
+            <div className="flex flex-col gap-3">
+              <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap w-full">
                 {videoLinks.map((link, idx) => {
                   const isSelected = selectedQualityIndex === idx;
-                  const is1080p = link.label?.includes('1080') || link.quality?.includes('1080');
                   return (
                     <button
                       key={idx}
                       onClick={() => setSelectedQualityIndex(idx)}
-                      className={`px-3 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 sm:gap-2 min-h-[44px] ${
+                      className={`px-3 py-2 rounded-xl text-xs transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 ${
                         isSelected
-                          ? 'bg-primary/25 border-2 border-primary text-primary shadow-lg shadow-primary/20 font-bold'
-                          : 'bg-surface-container-lowest/70 border border-outline-variant/30 text-on-surface-variant hover:border-primary/50 hover:text-on-surface'
+                          ? 'bg-indigo-600 text-white font-bold shadow-md'
+                          : 'bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:border-indigo-400'
                       }`}
                     >
-                      <span className="material-symbols-outlined text-base text-primary">
-                        {isSelected ? 'check_circle' : (is1080p ? 'hd' : 'high_density')}
-                      </span>
-                      <span className="truncate">{link.label || link.quality}</span>
-                      {is1080p && (
-                        <span className="hidden sm:inline text-[10px] px-1.5 py-0.2 rounded bg-primary/20 text-primary font-bold">
-                          Max
-                        </span>
+                      {isSelected ? (
+                        <CheckCircle2 className="w-3.5 h-3.5 text-white shrink-0" />
+                      ) : (
+                        <Sparkles className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
                       )}
+                      <span>{link.label || link.quality}</span>
                     </button>
                   );
                 })}
               </div>
 
-              {/* Tombol Utama: Download Video Langsung */}
+              {/* Tombol Download Video Utama */}
               {activeVideo && (
                 <button
                   onClick={() => handleDownload(activeVideo)}
                   disabled={downloading}
-                  className="w-full bg-gradient-to-r from-primary via-primary-container to-secondary-container hover:from-primary-fixed hover:to-secondary text-on-primary font-bold text-sm sm:text-base md:text-lg rounded-xl sm:rounded-2xl py-3.5 sm:py-4 flex items-center justify-center gap-2 shadow-xl shadow-primary/25 hover:shadow-primary/40 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 cursor-pointer disabled:opacity-50 min-h-[48px]"
+                  className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm sm:text-base rounded-xl py-3.5 flex items-center justify-center gap-2 shadow-md active:scale-98 transition-all cursor-pointer disabled:opacity-50"
                 >
-                  <span className="material-symbols-outlined text-xl sm:text-2xl">
-                    {downloading ? 'sync' : 'download'}
-                  </span>
-                  <span className="truncate">
-                    {downloading ? 'Memulai Download...' : `Download MP4 (${activeVideo.label || activeVideo.quality})`}
+                  {downloading ? (
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Download className="w-4 h-4" />
+                  )}
+                  <span>
+                    {downloading ? 'Memulai Unduhan...' : `Download Video MP4 (${activeVideo.label || activeVideo.quality})`}
                   </span>
                 </button>
               )}
+
+              {/* Tombol Download Audio / Sound Video MP3 */}
+              <button
+                onClick={() => {
+                  const audioItem = audioLinks[0] || {
+                    url: activeVideo.url,
+                    filename: 'kaze_sound.mp3',
+                    type: 'audio'
+                  };
+                  handleDownload(audioItem);
+                }}
+                className="w-full bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-slate-200 font-bold text-xs sm:text-sm rounded-xl py-3 flex items-center justify-center gap-2 transition-all cursor-pointer"
+              >
+                <Music2 className="w-4 h-4 text-emerald-400" />
+                <span>Dengar & Download Sound MP3 Saja</span>
+              </button>
             </div>
 
           </div>
@@ -204,25 +311,125 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
         </div>
       )}
 
-      {/* 2. Kartu Hasil Audio MP3 */}
-      {audioLinks.length > 0 && (
-        <div className="w-full bg-surface-container/60 backdrop-blur-2xl border border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 shadow-2xl flex flex-col gap-4 sm:gap-6 relative overflow-hidden">
+      {/* 2. Kartu Hasil Foto / Carousel Slideshow */}
+      {allPhotos.length > 0 && (
+        <div className="w-full bg-white dark:bg-[#12151f] border border-black/10 dark:border-white/10 rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-xl flex flex-col gap-4 animate-fadeIn">
           
-          <div className="flex items-center gap-3 sm:gap-4">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-primary/15 border border-primary/25 flex items-center justify-center text-primary shadow-md shrink-0">
-              <span className="material-symbols-outlined text-xl sm:text-2xl">music_note</span>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-black/5 dark:border-white/5">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+                <Images className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                  Postingan Foto ({allPhotos.length} Gambar HD)
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Gunakan panah untuk memilih foto atau unduh seluruh album
+                </p>
+              </div>
+            </div>
+
+            <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-500/10 text-indigo-400 font-mono">
+              Foto {currentPhotoIndex + 1} dari {allPhotos.length}
+            </span>
+          </div>
+
+          {/* Pratinjau Foto */}
+          <div className="relative w-full max-w-lg mx-auto aspect-square sm:aspect-[4/3] rounded-2xl overflow-hidden bg-black/80 flex items-center justify-center shadow-lg">
+            {activePhoto ? (
+              <img
+                key={activePhoto.url}
+                src={activePhoto.url}
+                alt={activePhoto.label || `Foto ${currentPhotoIndex + 1}`}
+                className="w-full h-full object-contain"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <div className="text-xs text-slate-400">Foto Siap Diunduh</div>
+            )}
+
+            {allPhotos.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={handlePrevPhoto}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/70 hover:bg-black text-white flex items-center justify-center transition-all cursor-pointer backdrop-blur-md"
+                  aria-label="Foto Sebelumnya"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleNextPhoto}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/70 hover:bg-black text-white flex items-center justify-center transition-all cursor-pointer backdrop-blur-md"
+                  aria-label="Foto Selanjutnya"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              </>
+            )}
+
+            <div className="absolute bottom-3 right-3 px-2.5 py-0.5 rounded-full bg-black/80 text-[10px] font-mono text-white pointer-events-none">
+              {currentPhotoIndex + 1} / {allPhotos.length}
+            </div>
+          </div>
+
+          {/* Tombol Download Foto */}
+          <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+            {activePhoto && (
+              <button
+                onClick={() => handleDownload(activePhoto)}
+                disabled={downloading}
+                className="w-full sm:flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs sm:text-sm rounded-xl py-3 flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
+              >
+                <Download className="w-4 h-4" />
+                <span>Download Foto Ini (#{currentPhotoIndex + 1})</span>
+              </button>
+            )}
+
+            {allPhotos.length > 1 && (
+              <button
+                onClick={handleDownloadAllPhotos}
+                disabled={downloadingAllPhotos}
+                className="w-full sm:flex-1 bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/15 text-slate-800 dark:text-slate-200 font-bold text-xs sm:text-sm rounded-xl py-3 flex items-center justify-center gap-2 transition-all cursor-pointer"
+              >
+                {downloadingAllPhotos ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>Mengunduh Foto {downloadAllProgress}/{allPhotos.length}...</span>
+                  </>
+                ) : (
+                  <>
+                    <DownloadCloud className="w-4 h-4" />
+                    <span>Download Semua ({allPhotos.length} Foto)</span>
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+
+        </div>
+      )}
+
+      {/* 3. Audio Player Mandiri */}
+      {audioLinks.length > 0 && (
+        <div className="w-full bg-white dark:bg-[#12151f] border border-black/10 dark:border-white/10 rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-xl flex flex-col gap-3">
+          
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+              <Music2 className="w-4 h-4" />
             </div>
             <div className="flex flex-col overflow-hidden">
-              <h3 className="text-sm sm:text-base md:text-lg font-bold text-on-surface truncate">
-                {result.musicInfo?.title || 'Audio Musik / MP3'}
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                {result.musicInfo?.title || 'Sound Musik / Lagu Asli'}
               </h3>
-              <p className="text-on-surface-variant/80 text-xs truncate">
-                {result.musicInfo?.author || result.author || 'Original Audio'}
+              <p className="text-slate-400 text-xs truncate">
+                {result.musicInfo?.author || result.author || 'Audio MP3'}
               </p>
             </div>
           </div>
 
-          {/* Pemutar Audio HTML5 */}
           <audio
             ref={audioRef}
             src={audioLinks[0].url}
@@ -230,24 +437,22 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
             className="hidden"
           />
 
-          <div className="w-full bg-surface-container-lowest/60 border border-outline-variant/30 rounded-xl sm:rounded-2xl p-3 sm:p-4 flex items-center gap-3 sm:gap-4">
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-black/30 border border-black/5 dark:border-white/5">
             <button
               onClick={togglePlayAudio}
-              className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-transform cursor-pointer shrink-0"
+              className="w-9 h-9 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-md hover:scale-105 active:scale-95 transition-transform cursor-pointer shrink-0"
               aria-label={isPlayingAudio ? 'Pause' : 'Play'}
             >
-              <span className="material-symbols-outlined text-xl sm:text-2xl">
-                {isPlayingAudio ? 'pause' : 'play_arrow'}
-              </span>
+              {isPlayingAudio ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 fill-current ml-0.5" />}
             </button>
-            <div className="flex-grow flex flex-col gap-1 overflow-hidden">
-              <div className="text-xs text-on-surface-variant flex justify-between">
-                <span className="truncate">{isPlayingAudio ? 'Sedang Diputar...' : 'Pratinjau Suara'}</span>
-                <span className="shrink-0 font-medium">MP3 128k</span>
+            <div className="flex-grow flex flex-col gap-1">
+              <div className="text-xs text-slate-500 dark:text-slate-400 flex justify-between font-mono">
+                <span>{isPlayingAudio ? 'Sedang Memutar Audio...' : 'Putar Audio Musik'}</span>
+                <span>MP3 HD</span>
               </div>
-              <div className="w-full h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+              <div className="w-full h-1.5 bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden">
                 <div
-                  className={`h-full bg-primary rounded-full transition-all duration-300 ${
+                  className={`h-full bg-emerald-500 rounded-full transition-all duration-300 ${
                     isPlayingAudio ? 'w-full animate-pulse' : 'w-1/4'
                   }`}
                 />
@@ -255,71 +460,34 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
             </div>
           </div>
 
-          {/* Tombol Download MP3 */}
           <button
             onClick={() => handleDownload(audioLinks[0])}
-            className="w-full bg-surface-container-high hover:bg-surface-container-highest border border-outline-variant/40 hover:border-primary/50 text-on-surface font-bold text-sm sm:text-base rounded-xl sm:rounded-2xl py-3 sm:py-3.5 flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer shadow-md min-h-[44px]"
+            className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm cursor-pointer transition-all"
           >
-            <span className="material-symbols-outlined text-lg sm:text-xl text-primary">download</span>
-            <span>Download Audio MP3</span>
+            <Download className="w-4 h-4" />
+            <span>Download Lagu / Sound MP3 Ini</span>
           </button>
-
         </div>
       )}
 
-      {/* 3. Kartu Gambar Slide (Jika ada) */}
-      {imageLinks.length > 0 && (
-        <div className="w-full bg-surface-container/60 backdrop-blur-2xl border border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 shadow-2xl flex flex-col gap-4 sm:gap-6">
-          <h3 className="text-base sm:text-lg font-bold text-on-surface flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary">photo_library</span>
-            <span>Foto / Slide ({imageLinks.length} Gambar)</span>
-          </h3>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
-            {imageLinks.map((img, i) => (
-              <div
-                key={i}
-                className="group relative rounded-xl overflow-hidden border border-outline-variant/30 aspect-square bg-surface-container-high"
-              >
-                <img
-                  src={img.url}
-                  alt={`Slide ${i + 1}`}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  referrerPolicy="no-referrer"
-                />
-                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-2">
-                  <button
-                    onClick={() => handleDownload(img)}
-                    className="p-2.5 rounded-full bg-primary text-on-primary shadow-lg cursor-pointer hover:scale-110 transition-transform"
-                    title="Download Foto Ini"
-                  >
-                    <span className="material-symbols-outlined text-xl">download</span>
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Navigasi Aksi Bawah: Tombol Back & Tombol Reset (Responsive Stacking) */}
-      <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 pt-2 w-full">
+      {/* Navigasi Aksi Bawah */}
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-1 w-full">
         {onBack && (
           <button
             onClick={onBack}
-            className="w-full sm:w-auto px-5 sm:px-6 py-3 rounded-xl sm:rounded-2xl bg-surface-container hover:bg-surface-container-high border border-outline-variant/30 text-on-surface hover:text-primary text-xs sm:text-sm font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md min-h-[44px]"
+            className="w-full sm:w-auto px-5 py-2.5 rounded-xl border border-black/10 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5 text-xs font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
-            <span className="material-symbols-outlined text-base sm:text-lg">arrow_back</span>
-            <span>Kembali ke Menu Platform</span>
+            <ArrowLeft className="w-4 h-4" />
+            <span>Kembali ke Beranda</span>
           </button>
         )}
 
         <button
           onClick={onReset}
-          className="w-full sm:w-auto px-5 sm:px-6 py-3 rounded-xl sm:rounded-2xl bg-surface-container-lowest/80 hover:bg-surface-container border border-outline-variant/30 text-on-surface-variant hover:text-primary text-xs sm:text-sm font-medium transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md min-h-[44px]"
+          className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm"
         >
-          <span className="material-symbols-outlined text-base sm:text-lg">refresh</span>
-          <span>Unduh Link Video Lainnya</span>
+          <RefreshCw className="w-4 h-4" />
+          <span>Unduh Link Lainnya</span>
         </button>
       </div>
 

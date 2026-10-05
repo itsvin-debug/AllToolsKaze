@@ -53,7 +53,7 @@ cd backend
 npm install
 npm run dev
 ```
-> Server backend akan berjalan di **`http://localhost:5000`**.
+> Server backend akan berjalan di **`http://localhost:5001`**.
 
 ---
 

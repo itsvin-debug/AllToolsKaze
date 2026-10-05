@@ -48,6 +48,7 @@ export async function downloadTikTok(rawUrl) {
     const author = $('.result_author h2, .result_author span').first().text().trim() || 'TikTok Creator';
 
     const rawVideoLinks = [];
+    const photoLinks = [];
     let audioLink = null;
 
     // loop cari link download di dalam HTML hasil respon
@@ -57,6 +58,7 @@ export async function downloadTikTok(rawUrl) {
 
       if (href && (href.startsWith('http') || href.includes('tikcdn'))) {
         const isMp3 = text.toLowerCase().includes('mp3') || text.toLowerCase().includes('audio') || href.includes('/m/');
+        const isImg = href.includes('.jpg') || href.includes('.jpeg') || href.includes('.png') || text.toLowerCase().includes('photo') || text.toLowerCase().includes('slide') || $(elem).closest('.splide__slide').length > 0;
         
         if (isMp3) {
           audioLink = {
@@ -67,15 +69,35 @@ export async function downloadTikTok(rawUrl) {
             extension: 'mp3',
             filename: `tiktok_audio_${Date.now()}.mp3`
           };
+        } else if (isImg) {
+          photoLinks.push(href);
         } else {
           rawVideoLinks.push(href);
         }
       }
     });
 
+    const downloadLinks = [];
+    const photos = [];
+
+    if (photoLinks.length > 0) {
+      photoLinks.forEach((imgUrl, idx) => {
+        const photoObj = {
+          id: idx + 1,
+          label: `Foto HD #${idx + 1}`,
+          quality: 'HD Image (No Watermark)',
+          url: imgUrl,
+          type: 'image',
+          extension: 'jpg',
+          filename: `tiktok_slide_${Date.now()}_${idx + 1}.jpg`
+        };
+        photos.push(photoObj);
+        downloadLinks.push(photoObj);
+      });
+    }
+
     if (rawVideoLinks.length > 0) {
       const primaryVideoUrl = rawVideoLinks[0];
-      const downloadLinks = [];
 
       // 1. Opsi Resolusi HD 1080p (Full HD, Tanpa Watermark)
       downloadLinks.push({
@@ -97,19 +119,22 @@ export async function downloadTikTok(rawUrl) {
         extension: 'mp4',
         filename: `tiktok_720p_nowm_${Date.now()}.mp4`
       });
+    }
 
-      // 3. Opsi Audio MP3
-      if (audioLink) {
-        downloadLinks.push(audioLink);
-      }
+    // 3. Opsi Audio MP3
+    if (audioLink) {
+      downloadLinks.push(audioLink);
+    }
 
+    if (downloadLinks.length > 0) {
       return {
         success: true,
         platform: 'TikTok',
         title,
         author,
-        thumbnail,
+        thumbnail: thumbnail || photos[0]?.url || null,
         duration: null,
+        photos,
         musicInfo: {
           title: 'Original TikTok Audio',
           author: author
@@ -122,7 +147,7 @@ export async function downloadTikTok(rawUrl) {
     lastError = err;
   }
 
-  // STRATEGI 2: TikWM Fallback
+  // STRATEGI 2: TikWM Fallback (Dukungan sangat kuat untuk TikTok Photo Mode/Slide)
   try {
     const tikwmRes = await axios.post(
       'https://www.tikwm.com/api/',
@@ -147,8 +172,27 @@ export async function downloadTikTok(rawUrl) {
     if (data && data.code === 0 && data.data) {
       const item = data.data;
       const downloadLinks = [];
+      const photos = [];
 
-      // 1080p HD
+      // Ekstraksi Foto Slide TikTok jika format postingan adalah Photo Mode
+      if (item.images && Array.isArray(item.images) && item.images.length > 0) {
+        item.images.forEach((imgUrl, idx) => {
+          const fullImgUrl = imgUrl.startsWith('http') ? imgUrl : `https://www.tikwm.com${imgUrl}`;
+          const photoObj = {
+            id: idx + 1,
+            label: `Foto HD #${idx + 1}`,
+            quality: 'HD Image (No Watermark)',
+            url: fullImgUrl,
+            type: 'image',
+            extension: 'jpg',
+            filename: `tiktok_${item.id || Date.now()}_${idx + 1}.jpg`
+          };
+          photos.push(photoObj);
+          downloadLinks.push(photoObj);
+        });
+      }
+
+      // 1080p HD Video
       if (item.hdplay) {
         downloadLinks.push({
           label: 'Resolusi HD 1080p',
@@ -160,7 +204,7 @@ export async function downloadTikTok(rawUrl) {
         });
       }
 
-      // 720p HD
+      // 720p HD Video
       if (item.play) {
         downloadLinks.push({
           label: 'Resolusi HD 720p',
@@ -189,10 +233,11 @@ export async function downloadTikTok(rawUrl) {
           success: true,
           platform: 'TikTok',
           id: item.id || '',
-          title: item.title || 'TikTok Video',
+          title: item.title || 'TikTok Post',
           author: item.author?.nickname || item.author?.unique_id || 'TikTok Creator',
-          thumbnail: item.cover || item.origin_cover,
+          thumbnail: photos[0]?.url || item.cover || item.origin_cover,
           duration: item.duration ? `${item.duration}s` : null,
+          photos,
           musicInfo: {
             title: item.music_info?.title || 'Original Sound',
             author: item.music_info?.author || item.author?.nickname || 'TikTok'
@@ -206,5 +251,5 @@ export async function downloadTikTok(rawUrl) {
     lastError = err;
   }
 
-  throw new Error(`Gagal memproses video TikTok. Pastikan video publik dan link dapat diakses. (Detail: ${lastError?.message || 'Media tidak ditemukan'})`);
+  throw new Error(`Gagal memproses media TikTok. Pastikan postingan publik dan link dapat diakses. (Detail: ${lastError?.message || 'Media tidak ditemukan'})`);
 }

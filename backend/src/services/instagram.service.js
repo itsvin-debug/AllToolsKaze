@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import https from 'https';
+import { snapsave } from 'snapsave-media-downloader';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -12,11 +13,235 @@ const agent = new https.Agent({ rejectUnauthorized: false });
 
 // pembantu buat ambil shortcode dari berbagai format URL Instagram
 function getInstagramShortcode(url) {
-  const match = url.match(/(?:reel|reels|p|tv)\/([A-Za-z0-9_-]+)/i);
+  const match = url.match(/(?:reel|reels|p|tv|share)\/([A-Za-z0-9_-]+)/i);
   return match ? match[1] : null;
 }
 
-// STRATEGI 1: Ekstraksi lewat binary yt-dlp lokal
+// STRATEGI 1: Ekstraksi lewat Instagram Embed Page (Mendukung Video, Foto Tunggal, dan Multi-Foto / Carousel)
+async function extractInstagramViaEmbed(url) {
+  const shortcode = getInstagramShortcode(url);
+  if (!shortcode) throw new Error('Shortcode Instagram tidak valid.');
+
+  const embedUrl = `https://www.instagram.com/p/${shortcode}/embed/captioned/`;
+  const res = await axios.get(embedUrl, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+    },
+    httpsAgent: agent,
+    timeout: 10000
+  });
+
+  const html = res.data;
+  const $ = cheerio.load(html);
+  const caption = $('.Caption').text().trim() || $('div.Caption').text().trim() || 'Instagram Media';
+  const author = $('.Avatar img').attr('alt') || 'Instagram Creator';
+
+  // cari semua video_url
+  const videoMatches = [...html.matchAll(/video_url\\?":\\?"([^"]+)\\?"/gi), ...html.matchAll(/video_url\s*:\s*"([^"]+)"/g)];
+  const uniqueVideos = [];
+  for (const m of videoMatches) {
+    if (m[1]) {
+      const clean = m[1].replace(/\\/g, '').replace(/&amp;/g, '&');
+      if (clean.startsWith('http') && !uniqueVideos.includes(clean)) {
+        uniqueVideos.push(clean);
+      }
+    }
+  }
+
+  // cari semua display_url dan display_resources (foto HD)
+  const displayMatches = [...html.matchAll(/display_url\\?":\\?"([^"]+)\\?"/gi), ...html.matchAll(/display_url\s*:\s*"([^"]+)"/g)];
+  const uniqueImages = [];
+  for (const m of displayMatches) {
+    if (m[1]) {
+      const clean = m[1].replace(/\\/g, '').replace(/&amp;/g, '&');
+      if (clean.startsWith('http') && !uniqueImages.includes(clean)) {
+        uniqueImages.push(clean);
+      }
+    }
+  }
+
+  const downloadLinks = [];
+  const photos = [];
+
+  // jika ada video (Reels / Postingan Video)
+  if (uniqueVideos.length > 0) {
+    const mainVideo = uniqueVideos[0];
+    downloadLinks.push({
+      label: 'Resolusi HD 1080p',
+      quality: '1080p (Full HD)',
+      url: mainVideo,
+      type: 'video',
+      extension: 'mp4',
+      filename: `instagram_${shortcode}_1080p.mp4`
+    });
+    downloadLinks.push({
+      label: 'Resolusi HD 720p',
+      quality: '720p (Standard HD)',
+      url: mainVideo,
+      type: 'video',
+      extension: 'mp4',
+      filename: `instagram_${shortcode}_720p.mp4`
+    });
+    downloadLinks.push({
+      label: 'Audio MP3',
+      quality: '128kbps',
+      url: mainVideo,
+      type: 'audio',
+      extension: 'mp3',
+      filename: `instagram_audio_${shortcode}.mp3`
+    });
+  }
+
+  // proses foto-foto (baik postingan foto tunggal maupun carousel multi-foto)
+  if (uniqueImages.length > 0) {
+    uniqueImages.forEach((imgUrl, idx) => {
+      const photoObj = {
+        id: idx + 1,
+        label: `Foto HD #${idx + 1}`,
+        quality: 'HD Original',
+        url: imgUrl,
+        type: 'image',
+        extension: 'jpg',
+        filename: `instagram_${shortcode}_${idx + 1}.jpg`
+      };
+      photos.push(photoObj);
+      downloadLinks.push(photoObj);
+    });
+  }
+
+  if (downloadLinks.length > 0) {
+    return {
+      success: true,
+      platform: 'Instagram',
+      title: caption,
+      author: author,
+      thumbnail: uniqueImages[0] || null,
+      photos,
+      downloadLinks,
+      musicInfo: uniqueVideos.length > 0 ? { title: 'Instagram Audio', author } : null
+    };
+  }
+
+  throw new Error('Tidak dapat menemukan media dari embed Instagram.');
+}
+
+// STRATEGI 2: FastDL / SaveIG scraper fallback (Mendukung penuh carousel multi-foto)
+async function extractInstagramViaFastDL(url) {
+  const res = await axios.post('https://fastdl.app/c/', new URLSearchParams({
+    url: url,
+    lang_code: 'en'
+  }), {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+      'Referer': 'https://fastdl.app/'
+    },
+    httpsAgent: agent,
+    timeout: 12000
+  });
+
+  const $ = cheerio.load(res.data);
+  const downloadLinks = [];
+  const photos = [];
+  let photoIndex = 1;
+
+  $('a.download-items__btn, a.btn-download, a[download], a[href*="cdninstagram"], a[href*="fbcdn"]').each((i, el) => {
+    const href = $(el).attr('href');
+    if (href && !href.startsWith('javascript') && href.startsWith('http')) {
+      const isVideo = href.includes('.mp4');
+      if (isVideo) {
+        downloadLinks.push({
+          label: `Resolusi HD ${i === 0 ? '1080p' : '720p'}`,
+          quality: i === 0 ? '1080p (Full HD)' : '720p (Standard HD)',
+          url: href,
+          type: 'video',
+          extension: 'mp4',
+          filename: `instagram_${Date.now()}_video.mp4`
+        });
+      } else {
+        const photoObj = {
+          id: photoIndex,
+          label: `Foto HD #${photoIndex}`,
+          quality: 'HD Image',
+          url: href,
+          type: 'image',
+          extension: 'jpg',
+          filename: `instagram_${Date.now()}_${photoIndex}.jpg`
+        };
+        photos.push(photoObj);
+        downloadLinks.push(photoObj);
+        photoIndex++;
+      }
+    }
+  });
+
+  if (downloadLinks.length > 0) {
+    return {
+      success: true,
+      platform: 'Instagram',
+      title: 'Instagram Media',
+      author: 'Instagram User',
+      thumbnail: photos[0]?.url || $('img').first().attr('src') || null,
+      photos,
+      downloadLinks
+    };
+  }
+
+  throw new Error('Gagal mengekstrak media dari FastDL.');
+}
+
+// STRATEGI 3: SnapSave Media Downloader (Fallback handal untuk carousel foto/video)
+async function extractInstagramViaSnapSave(url) {
+  const res = await snapsave(url);
+  if (res && res.success && res.data && res.data.media && res.data.media.length > 0) {
+    const downloadLinks = [];
+    const photos = [];
+    let pCount = 1;
+
+    res.data.media.forEach((item) => {
+      if (item.type === 'image' || !item.resolution) {
+        const photoObj = {
+          id: pCount,
+          label: `Foto HD #${pCount}`,
+          quality: 'HD Original',
+          url: item.url,
+          type: 'image',
+          extension: 'jpg',
+          filename: `instagram_${Date.now()}_${pCount}.jpg`
+        };
+        photos.push(photoObj);
+        downloadLinks.push(photoObj);
+        pCount++;
+      } else {
+        downloadLinks.push({
+          label: `Resolusi HD ${item.resolution || '1080p'}`,
+          quality: item.resolution || '1080p (Full HD)',
+          url: item.url,
+          type: 'video',
+          extension: 'mp4',
+          filename: `instagram_${Date.now()}_video.mp4`
+        });
+      }
+    });
+
+    if (downloadLinks.length > 0) {
+      return {
+        success: true,
+        platform: 'Instagram',
+        title: res.data.description || 'Instagram Post',
+        author: 'Instagram Creator',
+        thumbnail: res.data.preview || photos[0]?.url || null,
+        photos,
+        downloadLinks
+      };
+    }
+  }
+
+  throw new Error('SnapSave tidak dapat menemukan media Instagram.');
+}
+
+// STRATEGI 4: Ekstraksi lewat binary yt-dlp lokal
 async function extractInstagramViaYtDlp(url) {
   return new Promise((resolve, reject) => {
     execFile(ytDlpPath, [
@@ -71,6 +296,7 @@ async function extractInstagramViaYtDlp(url) {
             title,
             author,
             thumbnail,
+            photos: [],
             downloadLinks
           });
         }
@@ -81,121 +307,6 @@ async function extractInstagramViaYtDlp(url) {
       }
     });
   });
-}
-
-// STRATEGI 2: Ekstraksi lewat Instagram Embed Page
-async function extractInstagramViaEmbed(url) {
-  const shortcode = getInstagramShortcode(url);
-  if (!shortcode) throw new Error('Shortcode Instagram tidak valid.');
-
-  const embedUrl = `https://www.instagram.com/p/${shortcode}/embed/captioned/`;
-  const res = await axios.get(embedUrl, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
-    },
-    httpsAgent: agent,
-    timeout: 10000
-  });
-
-  const html = res.data;
-  const $ = cheerio.load(html);
-  const caption = $('.Caption').text().trim() || $('div.Caption').text().trim() || 'Instagram Media';
-  const author = $('.Avatar img').attr('alt') || 'Instagram Creator';
-
-  const videoMatch = html.match(/video_url\s*:\s*"([^"]+)"/) || html.match(/"video_url":"([^"]+)"/);
-  const displayMatch = html.match(/display_url\s*:\s*"([^"]+)"/) || html.match(/"display_url":"([^"]+)"/);
-
-  const downloadLinks = [];
-
-  if (videoMatch && videoMatch[1]) {
-    const rawVideoUrl = JSON.parse(`"${videoMatch[1]}"`);
-    downloadLinks.push({
-      label: 'Resolusi HD 1080p',
-      quality: '1080p (Full HD)',
-      url: rawVideoUrl,
-      type: 'video',
-      extension: 'mp4',
-      filename: `instagram_${shortcode}_1080p.mp4`
-    });
-    downloadLinks.push({
-      label: 'Resolusi HD 720p',
-      quality: '720p (Standard HD)',
-      url: rawVideoUrl,
-      type: 'video',
-      extension: 'mp4',
-      filename: `instagram_${shortcode}_720p.mp4`
-    });
-  } else if (displayMatch && displayMatch[1]) {
-    const rawImgUrl = JSON.parse(`"${displayMatch[1]}"`);
-    downloadLinks.push({
-      label: 'Foto HD (Original)',
-      quality: 'High Resolution',
-      url: rawImgUrl,
-      type: 'image',
-      extension: 'jpg',
-      filename: `instagram_${shortcode}.jpg`
-    });
-  }
-
-  if (downloadLinks.length > 0) {
-    return {
-      success: true,
-      platform: 'Instagram',
-      title: caption,
-      author: author,
-      thumbnail: displayMatch ? JSON.parse(`"${displayMatch[1]}"`) : null,
-      downloadLinks
-    };
-  }
-
-  throw new Error('Tidak dapat menemukan media dari embed Instagram.');
-}
-
-// STRATEGI 3: FastDL / SaveIG scraper fallback
-async function extractInstagramViaFastDL(url) {
-  const res = await axios.post('https://fastdl.app/c/', new URLSearchParams({
-    url: url,
-    lang_code: 'en'
-  }), {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-      'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-      'Referer': 'https://fastdl.app/'
-    },
-    httpsAgent: agent,
-    timeout: 10000
-  });
-
-  const $ = cheerio.load(res.data);
-  const downloadLinks = [];
-  $('a.download-items__btn, a.btn-download, a[download], a[href*="cdninstagram"]').each((i, el) => {
-    const href = $(el).attr('href');
-    if (href && !href.startsWith('javascript')) {
-      const isVideo = href.includes('.mp4');
-      downloadLinks.push({
-        label: isVideo ? `Resolusi HD ${i === 0 ? '1080p' : '720p'}` : `Download Foto #${i + 1}`,
-        quality: isVideo ? (i === 0 ? '1080p (Full HD)' : '720p (Standard HD)') : 'HD Image',
-        url: href,
-        type: isVideo ? 'video' : 'image',
-        extension: isVideo ? 'mp4' : 'jpg',
-        filename: `instagram_${Date.now()}_${i + 1}.${isVideo ? 'mp4' : 'jpg'}`
-      });
-    }
-  });
-
-  if (downloadLinks.length > 0) {
-    return {
-      success: true,
-      platform: 'Instagram',
-      title: 'Instagram Media',
-      author: 'Instagram User',
-      thumbnail: $('img').first().attr('src') || null,
-      downloadLinks
-    };
-  }
-
-  throw new Error('Gagal mengekstrak media dari FastDL.');
 }
 
 // FUNGSI UTAMA downloadInstagram dengan multi-engine fallback
@@ -211,20 +322,28 @@ export async function downloadInstagram(url) {
   }
 
   try {
-    const res2 = await extractInstagramViaYtDlp(url);
+    const res2 = await extractInstagramViaFastDL(url);
     if (res2 && res2.downloadLinks.length > 0) return res2;
   } catch (err) {
-    console.warn('Strategi 2 Instagram (yt-dlp) gagal, mencoba fallback... Detail:', err.message);
+    console.warn('Strategi 2 Instagram (FastDL) gagal, mencoba fallback... Detail:', err.message);
     lastError = err;
   }
 
   try {
-    const res3 = await extractInstagramViaFastDL(url);
+    const res3 = await extractInstagramViaSnapSave(url);
     if (res3 && res3.downloadLinks.length > 0) return res3;
   } catch (err) {
-    console.warn('Strategi 3 Instagram (FastDL) gagal... Detail:', err.message);
+    console.warn('Strategi 3 Instagram (SnapSave) gagal, mencoba fallback... Detail:', err.message);
     lastError = err;
   }
 
-  throw new Error(`Gagal mengambil media Instagram. Pastikan akun tidak diprivat dan link video Reels/Post valid. (Detail: ${lastError?.message || 'Media tidak ditemukan'})`);
+  try {
+    const res4 = await extractInstagramViaYtDlp(url);
+    if (res4 && res4.downloadLinks.length > 0) return res4;
+  } catch (err) {
+    console.warn('Strategi 4 Instagram (yt-dlp) gagal... Detail:', err.message);
+    lastError = err;
+  }
+
+  throw new Error(`Gagal mengambil media Instagram. Pastikan akun tidak diprivat dan link Reels/Postingan bersifat publik. (Detail: ${lastError?.message || 'Media tidak ditemukan'})`);
 }
