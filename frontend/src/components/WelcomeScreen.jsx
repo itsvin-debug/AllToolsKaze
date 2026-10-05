@@ -12,7 +12,8 @@ import {
   ArrowRight, 
   LayoutGrid,
   X,
-  CheckCircle2
+  CheckCircle2,
+  Zap
 } from 'lucide-react';
 import KazeIdentityCard from './KazeIdentityCard';
 
@@ -113,6 +114,14 @@ export default function WelcomeScreen({ onSelectPlatform, onOpenTool, theme = 'd
       tag: 'FX STUDIO',
       icon: Film,
       onClick: () => onOpenTool('videoStudio')
+    },
+    {
+      id: 'waReact',
+      name: 'WA Channel Auto-React',
+      desc: 'Multi-sesi auto react saluran WA',
+      tag: 'BOT REACT',
+      icon: Zap,
+      onClick: () => onOpenTool('waReact')
     }
   ];
 

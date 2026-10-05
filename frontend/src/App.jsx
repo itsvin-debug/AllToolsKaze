@@ -7,6 +7,7 @@ import ImageToLinkScreen from './components/ImageToLinkScreen';
 import PhotoStudioScreen from './components/PhotoStudioScreen';
 import VideoStudioScreen from './components/VideoStudioScreen';
 import BgRemoverScreen from './components/BgRemoverScreen';
+import WaReactCard from './components/WaReactCard';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ShaderBackground from './components/ShaderBackground';
@@ -118,6 +119,13 @@ export default function App() {
 
       {currentScreen === 'bgRemover' && (
         <BgRemoverScreen
+          onBack={() => setCurrentScreen('welcome')}
+        />
+      )}
+
+      {currentScreen === 'waReact' && (
+        <WaReactCard
+          theme={theme}
           onBack={() => setCurrentScreen('welcome')}
         />
       )}

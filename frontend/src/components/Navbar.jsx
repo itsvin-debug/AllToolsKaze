@@ -10,7 +10,8 @@ import {
   Scissors, 
   Home, 
   Sun, 
-  Moon 
+  Moon,
+  Zap
 } from 'lucide-react';
 
 export default function Navbar({ currentScreen, onSelectTool, onGoHome, theme = 'dark', onToggleTheme }) {
@@ -23,7 +24,8 @@ export default function Navbar({ currentScreen, onSelectTool, onGoHome, theme = 
     { id: 'imageToLink', label: 'Foto ke Link', icon: Link2 },
     { id: 'photoStudio', label: 'Photo Studio HD', icon: Sparkles },
     { id: 'videoStudio', label: 'Video Studio HD', icon: Film },
-    { id: 'bgRemover', label: 'Remove BG', icon: Scissors }
+    { id: 'bgRemover', label: 'Remove BG', icon: Scissors },
+    { id: 'waReact', label: 'WA Auto-React', icon: Zap }
   ];
 
   return (
