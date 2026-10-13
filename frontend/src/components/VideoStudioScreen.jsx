@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import CosmicBackButton from './CosmicBackButton';
 import { 
   Film, 
   ArrowLeft, 
@@ -21,7 +22,7 @@ import {
   Gauge
 } from 'lucide-react';
 
-export default function VideoStudioScreen({ onBack }) {
+export default function VideoStudioScreen({ onBack, onOpenTrimmer }) {
   const [videoSrc, setVideoSrc] = useState(null);
   const [fileName, setFileName] = useState('video.mp4');
   const [isPlaying, setIsPlaying] = useState(false);
@@ -201,13 +202,16 @@ export default function VideoStudioScreen({ onBack }) {
       
       {/* Tombol Navigasi Kembali */}
       <div className="w-full flex items-center justify-between mb-6">
-        <button
-          onClick={onBack}
-          className="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold text-on-surface-variant hover:text-primary transition-colors cursor-pointer px-3 py-1.5 rounded-lg hover:bg-surface-container"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Kembali ke Beranda Tools</span>
-        </button>
+        <CosmicBackButton onClick={onBack} label="Kembali ke Beranda Tools" />
+
+        {onOpenTrimmer && (
+          <button
+            onClick={onOpenTrimmer}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/25 text-indigo-400 font-semibold text-xs transition-all cursor-pointer"
+          >
+            <span>✂️ Buka Video Trimmer (Potong Video)</span>
+          </button>
+        )}
       </div>
 
       {/* Header Judul Fitur */}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   User, 
   Crown, 
@@ -13,11 +13,12 @@ import {
   ExternalLink, 
   MessageCircle, 
   Radio, 
-  Volume2,
   Lock,
   LogOut,
   X,
-  KeyRound
+  KeyRound,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 
 export default function KazeIdentityCard({ 
@@ -27,15 +28,87 @@ export default function KazeIdentityCard({
   onToggleTheme, 
   onSearchSubmit 
 }) {
-  // 1. Role State: Default adalah 'Member' (pengguna biasa) sesuai permintaan user
+  // 1. Role State: Default adalah 'Member' (pengguna biasa) saat pertama masuk.
+  // Hanya pengguna yang memasukkan kata sandi admin dari .env (VINZ6767) yang menjadi 'Admin'.
   const [role, setRole] = useState(() => {
-    return localStorage.getItem('kaze_user_role') || 'Member';
+    const isAuth = localStorage.getItem('kaze_admin_auth') === 'true';
+    return isAuth ? 'Admin' : 'Member';
   });
 
   // Modal Login Admin
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState('');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+
+  // Video Ref & Live Wallpaper Playback Controller
+  const videoRef = useRef(null);
+  const bannerContainerRef = useRef(null);
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+
+  // Fungsi handal untuk memastikan video gerak blackholev2 selalu berputar otomatis & looping
+  const triggerWallpaperPlayback = () => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    try {
+      video.defaultMuted = true;
+      video.muted = true;
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            setIsVideoPlaying(true);
+          })
+          .catch(() => {
+            // Browser mungkin menahan jika belum ada interaksi, listener di bawah akan menangani
+          });
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    video.defaultMuted = true;
+    video.muted = true;
+    video.playsInline = true;
+
+    // Coba putar langsung saat komponen dimuat
+    triggerWallpaperPlayback();
+
+    // Event listener interaksi global: bila browser memblokir autoplay sejenak,
+    // interaksi pertama (klik/tap/scroll/tekan tombol) langsung menyalakan video gerak
+    const handleUserInteraction = () => {
+      if (video && video.paused) {
+        triggerWallpaperPlayback();
+      }
+    };
+
+    const handleVisibility = () => {
+      if (!document.hidden && video && video.paused) {
+        triggerWallpaperPlayback();
+      }
+    };
+
+    window.addEventListener('pointerdown', handleUserInteraction, { passive: true });
+    window.addEventListener('touchstart', handleUserInteraction, { passive: true });
+    window.addEventListener('scroll', handleUserInteraction, { passive: true });
+    window.addEventListener('keydown', handleUserInteraction, { passive: true });
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      window.removeEventListener('pointerdown', handleUserInteraction);
+      window.removeEventListener('touchstart', handleUserInteraction);
+      window.removeEventListener('scroll', handleUserInteraction);
+      window.removeEventListener('keydown', handleUserInteraction);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, []);
 
   // 2. Real-Time Battery API
   const [batteryLevel, setBatteryLevel] = useState(85);
@@ -88,22 +161,61 @@ export default function KazeIdentityCard({
     }
   }, []);
 
-  const handleAdminLogin = (e) => {
+  const handleAdminLogin = async (e) => {
     e.preventDefault();
-    const pass = adminPassword.trim().toLowerCase();
-    // Password admin: 'kaze', 'admin123', atau 'kaze123'
-    if (pass === 'kaze' || pass === 'admin123' || pass === 'kaze123' || pass === 'admin') {
+    const pass = adminPassword.trim();
+    if (!pass) {
+      setLoginError('Silakan masukkan kata sandi admin.');
+      return;
+    }
+
+    setIsLoggingIn(true);
+    setLoginError('');
+
+    const envPassword = (import.meta.env.VITE_ADMIN_PASSWORD || 'VINZ6767').trim();
+
+    // 1. Verifikasi langsung dengan kata sandi dari .env (VITE_ADMIN_PASSWORD)
+    if (pass === envPassword) {
       setRole('Admin');
+      localStorage.setItem('kaze_user_role', 'Admin');
+      localStorage.setItem('kaze_admin_auth', 'true');
       setShowLoginModal(false);
       setAdminPassword('');
       setLoginError('');
-    } else {
-      setLoginError('Kata sandi admin salah! Coba ketik: kaze');
+      setIsLoggingIn(false);
+      return;
     }
+
+    // 2. Verifikasi dengan backend .env (ADMIN_PASSWORD di server)
+    try {
+      const res = await fetch('http://localhost:5001/api/verify-admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pass })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setRole('Admin');
+        localStorage.setItem('kaze_user_role', 'Admin');
+        localStorage.setItem('kaze_admin_auth', 'true');
+        setShowLoginModal(false);
+        setAdminPassword('');
+        setLoginError('');
+        setIsLoggingIn(false);
+        return;
+      }
+    } catch (err) {
+      // offline/fetch error fallback
+    }
+
+    setIsLoggingIn(false);
+    setLoginError('Kata sandi admin salah! Akses role Admin ditolak.');
   };
 
   const handleAdminLogout = () => {
     setRole('Member');
+    localStorage.setItem('kaze_user_role', 'Member');
+    localStorage.removeItem('kaze_admin_auth');
   };
 
   const isDark = theme === 'dark';
@@ -183,39 +295,38 @@ export default function KazeIdentityCard({
         </form>
       </div>
 
-      {/* ─── 2. MEDIA BANNER: GIF DARI GIPHY ─── */}
+      {/* ─── 2. MEDIA BANNER: BLACK HOLE LIVE COSMIC VIDEO (INSTANT RENDER & ANTI-BLACK SCREEN) ─── */}
       <div className={`rounded-2xl sm:rounded-3xl p-2 sm:p-2.5 overflow-hidden transition-all duration-300 border ${
-        isDark ? 'bg-[#12151f] border-white/10 shadow-xl' : 'bg-white border-slate-200 shadow-md'
+        isDark 
+          ? 'bg-[#0d101a] border-indigo-500/20 shadow-2xl shadow-indigo-950/40' 
+          : 'bg-white border-slate-200 shadow-md'
       }`}>
-        <div className="relative w-full h-44 sm:h-60 md:h-64 rounded-xl sm:rounded-2xl overflow-hidden bg-black/60">
-          <img 
-            src="https://media.giphy.com/media/4lu5FuhtrbaOQgKN57/giphy.gif"
-            alt="Anime Kaze"
-            className="w-full h-full object-cover object-center"
-            onError={(e) => {
-              e.currentTarget.src = "https://i.giphy.com/4lu5FuhtrbaOQgKN57.gif";
-            }}
+        <div 
+          ref={bannerContainerRef}
+          onClick={triggerWallpaperPlayback}
+          className="relative w-full aspect-video rounded-xl sm:rounded-2xl overflow-hidden bg-[#030408] shadow-2xl flex items-center justify-center cursor-pointer select-none group"
+          title="Wallpaper Gerak Black Hole v2 (Klik untuk memutar)"
+        >
+          {/* Murni Video Gerak Black Hole v2 - Tanpa Tag Foto / Poster Statis */}
+          <video 
+            ref={videoRef}
+            src="/videos/blackholev2.mp4"
+            preload="auto"
+            autoPlay 
+            loop 
+            muted
+            playsInline
+            onCanPlay={triggerWallpaperPlayback}
+            onLoadedData={triggerWallpaperPlayback}
+            onPlaying={() => setIsVideoPlaying(true)}
+            onEnded={triggerWallpaperPlayback}
+            className="w-full h-full object-cover object-center pointer-events-none"
           />
 
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 pointer-events-none" />
-
-          {/* Top Audio indicator badge */}
-          <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-[11px] font-mono text-cyan-300 shadow-md">
-            <Volume2 className="w-3.5 h-3.5" />
-            <div className="flex items-center gap-0.5 h-2.5">
-              <span className="w-0.5 h-2 bg-cyan-400 animate-pulse" />
-              <span className="w-0.5 h-3 bg-cyan-300 animate-pulse delay-75" />
-              <span className="w-0.5 h-1.5 bg-cyan-400 animate-pulse delay-150" />
-            </div>
-          </div>
-
-          <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-white">
-            <span className="text-xs sm:text-sm font-bold drop-shadow-md">
-              All Tools Kaze
-            </span>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-black/40 backdrop-blur-md text-slate-300 border border-white/20">
-              HD
-            </span>
+          {/* Indikator Wallpaper Gerak Aktif (Elegan & Sinematik) */}
+          <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md border border-cyan-500/20 text-[10px] font-mono text-cyan-300 flex items-center gap-1.5 pointer-events-none shadow-lg">
+            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+            <span className="font-semibold tracking-wider">LIVE WALLPAPER</span>
           </div>
         </div>
       </div>
@@ -461,23 +572,33 @@ export default function KazeIdentityCard({
             <form onSubmit={handleAdminLogin} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-400 mb-1.5">
-                  Kata Sandi Admin
+                  Kata Sandi Admin (.env)
                 </label>
-                <input
-                  type="password"
-                  value={adminPassword}
-                  onChange={(e) => {
-                    setAdminPassword(e.target.value);
-                    setLoginError('');
-                  }}
-                  placeholder="Masukkan kata sandi (kaze)"
-                  autoFocus
-                  className={`w-full px-4 py-2.5 rounded-xl text-xs sm:text-sm border outline-none transition-all ${
-                    isDark 
-                      ? 'bg-black/40 border-white/15 text-white placeholder-slate-500 focus:border-amber-400' 
-                      : 'bg-slate-50 border-slate-300 text-slate-900 placeholder-slate-400 focus:border-amber-500'
-                  }`}
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={adminPassword}
+                    onChange={(e) => {
+                      setAdminPassword(e.target.value);
+                      setLoginError('');
+                    }}
+                    placeholder="Masukkan sandi admin..."
+                    autoFocus
+                    className={`w-full pl-4 pr-10 py-2.5 rounded-xl text-xs sm:text-sm border outline-none transition-all ${
+                      isDark 
+                        ? 'bg-black/40 border-white/15 text-white placeholder-slate-500 focus:border-amber-400' 
+                        : 'bg-slate-50 border-slate-300 text-slate-900 placeholder-slate-400 focus:border-amber-500'
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(prev => !prev)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                    title={showPassword ? "Sembunyikan sandi" : "Tampilkan sandi"}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
 
               {loginError && (
@@ -496,9 +617,10 @@ export default function KazeIdentityCard({
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs shadow-md transition-all cursor-pointer"
+                  disabled={isLoggingIn}
+                  className="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-60 text-black font-bold text-xs shadow-md transition-all cursor-pointer"
                 >
-                  Masuk Admin
+                  {isLoggingIn ? 'Memeriksa...' : 'Masuk Admin'}
                 </button>
               </div>
             </form>

@@ -4,6 +4,14 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import axios from 'axios';
 import { extractScribdDocument, extractWebDocument } from '../services/scribd.service.js';
+import { findJjTemplates } from '../services/jj.service.js';
+import { sendChannelReactions } from '../services/channelReact.service.js';
+import { 
+  compressVideoService, 
+  mergeAudiosService, 
+  uploadUniversalFileService,
+  trimVideoService
+} from '../services/mediaProcessing.service.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -54,6 +62,32 @@ router.post('/link-to-doc', async (req, res) => {
 });
 
 /**
+ * 1.5 GET /api/proxy-doc-image
+ * Proxy gambar dokumen Scribd/web agar tidak terkena CORS di browser saat render PDF/PPTX
+ */
+router.get('/proxy-doc-image', async (req, res) => {
+  try {
+    const { url } = req.query;
+    if (!url) return res.status(400).send('URL gambar diperlukan.');
+    
+    const response = await axios.get(url, {
+      responseType: 'arraybuffer',
+      timeout: 12000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
+    });
+
+    res.setHeader('Content-Type', response.headers['content-type'] || 'image/jpeg');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    return res.send(Buffer.from(response.data));
+  } catch (err) {
+    return res.status(500).send('Gagal memuat gambar: ' + err.message);
+  }
+});
+
+/**
  * 2. GET /api/view-image/:filename
  * Endpoint langsung untuk melihat/mengunduh gambar lokal
  */
@@ -80,85 +114,209 @@ router.get('/view-image/:filename', (req, res) => {
 });
 
 /**
- * 3. POST /api/upload-image
- * Menerima foto (base64 / data URL) -> simpan lokal & unggah ke hosting publik instan
+ * 3. POST /api/upload-file & POST /api/upload-image
+ * Menerima file foto, video, atau dokumen PDF -> simpan lokal & sediakan link langsung + CDN
  */
-router.post('/upload-image', async (req, res) => {
+router.post(['/upload-file', '/upload-image'], async (req, res) => {
   try {
-    const { imageBase64, originalName } = req.body;
-    if (!imageBase64) {
+    const fileBase64 = req.body.fileBase64 || req.body.imageBase64;
+    const originalName = req.body.originalName || 'file';
+    const mimeType = req.body.mimeType || '';
+
+    if (!fileBase64) {
       return res.status(400).json({
         success: false,
-        message: 'Foto tidak boleh kosong.'
+        message: 'File tidak boleh kosong (Foto, Video, atau PDF).'
       });
     }
 
-    // Ekstrak tipe dan data base64
-    const matches = imageBase64.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
-    let ext = 'png';
-    let buffer;
-
-    if (matches && matches.length === 3) {
-      const mime = matches[1];
-      if (mime.includes('jpeg') || mime.includes('jpg')) ext = 'jpg';
-      else if (mime.includes('webp')) ext = 'webp';
-      else if (mime.includes('gif')) ext = 'gif';
-      buffer = Buffer.from(matches[2], 'base64');
-    } else {
-      buffer = Buffer.from(imageBase64, 'base64');
-    }
-
-    const uniqueId = Date.now() + '_' + Math.random().toString(36).substring(2, 8);
-    const fileName = `kaze_img_${uniqueId}.${ext}`;
-    const filePath = path.join(uploadsDir, fileName);
-
-    // 1. Simpan selalu ke storage lokal server
-    fs.writeFileSync(filePath, buffer);
-
-    const host = req.get('host') || 'localhost:5001';
-    const protocol = req.protocol || 'http';
-    const localDirectUrl = `${protocol}://${host}/uploads/${fileName}`;
-    const localApiUrl = `${protocol}://${host}/api/view-image/${fileName}`;
-
-    let publicDirectUrl = localDirectUrl;
-
-    // 2. Coba unggah ke cloud hosting publik (uguu.se) agar bisa diakses seluruh dunia
-    try {
-      const formData = new FormData();
-      const blob = new Blob([buffer], { type: `image/${ext}` });
-      formData.append('files[]', blob, fileName);
-
-      const cloudRes = await axios.post('https://uguu.se/upload.php', formData, {
-        timeout: 6000
-      });
-
-      if (cloudRes.data && cloudRes.data.success && Array.isArray(cloudRes.data.files) && cloudRes.data.files[0]?.url) {
-        publicDirectUrl = cloudRes.data.files[0].url;
-      }
-    } catch (e) {
-      console.log('Upload cloud tidak merespon, menggunakan URL lokal:', e.message);
-      publicDirectUrl = localDirectUrl;
-    }
+    const result = await uploadUniversalFileService({
+      fileBase64,
+      originalName,
+      mimeType
+    });
 
     return res.json({
       success: true,
-      message: 'Foto berhasil diubah menjadi tautan!',
-      data: {
-        url: publicDirectUrl,
-        localUrl: localDirectUrl,
-        apiUrl: localApiUrl,
-        fileName: originalName || fileName,
-        sizeBytes: buffer.length,
-        sizeFormatted: (buffer.length / 1024).toFixed(1) + ' KB',
-        markdown: `![${originalName || 'image'}](${publicDirectUrl})`,
-        html: `<img src="${publicDirectUrl}" alt="${originalName || 'image'}" />`
-      }
+      message: `${result.category.toUpperCase()} berhasil diubah menjadi tautan aktif!`,
+      data: result
     });
   } catch (err) {
-    console.error('Error upload-image:', err.message);
+    console.error('Error upload-file:', err.message);
     return res.status(500).json({
       success: false,
-      message: 'Gagal mengunggah foto menjadi link: ' + err.message
+      message: 'Gagal mengunggah file menjadi link: ' + err.message
+    });
+  }
+});
+
+/**
+ * 3.5 POST /api/compress-video
+ * Mengompres video resolusi HD dengan FFmpeg (H.264/AAC CRF tinggi)
+ */
+router.post('/compress-video', async (req, res) => {
+  try {
+    const { videoBase64, originalName, crf, qualityPreset, scale } = req.body;
+
+    if (!videoBase64) {
+      return res.status(400).json({
+        success: false,
+        message: 'File video tidak boleh kosong.'
+      });
+    }
+
+    const result = await compressVideoService({
+      videoBase64,
+      originalName: originalName || 'video.mp4',
+      crf: crf || 28,
+      qualityPreset: qualityPreset || 'balanced',
+      scale: scale || 'original'
+    });
+
+    return res.json({
+      success: true,
+      message: `Video berhasil dikompres hemat ${result.savingsPercent}!`,
+      data: result
+    });
+  } catch (err) {
+    console.error('Error compress-video:', err.message);
+    return res.status(500).json({
+      success: false,
+      message: 'Gagal mengompres video: ' + err.message
+    });
+  }
+});
+
+/**
+ * 3.8 POST /api/merge-audio
+ * Menggabungkan multi-track audio dengan pemotongan menit & detik presisi via FFmpeg
+ */
+router.post('/merge-audio', async (req, res) => {
+  try {
+    const { tracks } = req.body;
+
+    if (!tracks || !Array.isArray(tracks) || tracks.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Daftar audio untuk digabungkan tidak boleh kosong.'
+      });
+    }
+
+    const result = await mergeAudiosService({ tracks });
+
+    return res.json({
+      success: true,
+      message: `Berhasil menggabungkan ${result.totalTracksMerged} audio menjadi satu track master!`,
+      data: result
+    });
+  } catch (err) {
+    console.error('Error merge-audio:', err.message);
+    return res.status(500).json({
+      success: false,
+      message: 'Gagal menggabungkan audio: ' + err.message
+    });
+  }
+});
+
+/**
+ * 3.5 POST /api/trim-video
+ * Memotong durasi video secara presisi dengan FFmpeg stream copy (lossless encoding)
+ */
+router.post('/trim-video', async (req, res) => {
+  try {
+    const { videoBase64, startTime, endTime, originalName } = req.body;
+
+    if (!videoBase64) {
+      return res.status(400).json({
+        success: false,
+        message: 'File video untuk dipotong tidak boleh kosong.'
+      });
+    }
+
+    const result = await trimVideoService({
+      videoBase64,
+      startTime,
+      endTime,
+      originalName
+    });
+
+    return res.json({
+      success: true,
+      message: `Video berhasil dipotong selama ${result.duration} detik secara lossless!`,
+      data: result
+    });
+  } catch (err) {
+    console.error('Error trim-video:', err.message);
+    return res.status(500).json({
+      success: false,
+      message: 'Gagal memotong video: ' + err.message
+    });
+  }
+});
+
+/**
+ * 4. POST /api/jj-finder
+ * Mencari link template JJ (XML Google Drive & 5MB Alight Motion) dari link TikTok atau kata kunci
+ */
+router.post('/jj-finder', async (req, res) => {
+  try {
+    const { query } = req.body;
+    if (!query || typeof query !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: 'Masukkan link TikTok atau kata kunci pencarian template JJ.'
+      });
+    }
+
+    const result = await findJjTemplates(query);
+    return res.json({
+      success: true,
+      message: 'Template JJ berhasil ditemukan!',
+      data: result
+    });
+  } catch (err) {
+    console.error('Error jj-finder:', err.message);
+    return res.status(500).json({
+      success: false,
+      message: err.message || 'Gagal mencari template JJ.'
+    });
+  }
+});
+
+/**
+ * 5. POST /api/channel-react
+ * Mengirim reaksi emoji ke pesan saluran WhatsApp secara real-time via API NexaDev (rahasia di .env)
+ */
+router.post('/channel-react', async (req, res) => {
+  try {
+    const { channelLink, messageLink, messageId, reactions, targetCount, count, customKey } = req.body;
+
+    if (!channelLink && !messageLink) {
+      return res.status(400).json({
+        success: false,
+        message: 'Mohon masukkan tautan saluran WhatsApp dan link/ID pesan.'
+      });
+    }
+
+    const result = await sendChannelReactions({
+      channelLink,
+      messageLink,
+      messageId,
+      reactions,
+      targetCount: targetCount || count || 100,
+      customKey
+    });
+
+    return res.json({
+      success: result.success,
+      message: result.overallMessage || 'Proses reaksi saluran selesai.',
+      data: result
+    });
+  } catch (err) {
+    console.error('Error channel-react:', err.message);
+    return res.status(500).json({
+      success: false,
+      message: err.message || 'Gagal mengirim reaksi ke saluran WhatsApp.'
     });
   }
 });

@@ -28,3 +28,11 @@ Thumbs.db
 
 # Backend binary executables (yt-dlp auto-downloaded on server or cloud)
 backend/bin/
+
+# Temporary media uploads
+backend/uploads/*
+!backend/uploads/.gitkeep
+!backend/uploads/temp/
+backend/uploads/temp/*
+!backend/uploads/temp/.gitkeep
+

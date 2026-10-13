@@ -6,8 +6,13 @@ import LinkToDocScreen from './components/LinkToDocScreen';
 import ImageToLinkScreen from './components/ImageToLinkScreen';
 import PhotoStudioScreen from './components/PhotoStudioScreen';
 import VideoStudioScreen from './components/VideoStudioScreen';
+import VideoTrimmerScreen from './components/VideoTrimmerScreen';
 import BgRemoverScreen from './components/BgRemoverScreen';
-import WaReactCard from './components/WaReactCard';
+import JjFinderScreen from './components/JjFinderScreen';
+import ChannelReactScreen from './components/ChannelReactScreen';
+import MediaCompressorScreen from './components/MediaCompressorScreen';
+import QrStudioScreen from './components/QrStudioScreen';
+import AudioMergerScreen from './components/AudioMergerScreen';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ShaderBackground from './components/ShaderBackground';
@@ -16,6 +21,7 @@ export default function App() {
   // State layar aktif:
   // 'splash' | 'welcome' | 'downloader' | 'linkToDoc' | 'imageToLink' | 'photoStudio' | 'videoStudio' | 'bgRemover'
   const [currentScreen, setCurrentScreen] = useState('welcome');
+  const [qrInitialUrl, setQrInitialUrl] = useState('');
   
   // Platform sosmed yang dipilih jika masuk ke downloader
   const [activePlatform, setActivePlatform] = useState('tiktok');
@@ -50,8 +56,8 @@ export default function App() {
   const isDark = theme === 'dark';
 
   return (
-    <div className={`min-h-screen flex flex-col relative overflow-x-hidden transition-colors duration-300 ${
-      isDark ? 'bg-[#08090c] text-slate-100' : 'bg-[#f8fafc] text-slate-900'
+    <div className={`min-h-screen flex flex-col relative overflow-x-clip transition-colors duration-500 ${
+      isDark ? 'bg-[#030408] text-slate-100' : 'bg-[#f1f5f9] text-slate-900'
     }`}>
       
       {/* Background shader dinamis responsif tema */}
@@ -102,6 +108,29 @@ export default function App() {
       {currentScreen === 'imageToLink' && (
         <ImageToLinkScreen
           onBack={() => setCurrentScreen('welcome')}
+          onOpenQrStudio={(url) => {
+            setQrInitialUrl(url);
+            setCurrentScreen('qrStudio');
+          }}
+        />
+      )}
+
+      {currentScreen === 'compressor' && (
+        <MediaCompressorScreen
+          onBack={() => setCurrentScreen('welcome')}
+        />
+      )}
+
+      {currentScreen === 'qrStudio' && (
+        <QrStudioScreen
+          initialUrl={qrInitialUrl}
+          onBack={() => setCurrentScreen('welcome')}
+        />
+      )}
+
+      {currentScreen === 'audioMerger' && (
+        <AudioMergerScreen
+          onBack={() => setCurrentScreen('welcome')}
         />
       )}
 
@@ -114,6 +143,13 @@ export default function App() {
       {currentScreen === 'videoStudio' && (
         <VideoStudioScreen
           onBack={() => setCurrentScreen('welcome')}
+          onOpenTrimmer={() => setCurrentScreen('videoTrimmer')}
+        />
+      )}
+
+      {currentScreen === 'videoTrimmer' && (
+        <VideoTrimmerScreen
+          onBack={() => setCurrentScreen('welcome')}
         />
       )}
 
@@ -123,8 +159,15 @@ export default function App() {
         />
       )}
 
-      {currentScreen === 'waReact' && (
-        <WaReactCard
+      {currentScreen === 'jjFinder' && (
+        <JjFinderScreen
+          theme={theme}
+          onBack={() => setCurrentScreen('welcome')}
+        />
+      )}
+
+      {currentScreen === 'channelReact' && (
+        <ChannelReactScreen
           theme={theme}
           onBack={() => setCurrentScreen('welcome')}
         />

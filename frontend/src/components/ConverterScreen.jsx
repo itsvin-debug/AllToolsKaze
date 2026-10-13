@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import CosmicBackButton from './CosmicBackButton';
 import { 
   ArrowLeft, 
   Sparkles, 
@@ -41,7 +42,7 @@ export default function ConverterScreen({ activePlatform: initialPlatform = 'tik
       placeholder: 'Tempel link TikTok khusus (vt.tiktok.com atau tiktok.com/@user/...)',
       accentColor: 'text-[#00f2fe]',
       accentBg: 'bg-[#00f2fe]/10 border-[#00f2fe]/20',
-      hint: 'Hanya menerima link resmi TikTok (video & slide foto tanpa watermark)',
+      hint: 'Hanya menerima link resmi TikTok (video HD & slide foto / video tanpa watermark)',
       badge: 'Khusus TikTok'
     },
     instagram: {
@@ -238,13 +239,7 @@ export default function ConverterScreen({ activePlatform: initialPlatform = 'tik
         
         {/* Navigation & Header */}
         <div className="w-full flex items-center justify-between">
-          <button
-            onClick={onBack}
-            className="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-400 hover:text-white transition-colors cursor-pointer px-3 py-1.5 rounded-xl hover:bg-white/5"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Kembali ke Beranda Tools</span>
-          </button>
+          <CosmicBackButton onClick={onBack} label="Kembali ke Beranda Tools" />
 
           <span className="text-[10px] font-mono px-2.5 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 font-bold">
             {currentMeta.badge}

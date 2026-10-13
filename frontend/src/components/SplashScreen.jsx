@@ -310,7 +310,7 @@ export default function SplashScreen({ onEnter }) {
 
         {/* Grand Title */}
         <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight leading-none text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-indigo-200 to-pink-400 drop-shadow-[0_0_35px_rgba(139,92,246,0.35)] animate-fadeIn">
-          website download by kaze
+          AllToolsKaze
         </h1>
 
         {/* Subheading */}

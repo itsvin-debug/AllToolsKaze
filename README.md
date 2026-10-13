@@ -46,25 +46,17 @@ download/
 
 Pastikan di komputermu sudah terpasang [Node.js](https://nodejs.org/) (versi 18 ke atas).
 
-### 1. Jalankan Backend (Node.js + Express)
-Buka terminal baru di folder `backend`:
+### 🚀 Cara Menjalankan Sekaligus (1 Perintah / 1 Terminal)
+Cukup buka 1 terminal di folder utama (`AllToolsKaze`) atau folder `frontend`, lalu jalankan:
 ```bash
-cd backend
-npm install
 npm run dev
 ```
-> Server backend akan berjalan di **`http://localhost:5001`**.
+> Perintah ini otomatis menjalankan **Backend (`http://localhost:5001`)** dan **Frontend (`http://localhost:5173`)** secara bersamaan dengan label warna rapi `[BACKEND]` dan `[FRONTEND]`.
 
----
+Jika ingin menjalankan secara terpisah:
+- **Backend saja**: `npm run dev:backend` (atau `cd backend && npm run dev`)
+- **Frontend saja**: `npm run dev:frontend` (atau `cd frontend && npm run dev:vite`)
 
-### 2. Jalankan Frontend (React + Vite)
-Buka terminal baru di folder `frontend`:
-```bash
-cd frontend
-npm install
-npm run dev
-```
-> Buka browser dan akses alamat **`http://localhost:5173`**.
 
 ---
 

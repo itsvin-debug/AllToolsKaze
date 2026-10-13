@@ -75,11 +75,21 @@ router.post('/download', async (req, res) => {
         });
     }
 
-    // tambahkan proxyUrl ke setiap link agar download otomatis aman dari blokir CORS
+    // tambahkan proxyUrl & streamUrl ke setiap link agar download otomatis aman dari blokir CORS
     if (mediaData && mediaData.downloadLinks) {
       mediaData.downloadLinks = mediaData.downloadLinks.map((item) => ({
         ...item,
-        proxyUrl: `/api/proxy-download?url=${encodeURIComponent(item.url)}&filename=${encodeURIComponent(item.filename || 'kaze_download.mp4')}`
+        proxyUrl: `/api/proxy-download?url=${encodeURIComponent(item.url)}&filename=${encodeURIComponent(item.filename || 'kaze_download.mp4')}`,
+        streamUrl: item.type === 'video' ? `/api/proxy-stream?url=${encodeURIComponent(item.url)}` : undefined
+      }));
+    }
+
+    // tambahkan proxyUrl & streamUrl ke setiap video slide di mediaData.videoSlides
+    if (mediaData && mediaData.videoSlides && Array.isArray(mediaData.videoSlides)) {
+      mediaData.videoSlides = mediaData.videoSlides.map((item, idx) => ({
+        ...item,
+        proxyUrl: `/api/proxy-download?url=${encodeURIComponent(item.url)}&filename=${encodeURIComponent(item.filename || `kaze_videoslide_${idx + 1}.mp4`)}`,
+        streamUrl: `/api/proxy-stream?url=${encodeURIComponent(item.url)}`
       }));
     }
 
@@ -106,8 +116,64 @@ router.post('/download', async (req, res) => {
   }
 });
 
-// Endpoint Proxy: GET /api/proxy-download
-// mengalirkan file video/foto langsung ke browser agar otomatis terdownload ke disk/galeri
+// Endpoint Streaming Video: GET /api/proxy-stream
+// Mengalirkan video secara inline dengan dukungan Range Header (206 Partial Content) untuk pemutaran video gerak yang lancar
+router.get('/proxy-stream', async (req, res) => {
+  try {
+    const { url } = req.query;
+    if (!url) return res.status(400).send('URL target tidak boleh kosong.');
+
+    const targetUrl = decodeURIComponent(url);
+    const range = req.headers.range;
+
+    let referer = undefined;
+    if (targetUrl.includes('tiktok') || targetUrl.includes('tikcdn')) {
+      referer = 'https://www.tiktok.com/';
+    } else if (targetUrl.includes('instagram') || targetUrl.includes('cdninstagram') || targetUrl.includes('fbcdn')) {
+      referer = 'https://www.instagram.com/';
+    } else if (targetUrl.includes('twimg') || targetUrl.includes('twitter') || targetUrl.includes('x.com')) {
+      referer = 'https://twitter.com/';
+    } else if (targetUrl.includes('googlevideo') || targetUrl.includes('youtube') || targetUrl.includes('ytimg')) {
+      referer = 'https://www.youtube.com/';
+    }
+
+    const headers = {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+    };
+    if (referer) headers['Referer'] = referer;
+    if (range) headers['Range'] = range;
+
+    const response = await axios({
+      method: 'GET',
+      url: targetUrl,
+      responseType: 'stream',
+      headers,
+      timeout: 30000,
+      validateStatus: (status) => status >= 200 && status < 400
+    });
+
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Accept-Ranges', 'bytes');
+    res.setHeader('Content-Type', response.headers['content-type'] || 'video/mp4');
+    if (response.headers['content-range']) {
+      res.setHeader('Content-Range', response.headers['content-range']);
+    }
+    if (response.headers['content-length']) {
+      res.setHeader('Content-Length', response.headers['content-length']);
+    }
+
+    res.status(response.status);
+    response.data.pipe(res);
+  } catch (error) {
+    console.error('Error proxy stream video:', error.message);
+    if (!res.headersSent) {
+      return res.redirect(decodeURIComponent(req.query.url));
+    }
+  }
+});
+
+// Endpoint Proxy Download: GET /api/proxy-download
+// Mengalirkan file video/foto langsung ke browser agar otomatis terdownload ke disk/galeri
 router.get('/proxy-download', async (req, res) => {
   try {
     const { url, filename } = req.query;

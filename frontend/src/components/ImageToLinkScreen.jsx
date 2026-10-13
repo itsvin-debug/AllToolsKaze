@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import CosmicBackButton from './CosmicBackButton';
 import { 
   Link2, 
   Upload, 
   Image as ImageIcon, 
+  Video as VideoIcon,
+  FileText,
   Check, 
   Copy, 
   ExternalLink, 
@@ -14,11 +17,14 @@ import {
   History, 
   Trash2, 
   AlertCircle,
-  Loader2
+  Loader2,
+  FileCode,
+  Download
 } from 'lucide-react';
 
-export default function ImageToLinkScreen({ onBack }) {
-  const [selectedImage, setSelectedImage] = useState(null);
+export default function ImageToLinkScreen({ onBack, onOpenQrStudio }) {
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [fileType, setFileType] = useState('image'); // 'image' | 'video' | 'pdf'
   const [previewUrl, setPreviewUrl] = useState('');
   const [uploading, setUploading] = useState(false);
   const [resultData, setResultData] = useState(null);
@@ -29,7 +35,7 @@ export default function ImageToLinkScreen({ onBack }) {
   // Load history dari localStorage saat mount
   useEffect(() => {
     try {
-      const saved = localStorage.getItem('kaze_image_links_history');
+      const saved = localStorage.getItem('kaze_file_links_history');
       if (saved) setUploadHistory(JSON.parse(saved));
     } catch {
       // ignore
@@ -40,7 +46,7 @@ export default function ImageToLinkScreen({ onBack }) {
     const updated = [item, ...uploadHistory.filter(h => h.url !== item.url)].slice(0, 10);
     setUploadHistory(updated);
     try {
-      localStorage.setItem('kaze_image_links_history', JSON.stringify(updated));
+      localStorage.setItem('kaze_file_links_history', JSON.stringify(updated));
     } catch {
       // ignore
     }
@@ -49,31 +55,25 @@ export default function ImageToLinkScreen({ onBack }) {
   const clearHistory = () => {
     setUploadHistory([]);
     try {
-      localStorage.removeItem('kaze_image_links_history');
+      localStorage.removeItem('kaze_file_links_history');
     } catch {
       // ignore
     }
   };
 
-  // Handle pilih file foto
+  // Deteksi tipe file
+  const detectFileType = (file) => {
+    if (file.type.startsWith('image/')) return 'image';
+    if (file.type.startsWith('video/')) return 'video';
+    if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) return 'pdf';
+    return 'other';
+  };
+
+  // Handle pilih file
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      setErrorMessage('File yang dipilih harus berupa gambar (JPG, PNG, WebP, GIF).');
-      return;
-    }
-
-    setErrorMessage('');
-    setSelectedImage(file);
-    setResultData(null);
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      setPreviewUrl(reader.result);
-    };
-    reader.readAsDataURL(file);
+    processSelectedFile(file);
   };
 
   // Handle Drop file
@@ -81,13 +81,19 @@ export default function ImageToLinkScreen({ onBack }) {
     e.preventDefault();
     const file = e.dataTransfer.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      setErrorMessage('File yang didrop harus berupa gambar.');
+    processSelectedFile(file);
+  };
+
+  const processSelectedFile = (file) => {
+    const type = detectFileType(file);
+    if (type === 'other') {
+      setErrorMessage('Format file tidak didukung. Harap unggah Foto (JPG, PNG, WebP), Video (MP4, WebM), atau Dokumen PDF.');
       return;
     }
 
     setErrorMessage('');
-    setSelectedImage(file);
+    setSelectedFile(file);
+    setFileType(type);
     setResultData(null);
 
     const reader = new FileReader();
@@ -99,15 +105,16 @@ export default function ImageToLinkScreen({ onBack }) {
 
   // Upload ke backend
   const handleUpload = async () => {
-    if (!previewUrl) return;
+    if (!previewUrl || !selectedFile) return;
 
     setUploading(true);
     setErrorMessage('');
 
     try {
-      const res = await axios.post('/api/upload-image', {
-        imageBase64: previewUrl,
-        originalName: selectedImage?.name || 'foto.png'
+      const res = await axios.post('/api/upload-file', {
+        fileBase64: previewUrl,
+        originalName: selectedFile.name,
+        mimeType: selectedFile.type
       });
 
       if (res.data && res.data.success) {
@@ -116,14 +123,16 @@ export default function ImageToLinkScreen({ onBack }) {
         saveToHistory({
           url: item.url,
           fileName: item.fileName,
+          category: item.category || fileType,
+          sizeFormatted: item.sizeFormatted,
           date: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
-          preview: previewUrl
+          preview: fileType === 'image' ? previewUrl : null
         });
       } else {
-        setErrorMessage(res.data?.message || 'Gagal mengubah foto menjadi tautan.');
+        setErrorMessage(res.data?.message || 'Gagal mengubah file menjadi tautan.');
       }
     } catch (err) {
-      setErrorMessage(err.response?.data?.message || err.message || 'Terjadi kesalahan saat mengunggah foto.');
+      setErrorMessage(err.response?.data?.message || err.message || 'Terjadi kesalahan saat mengunggah file.');
     } finally {
       setUploading(false);
     }
@@ -141,26 +150,25 @@ export default function ImageToLinkScreen({ onBack }) {
       
       {/* Tombol Navigasi Kembali */}
       <div className="w-full flex items-center justify-between mb-6">
-        <button
-          onClick={onBack}
-          className="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold text-on-surface-variant hover:text-primary transition-colors cursor-pointer px-3 py-1.5 rounded-lg hover:bg-surface-container"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Kembali ke Beranda Tools</span>
-        </button>
+        <CosmicBackButton onClick={onBack} label="Kembali ke Beranda Tools" />
+
+        <div className="flex items-center gap-2 text-xs text-indigo-400 bg-indigo-500/10 px-3 py-1 rounded-full border border-indigo-500/20">
+          <Sparkles className="w-3.5 h-3.5" />
+          <span>Foto, Video & PDF ke Link</span>
+        </div>
       </div>
 
       {/* Header Judul Fitur */}
       <div className="text-center mb-8 max-w-2xl">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-xs font-bold uppercase tracking-wider mb-3">
           <Link2 className="w-3.5 h-3.5" />
-          <span>Instant Image Hosting & CDN</span>
+          <span>Universal Media & Document Hosting</span>
         </div>
         <h1 className="text-2xl sm:text-4xl font-extrabold text-on-surface mb-2">
-          Ubah Foto Menjadi Link
+          Ubah Foto, Video & PDF Menjadi Link
         </h1>
         <p className="text-xs sm:text-sm text-on-surface-variant">
-          Upload foto dari perangkatmu dan dapatkan URL link langsung secara instan untuk disematkan di web, Discord, WhatsApp, atau media sosial.
+          Unggah media apapun dan dapatkan URL link langsung secara instan yang dapat dibuka, dibagikan, disematkan di web, atau dijadikan Kode QR.
         </p>
       </div>
 
@@ -169,186 +177,221 @@ export default function ImageToLinkScreen({ onBack }) {
         
         {/* Drop Area */}
         <div
-          onDragOver={(e) => e.preventDefault()}
           onDrop={handleDrop}
-          className={`relative border-2 border-dashed rounded-2xl p-6 sm:p-10 flex flex-col items-center justify-center text-center transition-all cursor-pointer ${
-            previewUrl 
-              ? 'border-indigo-500/50 bg-indigo-500/5' 
-              : 'border-outline-variant/40 hover:border-indigo-400/80 bg-surface-container-high/30 hover:bg-surface-container-high/50'
-          }`}
-          onClick={() => !previewUrl && document.getElementById('image-input-file')?.click()}
+          onDragOver={(e) => e.preventDefault()}
+          className="border-2 border-dashed border-outline-variant/50 hover:border-indigo-500/80 rounded-2xl p-6 sm:p-10 flex flex-col items-center justify-center text-center transition-all bg-surface-container/30 hover:bg-surface-container/50 relative cursor-pointer group"
+          onClick={() => document.getElementById('file-upload-input').click()}
         >
           <input
-            id="image-input-file"
+            id="file-upload-input"
             type="file"
-            accept="image/*"
-            onChange={handleFileChange}
+            accept="image/*,video/mp4,video/webm,video/quicktime,application/pdf"
             className="hidden"
+            onChange={handleFileChange}
           />
 
           {previewUrl ? (
-            <div className="flex flex-col items-center gap-4 w-full">
-              <div className="relative max-w-sm max-h-72 overflow-hidden rounded-xl border border-outline-variant/40 shadow-lg">
-                <img 
-                  src={previewUrl} 
-                  alt="Preview" 
-                  className="w-full h-full object-contain"
-                />
-              </div>
+            <div className="w-full flex flex-col items-center gap-4">
+              {fileType === 'image' && (
+                <div className="max-w-xs max-h-60 rounded-xl overflow-hidden shadow-lg border border-outline-variant/40 bg-black/40">
+                  <img src={previewUrl} alt="Preview" className="w-full h-full object-contain" />
+                </div>
+              )}
 
-              <div className="flex items-center gap-2 text-xs text-on-surface-variant">
-                <span className="font-semibold text-on-surface">{selectedImage?.name}</span>
-                <span>•</span>
-                <span>{(selectedImage?.size / 1024).toFixed(1)} KB</span>
-              </div>
+              {fileType === 'video' && (
+                <div className="max-w-md w-full rounded-xl overflow-hidden shadow-lg border border-outline-variant/40 bg-black">
+                  <video src={previewUrl} controls className="w-full max-h-60 object-contain" />
+                </div>
+              )}
 
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  document.getElementById('image-input-file')?.click();
-                }}
-                className="text-xs text-indigo-400 hover:text-indigo-300 font-semibold underline cursor-pointer"
-              >
-                Pilih foto lain
-              </button>
+              {fileType === 'pdf' && (
+                <div className="flex items-center gap-3 p-4 rounded-xl bg-surface-container border border-outline-variant/40 max-w-md w-full">
+                  <div className="w-12 h-12 rounded-lg bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-400 shrink-0">
+                    <FileText className="w-6 h-6" />
+                  </div>
+                  <div className="text-left overflow-hidden">
+                    <p className="text-xs font-bold text-on-surface truncate">{selectedFile?.name}</p>
+                    <p className="text-[11px] text-on-surface-variant">Dokumen PDF Resmi • Siap Dijadikan Link</p>
+                  </div>
+                </div>
+              )}
+
+              <div className="text-center">
+                <p className="text-xs font-semibold text-on-surface">{selectedFile?.name}</p>
+                <p className="text-[11px] text-on-surface-variant font-mono">
+                  {(selectedFile?.size / (1024 * 1024)).toFixed(2)} MB • {fileType.toUpperCase()}
+                </p>
+                <span className="text-[11px] text-indigo-400 group-hover:underline mt-1 inline-block">
+                  Klik untuk mengganti file
+                </span>
+              </div>
             </div>
           ) : (
             <div className="flex flex-col items-center gap-3">
-              <div className="w-16 h-16 rounded-full bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 mb-2">
-                <Upload className="w-8 h-8" />
+              <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform">
+                <Upload className="w-7 h-7" />
               </div>
-              <h3 className="text-base sm:text-lg font-bold text-on-surface">
-                Tarik & Lepas Foto ke Sini, atau Klik untuk Memilih
-              </h3>
-              <p className="text-xs text-on-surface-variant max-w-md">
-                Mendukung format PNG, JPG, JPEG, WEBP, dan GIF tanpa batas waktu kadaluarsa.
-              </p>
+              <div>
+                <p className="text-sm font-bold text-on-surface">
+                  Pilih atau Tarik File ke Sini
+                </p>
+                <p className="text-xs text-on-surface-variant mt-1">
+                  Mendukung Foto (JPG, PNG, WebP), Video (MP4, WebM), dan Dokumen PDF
+                </p>
+              </div>
+              <span className="text-[11px] px-3 py-1 rounded-full bg-surface-container font-mono text-on-surface-variant">
+                Maksimal 100 MB per file
+              </span>
             </div>
           )}
         </div>
 
-        {/* Action Button */}
-        {previewUrl && !resultData && (
-          <div className="mt-6 flex justify-center">
-            <button
-              onClick={handleUpload}
-              disabled={uploading}
-              className="px-8 py-3.5 rounded-xl bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white font-bold text-sm shadow-xl shadow-indigo-500/25 hover:scale-103 active:scale-97 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
-            >
-              {uploading ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  <span>Mengunggah & Membuat Link...</span>
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-5 h-5" />
-                  <span>Jadikan Foto Sebagai Link</span>
-                </>
-              )}
-            </button>
-          </div>
-        )}
-
-        {/* Error Notification */}
+        {/* Pesan Error */}
         {errorMessage && (
-          <div className="mt-4 p-4 rounded-xl bg-error-container/40 border border-error/30 text-error text-xs sm:text-sm flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+          <div className="mt-4 p-3 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center gap-2 text-red-400 text-xs">
+            <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{errorMessage}</span>
           </div>
         )}
 
+        {/* Tombol Upload */}
+        <div className="mt-6 flex justify-end">
+          <button
+            onClick={handleUpload}
+            disabled={!previewUrl || uploading}
+            className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20 transition-all cursor-pointer"
+          >
+            {uploading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Mengunggah & Mengonversi ke Link...</span>
+              </>
+            ) : (
+              <>
+                <Link2 className="w-4 h-4" />
+                <span>Buat Link Sekarang</span>
+              </>
+            )}
+          </button>
+        </div>
+
       </div>
 
-      {/* Hasil URL Link yang Tergenerate */}
+      {/* HASIL OUTPUT LINK BERHASIL */}
       {resultData && (
-        <div className="w-full glass-panel rounded-2xl p-6 sm:p-8 shadow-2xl animate-fadeIn space-y-6 mb-8">
-          
-          <div className="flex items-center justify-between border-b border-outline-variant/30 pb-4">
-            <div className="flex items-center gap-2 text-emerald-400 text-xs sm:text-sm font-bold">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
-              <span>Foto Berhasil Diubah Jadi Link Publik!</span>
+        <div className="w-full glass-panel rounded-2xl p-6 sm:p-8 shadow-2xl border border-indigo-500/30 space-y-6 mb-8 animate-in fade-in duration-300">
+          <div className="flex items-center justify-between pb-4 border-b border-outline-variant/30">
+            <div className="flex items-center gap-2 text-emerald-400">
+              <Check className="w-5 h-5" />
+              <h3 className="text-sm sm:text-base font-bold text-on-surface">
+                File Berhasil Diubah Menjadi Tautan!
+              </h3>
             </div>
-            <a
-              href={resultData.url}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 font-semibold"
-            >
-              <span>Buka Gambar Asli</span>
-              <ExternalLink className="w-3.5 h-3.5" />
-            </a>
+            <span className="text-[11px] font-mono text-indigo-400 bg-indigo-500/10 px-2.5 py-0.5 rounded-full border border-indigo-500/20">
+              {resultData.sizeFormatted}
+            </span>
           </div>
 
           {/* 1. Direct URL */}
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-on-surface-variant flex items-center gap-1.5">
-              <Link2 className="w-3.5 h-3.5 text-indigo-400" />
-              <span>Direct Link Gambar (URL Langsung)</span>
+            <label className="text-xs font-semibold text-on-surface-variant flex items-center justify-between">
+              <span>Tautan Langsung (Direct Link):</span>
+              <span className="text-[10px] text-indigo-400">Bisa dibuka di WhatsApp, Discord, Browser</span>
             </label>
             <div className="flex items-center gap-2">
               <input
                 type="text"
                 readOnly
                 value={resultData.url}
-                className="w-full px-3.5 py-2.5 rounded-lg bg-surface-container-high text-xs sm:text-sm text-cyan-300 font-mono select-all border border-outline-variant/30"
+                className="flex-grow px-3.5 py-2.5 rounded-xl bg-surface-container/60 border border-outline-variant/40 text-xs text-on-surface font-mono"
               />
               <button
-                onClick={() => handleCopy(resultData.url, 'direct')}
-                className={`px-4 py-2.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
-                  copiedField === 'direct'
-                    ? 'bg-emerald-600 text-white'
-                    : 'bg-indigo-600 hover:bg-indigo-500 text-white'
-                }`}
+                onClick={() => handleCopy(resultData.url, 'url')}
+                className="px-3.5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer"
               >
-                {copiedField === 'direct' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>{copiedField === 'direct' ? 'Tersalin!' : 'Salin'}</span>
+                {copiedField === 'url' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{copiedField === 'url' ? 'Tersalin!' : 'Salin'}</span>
               </button>
+              <a
+                href={resultData.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface border border-outline-variant/30 shrink-0 transition-colors"
+                title="Buka Tautan"
+              >
+                <ExternalLink className="w-4 h-4" />
+              </a>
             </div>
           </div>
 
-          {/* 2. Markdown & HTML */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* 2. Tombol Cepat: Jadikan Kode QR */}
+          <div className="p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shrink-0 shadow-md">
+                <QrCode className="w-5 h-5" />
+              </div>
+              <div className="text-left">
+                <h4 className="text-xs font-bold text-on-surface">Ingin Jadikan Tautan Ini Kode QR?</h4>
+                <p className="text-[11px] text-on-surface-variant">
+                  Kustomisasi bingkai, logo tengah, bentuk mata, dan warna gradasi di QR Studio.
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => {
+                if (onOpenQrStudio) onOpenQrStudio(resultData.url);
+              }}
+              className="w-full sm:w-auto px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center justify-center gap-2 shrink-0 shadow-sm transition-all cursor-pointer"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Desain Kode QR Sekarang</span>
+            </button>
+          </div>
+
+          {/* 3. Format Embed (HTML & Markdown) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
             
             {/* Markdown */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-on-surface-variant flex items-center gap-1.5">
-                <Code className="w-3.5 h-3.5 text-pink-400" />
-                <span>Format Markdown</span>
+              <label className="text-xs font-semibold text-on-surface-variant flex items-center gap-1.5">
+                <FileCode className="w-3.5 h-3.5 text-indigo-400" />
+                <span>Format Markdown:</span>
               </label>
               <div className="flex items-center gap-2">
                 <input
                   type="text"
                   readOnly
                   value={resultData.markdown}
-                  className="w-full px-3 py-2 rounded-lg bg-surface-container-high text-xs text-on-surface font-mono select-all border border-outline-variant/30"
+                  className="flex-grow px-3 py-2 rounded-xl bg-surface-container/60 border border-outline-variant/40 text-[11px] text-on-surface font-mono truncate"
                 />
                 <button
-                  onClick={() => handleCopy(resultData.markdown, 'markdown')}
-                  className="px-3 py-2 rounded-lg bg-surface-container hover:bg-surface-container-highest text-xs font-bold text-on-surface shrink-0 cursor-pointer"
+                  onClick={() => handleCopy(resultData.markdown, 'md')}
+                  className="p-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface border border-outline-variant/30 shrink-0 cursor-pointer"
+                  title="Salin Markdown"
                 >
-                  {copiedField === 'markdown' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                  {copiedField === 'md' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                 </button>
               </div>
             </div>
 
             {/* HTML Tag */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-on-surface-variant flex items-center gap-1.5">
-                <Code className="w-3.5 h-3.5 text-amber-400" />
-                <span>Format HTML Embed</span>
+              <label className="text-xs font-semibold text-on-surface-variant flex items-center gap-1.5">
+                <Code className="w-3.5 h-3.5 text-indigo-400" />
+                <span>Format HTML Embed:</span>
               </label>
               <div className="flex items-center gap-2">
                 <input
                   type="text"
                   readOnly
                   value={resultData.html}
-                  className="w-full px-3 py-2 rounded-lg bg-surface-container-high text-xs text-on-surface font-mono select-all border border-outline-variant/30"
+                  className="flex-grow px-3 py-2 rounded-xl bg-surface-container/60 border border-outline-variant/40 text-[11px] text-on-surface font-mono truncate"
                 />
                 <button
                   onClick={() => handleCopy(resultData.html, 'html')}
-                  className="px-3 py-2 rounded-lg bg-surface-container hover:bg-surface-container-highest text-xs font-bold text-on-surface shrink-0 cursor-pointer"
+                  className="p-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface border border-outline-variant/30 shrink-0 cursor-pointer"
+                  title="Salin HTML"
                 >
                   {copiedField === 'html' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                 </button>
@@ -357,61 +400,46 @@ export default function ImageToLinkScreen({ onBack }) {
 
           </div>
 
-          {/* 3. QR Code Bar */}
-          <div className="flex items-center gap-4 p-4 rounded-xl bg-surface-container/50 border border-outline-variant/20">
-            <img
-              src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(resultData.url)}`}
-              alt="QR Code"
-              className="w-16 h-16 rounded-lg bg-white p-1 shrink-0"
-            />
-            <div>
-              <h4 className="text-xs font-bold text-on-surface flex items-center gap-1.5">
-                <QrCode className="w-3.5 h-3.5 text-cyan-400" />
-                <span>QR Code Gambar</span>
-              </h4>
-              <p className="text-[11px] text-on-surface-variant mt-0.5">
-                Scan kode QR ini di smartphone untuk langsung membuka gambar di browser HP.
-              </p>
-            </div>
-          </div>
-
         </div>
       )}
 
-      {/* Riwayat Upload Lokal */}
+      {/* RIWAYAT PENGUNGGAHAN TERAKHIR */}
       {uploadHistory.length > 0 && (
-        <div className="w-full glass-panel rounded-2xl p-6 shadow-lg">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2 text-xs font-bold text-on-surface uppercase tracking-wider">
+        <div className="w-full glass-panel rounded-2xl p-6 shadow-xl space-y-4">
+          <div className="flex items-center justify-between border-b border-outline-variant/30 pb-3">
+            <div className="flex items-center gap-2 text-xs font-bold text-on-surface">
               <History className="w-4 h-4 text-indigo-400" />
-              <span>Riwayat Foto Yang Pernah Diubah ke Link</span>
+              <span>Riwayat File yang Pernah Diunggah</span>
             </div>
             <button
               onClick={clearHistory}
-              className="inline-flex items-center gap-1 text-[11px] text-error hover:underline cursor-pointer"
+              className="text-[11px] text-red-400 hover:text-red-300 flex items-center gap-1 transition-colors cursor-pointer"
             >
               <Trash2 className="w-3 h-3" />
-              <span>Bersihkan Riwayat</span>
+              <span>Hapus Semua</span>
             </button>
           </div>
 
-          <div className="divide-y divide-outline-variant/20">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {uploadHistory.map((item, idx) => (
-              <div key={idx} className="py-2.5 flex items-center justify-between gap-3 text-xs">
-                <div className="flex items-center gap-3 overflow-hidden">
-                  <span className="w-8 h-8 rounded-lg overflow-hidden bg-surface-container shrink-0 border border-white/10">
-                    <img src={item.preview || item.url} alt="" className="w-full h-full object-cover" />
-                  </span>
-                  <div className="truncate">
-                    <div className="font-semibold text-on-surface truncate">{item.fileName || 'Foto'}</div>
-                    <div className="text-[10px] text-on-surface-variant font-mono truncate">{item.url}</div>
+              <div 
+                key={idx} 
+                className="p-3 rounded-xl bg-surface-container/40 border border-outline-variant/30 flex items-center justify-between gap-3 hover:bg-surface-container/70 transition-colors"
+              >
+                <div className="flex items-center gap-2.5 overflow-hidden">
+                  <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0">
+                    {item.category === 'video' ? <VideoIcon className="w-4 h-4" /> : item.category === 'pdf' ? <FileText className="w-4 h-4" /> : <ImageIcon className="w-4 h-4" />}
+                  </div>
+                  <div className="overflow-hidden">
+                    <p className="text-xs font-semibold text-on-surface truncate">{item.fileName}</p>
+                    <p className="text-[10px] text-on-surface-variant font-mono">{item.sizeFormatted || item.date}</p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1.5 shrink-0">
+                <div className="flex items-center gap-1 shrink-0">
                   <button
                     onClick={() => handleCopy(item.url, `hist_${idx}`)}
-                    className="p-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface cursor-pointer"
+                    className="p-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface transition-colors cursor-pointer"
                     title="Salin Link"
                   >
                     {copiedField === `hist_${idx}` ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
@@ -419,9 +447,9 @@ export default function ImageToLinkScreen({ onBack }) {
                   <a
                     href={item.url}
                     target="_blank"
-                    rel="noreferrer"
-                    className="p-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface cursor-pointer"
-                    title="Buka"
+                    rel="noopener noreferrer"
+                    className="p-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface transition-colors"
+                    title="Buka Link"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
                   </a>

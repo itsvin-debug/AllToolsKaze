@@ -4,7 +4,8 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "npm --prefix .. run dev",
+    "dev:vite": "vite",
     "build": "vite build",
     "preview": "vite preview"
   },
@@ -12,8 +13,10 @@
     "axios": "^1.7.9",
     "canvas-confetti": "^1.9.4",
     "jspdf": "^4.2.1",
+    "jsqr": "^1.4.0",
     "lucide-react": "^1.16.0",
     "pptxgenjs": "^4.0.1",
+    "qrcode": "^1.5.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "three": "^0.185.1"

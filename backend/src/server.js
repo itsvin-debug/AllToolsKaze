@@ -5,7 +5,6 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import downloadRoutes from './routes/download.route.js';
 import toolsRoutes from './routes/tools.route.js';
-import waReactRoutes from './routes/wareact.route.js';
 
 // load konfigurasi env
 dotenv.config();
@@ -23,9 +22,9 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// middleware parsing json dan form-urlencoded dengan batas 50mb untuk upload media HD
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+// middleware parsing json dan form-urlencoded dengan batas 150mb untuk upload video/foto/audio kompresi
+app.use(express.json({ limit: '150mb' }));
+app.use(express.urlencoded({ extended: true, limit: '150mb' }));
 
 // sajikan file static uploads untuk direct image link
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
@@ -33,7 +32,25 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 // pasang rute API
 app.use('/api', downloadRoutes);
 app.use('/api', toolsRoutes);
-app.use('/api/wa-react', waReactRoutes);
+
+// Endpoint verifikasi login admin
+app.post('/api/verify-admin', (req, res) => {
+  const { password } = req.body || {};
+  const correctPassword = (process.env.ADMIN_PASSWORD || 'VINZ6767').trim();
+  
+  if (password && password.trim() === correctPassword) {
+    return res.json({
+      success: true,
+      message: 'Autentikasi admin berhasil! Selamat datang Admin Kaze.',
+      role: 'Admin'
+    });
+  }
+
+  return res.status(401).json({
+    success: false,
+    message: 'Kata sandi admin salah! Akses ditolak.'
+  });
+});
 
 // rute dasar buat ngecek server idup atau kagak
 app.get('/', (req, res) => {

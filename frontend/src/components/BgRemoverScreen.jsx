@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import CosmicBackButton from './CosmicBackButton';
 import { 
   Scissors, 
   ArrowLeft, 
@@ -328,13 +329,7 @@ export default function BgRemoverScreen({ onBack }) {
       
       {/* Tombol Navigasi Kembali */}
       <div className="w-full flex items-center justify-between mb-4">
-        <button
-          onClick={onBack}
-          className="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-400 hover:text-white transition-colors cursor-pointer px-3 py-1.5 rounded-xl hover:bg-white/5"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Kembali ke Beranda Tools</span>
-        </button>
+        <CosmicBackButton onClick={onBack} label="Kembali ke Beranda Tools" />
       </div>
 
       {/* Header Judul Fitur (Tanpa embel-embel AI) */}

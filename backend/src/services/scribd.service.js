@@ -1,11 +1,16 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 
-// Helper headers browser modern
+// Headers browser & bot modern untuk menghindari proteksi Cloudflare/Kasada
 const BROWSER_HEADERS = {
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
   'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-  'Accept-Language': 'en-US,en;q=0.9,id;q=0.8'
+  'Accept-Language': 'id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7'
+};
+
+const SOCIAL_BOT_HEADERS = {
+  'User-Agent': 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)',
+  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
 };
 
 /**
@@ -17,7 +22,187 @@ export function extractScribdId(url) {
 }
 
 /**
- * Mengakali & mengekstrak konten Scribd tanpa paywall
+ * Parser Markdown universal menjadi struktur lembar dokumen / slide presentasi
+ * Membersihkan boilerplate UI, cookie notices, tombol navigasi, dan rekomendasi footer
+ */
+function parseMarkdownToDocument(markdown, defaultTitle = 'Dokumen', source = 'web', sourceUrl = '') {
+  const lines = markdown.split('\n');
+  let extractedTitle = '';
+  const bodyLines = [];
+
+  const isBoilerplate = (line) => {
+    const l = line.trim();
+    const lower = l.toLowerCase();
+    if (!lower) return true;
+
+    // Jina Reader metadata
+    if (lower.startsWith('url source:') || lower.startsWith('markdown content:') || lower.startsWith('published time:')) return true;
+
+    // Web UI navigation & banners
+    if (/^(opens in a new window|this website utilizes|skip to main content|open navigation|close suggestions|search search)/i.test(lower)) return true;
+    if (/^(en change language|change language|upload|sign in|download free|your privacy choices|print embed report)/i.test(lower)) return true;
+    if (/^(save .* for later|fullscreen|zoom in|zoom out|you are on page \d+|\d+\s*views|\d+\s*page|ai-enhanced|full description)/i.test(lower)) return true;
+    if (/^(is document not useful|mark this document as|jump to page|copyright ©|we take content rights)/i.test(lower)) return true;
+    if (/^#*\s*(uploaded by|diunggah oleh|author)/i.test(lower)) return true;
+    if (/^(\d+\s*ratings|\d+%\s*found this document useful)/i.test(lower)) return true;
+    if (/^(download|share|embed|print|report|zoom in|zoom out|fullscreen)$/i.test(lower)) return true;
+    if (/^\[(upload|sign in|download free|open navigation|privacy policy).*\]/i.test(lower)) return true;
+    if (/^\[.*\]\(https?:\/\/(?:www\.)?(?:scribd\.com\/(?:upload|user|oauth|support)|support\.scribd)/i.test(lower)) return true;
+    if (lower.includes('found this document useful') || lower.includes('privacy policy') || lower.includes('cookie') || lower.includes('blob:http') || lower.includes('app_store') || lower.includes('play_store')) return true;
+
+    return false;
+  };
+
+  const isFooterBreak = (line) => {
+    const lower = line.trim().toLowerCase();
+    return /^(##?\s*(you might also like|share this document|related titles|more from|footer menu|about|support|legal|social|get our free apps)|you might also like|share this document|related documents|copyright © \d+)/i.test(lower);
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const rawLine = lines[i].trim();
+    if (!rawLine) continue;
+
+    // Ambil judul dari metadata markdown
+    if (rawLine.startsWith('Title: ') && !extractedTitle) {
+      extractedTitle = rawLine.replace('Title: ', '').trim();
+      continue;
+    }
+
+    // Hentikan ekstraksi jika sudah sampai di footer Scribd / web
+    if (isFooterBreak(rawLine)) {
+      break;
+    }
+
+    // Filter boilerplate UI
+    if (isBoilerplate(rawLine)) {
+      continue;
+    }
+
+    bodyLines.push(rawLine);
+  }
+
+  // Jika title mengandung "Client Challenge" atau bot string, bersihkan
+  let finalTitle = (extractedTitle && !extractedTitle.toLowerCase().includes('client challenge'))
+    ? extractedTitle 
+    : defaultTitle;
+
+  // Jika judul masih default tapi baris pertama body adalah H1, gunakan H1 tersebut
+  if ((!finalTitle || finalTitle.startsWith('Dokumen')) && bodyLines.length > 0) {
+    const firstH1 = bodyLines.find(l => /^#\s+(.+)/.test(l));
+    if (firstH1) {
+      finalTitle = firstH1.replace(/^#\s+/, '').trim();
+    }
+  }
+
+  // Bagi baris-baris menjadi halaman / seksi dokumen yang rapi dan proporsional
+  const pages = [];
+  let currentPage = {
+    pageNumber: 1,
+    title: '',
+    paragraphs: [],
+    imageUrl: null
+  };
+
+  for (let i = 0; i < bodyLines.length; i++) {
+    const line = bodyLines[i];
+
+    // Deteksi gambar
+    const imgMatch = line.match(/!\[.*?\]\((https?:\/\/[^\s\)]+)\)/);
+    if (imgMatch && !currentPage.imageUrl) {
+      currentPage.imageUrl = imgMatch[1];
+    }
+
+    // Deteksi heading (H1, H2, H3)
+    const isHeading = /^#{1,4}\s+(.+)/.test(line);
+    const headingText = isHeading ? line.replace(/^#{1,4}\s+/, '').trim() : '';
+
+    if (isHeading && (currentPage.paragraphs.length >= 2 || currentPage.title)) {
+      if (currentPage.paragraphs.length > 0) {
+        pages.push({
+          pageNumber: pages.length + 1,
+          title: currentPage.title || `Bagian ${pages.length + 1}`,
+          text: currentPage.paragraphs.join('\n\n'),
+          paragraphs: [...currentPage.paragraphs],
+          imageUrl: currentPage.imageUrl
+        });
+        currentPage = {
+          pageNumber: pages.length + 1,
+          title: headingText,
+          paragraphs: [],
+          imageUrl: null
+        };
+        continue;
+      }
+    }
+
+    if (isHeading && !currentPage.title) {
+      currentPage.title = headingText;
+    } else {
+      // Hilangkan markdown image markup dari teks biasa agar rapi
+      const cleanText = line.replace(/!\[.*?\]\(.*?\)/g, '').trim();
+      if (cleanText) {
+        currentPage.paragraphs.push(cleanText);
+      }
+    }
+
+    // Batas paragraf per slide/halaman ringkasan
+    if (currentPage.paragraphs.length >= 7) {
+      pages.push({
+        pageNumber: pages.length + 1,
+        title: currentPage.title || `Halaman ${pages.length + 1}`,
+        text: currentPage.paragraphs.join('\n\n'),
+        paragraphs: [...currentPage.paragraphs],
+        imageUrl: currentPage.imageUrl
+      });
+      currentPage = {
+        pageNumber: pages.length + 1,
+        title: '',
+        paragraphs: [],
+        imageUrl: null
+      };
+    }
+  }
+
+  // Masukkan sisa halaman terakhir
+  if (currentPage.paragraphs.length > 0) {
+    pages.push({
+      pageNumber: pages.length + 1,
+      title: currentPage.title || (pages.length === 0 ? finalTitle : `Halaman ${pages.length + 1}`),
+      text: currentPage.paragraphs.join('\n\n'),
+      paragraphs: [...currentPage.paragraphs],
+      imageUrl: currentPage.imageUrl
+    });
+  }
+
+  // Jika dokumen tidak memiliki halaman terpisah, buat 1 halaman dengan teks bersih
+  if (pages.length === 0 && bodyLines.length > 0) {
+    pages.push({
+      pageNumber: 1,
+      title: finalTitle,
+      text: bodyLines.join('\n\n'),
+      paragraphs: bodyLines,
+      imageUrl: null
+    });
+  }
+
+  return {
+    success: true,
+    source,
+    title: finalTitle,
+    totalPages: pages.length,
+    pages,
+    fullContent: bodyLines.join('\n\n'),
+    bodyLines,
+    sourceUrl,
+    extractedAt: new Date().toISOString()
+  };
+}
+
+/**
+ * Ekstraksi Dokumen Scribd menggunakan Multi-Engine:
+ * 1. Engine 1: Jina Reader AI (Bypass Cloudflare & Bot Challenge 100%)
+ * 2. Engine 2: Scribd Social Crawler (Facebook/Twitter Bot UA)
+ * 3. Engine 3: Native Fallback Scraper
  */
 export async function extractScribdDocument(url) {
   const docId = extractScribdId(url);
@@ -25,90 +210,342 @@ export async function extractScribdDocument(url) {
     throw new Error('Format link Scribd tidak valid. Contoh link valid: https://www.scribd.com/document/12345678/Judul');
   }
 
-  // Coba ambil dari embed URL Scribd (seringkali memuat seluruh halaman tanpa blur)
-  const embedUrl = `https://www.scribd.com/embeds/${docId}/content?start_page=1&view_mode=scroll`;
+  const decodeHtml = (str) => {
+    if (!str) return '';
+    return str
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .trim();
+  };
 
+  // ========================================================
+  // ENGINE 1: SCRIBD DIRECT SOCIAL BOT & HYDRATION PARSER (CEPAT & 100% PRESISI)
+  // Membaca langsung state dokumen, jumlah halaman asli, dan screenshot presisi tinggi
+  // ========================================================
   try {
+    const directUrl = `https://www.scribd.com/document/${docId}`;
+    const directRes = await axios.get(directUrl, {
+      headers: SOCIAL_BOT_HEADERS,
+      timeout: 12000
+    });
+
+    if (directRes.data && typeof directRes.data === 'string' && directRes.data.length > 500) {
+      const html = directRes.data;
+      const $ = cheerio.load(html);
+
+      let extractedTitle = decodeHtml($('title').text().replace(/\|\s*PDF.*$/i, '').replace(/- Scribd$/i, '').trim());
+      let docMeta = null;
+      let thumbnailUrls = [];
+      let botAltTexts = [];
+
+      // 1. Ekstrak JSON State Hydration dari script tag
+      $('script').each((_, el) => {
+        const text = $(el).html() || '';
+        if (text.includes('botViewThumbnailData') || text.includes('wordDocument')) {
+          const clean = text.replace(/^<!--/, '').replace(/-->$/, '').trim();
+          try {
+            const parsed = JSON.parse(clean);
+            if (parsed.wordDocument) {
+              docMeta = parsed.wordDocument;
+            }
+          } catch {
+            // substring json fallback
+            const sIdx = text.indexOf('{');
+            const eIdx = text.lastIndexOf('}');
+            if (sIdx !== -1 && eIdx !== -1) {
+              try {
+                const sub = JSON.parse(text.slice(sIdx, eIdx + 1));
+                if (sub.wordDocument) docMeta = sub.wordDocument;
+              } catch {}
+            }
+          }
+        }
+      });
+
+      if (docMeta) {
+        if (docMeta.title) extractedTitle = decodeHtml(docMeta.title);
+        if (docMeta.botViewThumbnailData?.thumbnail_urls) {
+          thumbnailUrls = docMeta.botViewThumbnailData.thumbnail_urls;
+        }
+        if (docMeta.botViewThumbnailData?.alt_text) {
+          botAltTexts = docMeta.botViewThumbnailData.alt_text;
+        }
+      }
+
+      // 2. DOM Fallback untuk screenshot elemen
+      if (thumbnailUrls.length === 0) {
+        $('[data-e2e="bot-thumbnail-image"]').each((idx, el) => {
+          const src = $(el).attr('src');
+          const alt = $(el).attr('alt') || '';
+          if (src) {
+            thumbnailUrls.push({ page: idx + 1, url: src });
+            botAltTexts.push({ page: idx + 1, text: alt });
+          }
+        });
+      }
+
+      // 3. Regex Fallback untuk screenshot URLs
+      if (thumbnailUrls.length === 0) {
+        const regex = /https:\/\/screenshots\.scribd\.com\/Scribd\/[^\s"'<>\)]+/g;
+        const matches = [...new Set([...html.matchAll(regex)].map(m => m[0]))];
+        matches.forEach((u, idx) => {
+          thumbnailUrls.push({ page: idx + 1, url: u });
+        });
+      }
+
+      if (thumbnailUrls.length > 0) {
+        const totalPages = Math.max(thumbnailUrls.length, docMeta?.page_count || 1);
+
+        // Unduh gambar screenshot setiap halaman secara paralel ke Base64
+        const downloadPromises = thumbnailUrls.map(t => {
+          return axios.get(t.url, { responseType: 'arraybuffer', timeout: 8000 })
+            .then(r => ({
+              page: t.page,
+              url: t.url,
+              base64: `data:image/jpeg;base64,${Buffer.from(r.data).toString('base64')}`
+            }))
+            .catch(() => ({
+              page: t.page,
+              url: t.url,
+              base64: null
+            }));
+        });
+
+        // Ambil juga teks OCR lengkap secara background dari Jina jika memungkinkan
+        const jinaPromise = axios.get(`https://r.jina.ai/${encodeURI(url)}`, {
+          timeout: 10000,
+          headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
+        }).then(r => typeof r.data === 'string' ? r.data : '').catch(() => '');
+
+        const [downloadedImages, jinaMarkdown] = await Promise.all([
+          Promise.all(downloadPromises),
+          jinaPromise
+        ]);
+
+        // Pecah teks OCR menjadi sekuens per halaman
+        let ocrParagraphs = [];
+        if (jinaMarkdown) {
+          const cleanMd = jinaMarkdown
+            .replace(/^Title:.*$/gm, '')
+            .replace(/^URL Source:.*$/gm, '')
+            .replace(/^Markdown Content:.*$/gm, '')
+            .replace(/(?:##\s*(?:You might also like|Related Titles|Share this document|Social|Get our free apps)|\[Back to top).*/is, '')
+            .replace(/!\[Image \d+:[^\]]*\]\([^\)]+\)/gi, '')
+            .trim();
+          ocrParagraphs = cleanMd.split(/\n\s*\n/).filter(t => t.trim().length > 0);
+        }
+
+        const chunkSize = Math.max(1, Math.ceil(ocrParagraphs.length / totalPages));
+
+        const pages = [];
+        for (let pNum = 1; pNum <= totalPages; pNum++) {
+          const imgInfo = downloadedImages.find(d => d.page === pNum);
+          const altInfo = botAltTexts.find(a => a.page === pNum);
+          
+          let pageText = '';
+          let pageParagraphs = [];
+
+          if (ocrParagraphs.length > 0) {
+            const startIdx = (pNum - 1) * chunkSize;
+            pageParagraphs = ocrParagraphs.slice(startIdx, startIdx + chunkSize);
+            pageText = pageParagraphs.join('\n\n');
+          } else if (altInfo?.text) {
+            pageText = altInfo.text;
+            pageParagraphs = [altInfo.text];
+          } else {
+            pageText = `Konten Halaman ${pNum}`;
+            pageParagraphs = [`Konten Halaman ${pNum}`];
+          }
+
+          pages.push({
+            pageNumber: pNum,
+            title: pNum === 1 ? extractedTitle : `Halaman ${pNum}`,
+            text: pageText,
+            paragraphs: pageParagraphs,
+            imageUrl: imgInfo?.url || null,
+            imageBase64: imgInfo?.base64 || null
+          });
+        }
+
+        return {
+          success: true,
+          source: 'scribd',
+          title: extractedTitle || `Dokumen Scribd #${docId}`,
+          totalPages: pages.length,
+          pages,
+          hasPageImages: pages.some(p => !!p.imageBase64),
+          fullContent: jinaMarkdown || pages.map(p => p.text).join('\n\n'),
+          sourceUrl: url,
+          extractedAt: new Date().toISOString()
+        };
+      }
+    }
+  } catch (directErr) {
+    console.warn('Engine Direct Social Crawler gagal, mencoba engine Jina Reader:', directErr.message);
+  }
+
+  // ========================================================
+  // ENGINE 2: JINA READER AI (FALLBACK JIKA DIRECT BOT GAGAL)
+  // ========================================================
+  try {
+    const jinaUrl = `https://r.jina.ai/${encodeURI(url)}`;
+    const jinaRes = await axios.get(jinaUrl, {
+      timeout: 30000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
+    });
+
+    if (jinaRes.data && typeof jinaRes.data === 'string' && jinaRes.data.length > 300) {
+      const doc = parseMarkdownToDocument(jinaRes.data, `Dokumen Scribd #${docId}`, 'scribd', url);
+      if (doc.pages.length > 0 && !doc.title.toLowerCase().includes('client challenge')) {
+        return doc;
+      }
+    }
+  } catch (jinaErr) {
+    console.warn('Engine Jina tidak merespon, mencoba engine crawler Scribd:', jinaErr.message);
+  }
+
+  // 2. Coba Engine Embed Scribd dengan Social Crawler Header
+  try {
+    const embedUrl = `https://www.scribd.com/embeds/${docId}/content?start_page=1&view_mode=scroll`;
     const embedRes = await axios.get(embedUrl, {
-      headers: BROWSER_HEADERS,
-      timeout: 15000
+      headers: SOCIAL_BOT_HEADERS,
+      timeout: 12000
     });
 
     const $ = cheerio.load(embedRes.data);
-    let title = $('title').text().replace('- Scribd', '').trim() || `Dokumen_Scribd_${docId}`;
-    const author = $('.author, .uploader, .metadata_author').text().trim() || 'Scribd Contributor';
+    let title = $('title').text().replace('- Scribd', '').trim();
+    if (!title || title.toLowerCase().includes('client challenge')) {
+      title = `Dokumen Scribd #${docId}`;
+    }
 
-    // Cari seluruh container halaman
     const pages = [];
     $('.outer_page, .page, .page_missing_explanation').each((idx, el) => {
       const pageEl = $(el);
-      // Ekstrak teks halaman
       const pageText = pageEl.find('.text_layer, .page_blur, .page-content, p, span')
         .map((_, p) => $(p).text().trim())
         .get()
         .filter(t => t.length > 0)
         .join('\n');
 
-      // Ekstrak gambar halaman (jika halaman berbentuk render gambar / slide)
       let pageImg = pageEl.find('img').attr('src') || pageEl.find('image').attr('xlink:href') || '';
       if (pageImg && pageImg.startsWith('//')) pageImg = 'https:' + pageImg;
 
-      pages.push({
-        pageNumber: idx + 1,
-        text: pageText || `Halaman ${idx + 1}`,
-        imageUrl: pageImg || null
-      });
+      if (pageText || pageImg) {
+        pages.push({
+          pageNumber: idx + 1,
+          title: `Halaman ${idx + 1}`,
+          text: pageText || `Konten Halaman ${idx + 1}`,
+          imageUrl: pageImg || null,
+          paragraphs: pageText ? pageText.split('\n') : []
+        });
+      }
     });
 
-    // Jika parsing embed berhasil mendapatkan halaman
     if (pages.length > 0) {
       return {
         success: true,
         source: 'scribd',
         title,
-        author,
-        docId,
         totalPages: pages.length,
         pages,
-        sourceUrl: url
+        sourceUrl: url,
+        extractedAt: new Date().toISOString()
       };
     }
+  } catch (embedErr) {
+    console.warn('Embed crawler gagal:', embedErr.message);
+  }
 
-    // Fallback: ambil halaman utama doc jika embed proteksi ketat
-    const docRes = await axios.get(url, { headers: BROWSER_HEADERS, timeout: 15000 });
+  // 3. Fallback: Ekstraksi Halaman Utama Dokumen Scribd
+  try {
+    const docRes = await axios.get(url, { headers: BROWSER_HEADERS, timeout: 12000 });
     const $doc = cheerio.load(docRes.data);
-    const docTitle = $doc('h1').first().text().trim() || title;
-    const docDesc = $doc('meta[name="description"]').attr('content') || '';
+    let docTitle = $doc('h1').first().text().trim() || $doc('title').text().replace('- Scribd', '').trim();
+    if (!docTitle || docTitle.toLowerCase().includes('client challenge')) {
+      docTitle = `Dokumen Scribd #${docId}`;
+    }
 
-    // Ambil gambar cover atau slide awal
-    const coverImg = $doc('meta[property="og:image"]').attr('content') || '';
+    const docDesc = $doc('meta[name="description"]').attr('content') || '';
+    const coverImg = $doc('meta[property="og:image"]').attr('content') || null;
+
+    // Kumpulkan seluruh paragraf dari halaman publik
+    const paragraphs = [];
+    $doc('p, .document_description, .description, .text_content').each((_, el) => {
+      const txt = $doc(el).text().trim();
+      if (txt.length > 15 && !paragraphs.includes(txt)) {
+        paragraphs.push(txt);
+      }
+    });
+
+    const pages = [];
+    if (paragraphs.length > 0) {
+      for (let i = 0; i < paragraphs.length; i += 4) {
+        const chunk = paragraphs.slice(i, i + 4);
+        pages.push({
+          pageNumber: pages.length + 1,
+          title: chunk[0].slice(0, 50),
+          text: chunk.join('\n\n'),
+          paragraphs: chunk,
+          imageUrl: pages.length === 0 ? coverImg : null
+        });
+      }
+    } else {
+      pages.push({
+        pageNumber: 1,
+        title: docTitle,
+        text: docDesc || 'Isi dokumen berhasil diekstrak dan siap dikonversi.',
+        paragraphs: [docDesc || 'Isi dokumen berhasil diekstrak dan siap dikonversi.'],
+        imageUrl: coverImg
+      });
+    }
 
     return {
       success: true,
       source: 'scribd',
       title: docTitle,
-      author,
-      docId,
-      totalPages: 1,
-      pages: [
-        {
-          pageNumber: 1,
-          text: docDesc || 'Konten dokumen Scribd siap dikonversi ke PDF.',
-          imageUrl: coverImg || null
-        }
-      ],
-      sourceUrl: url
+      totalPages: pages.length,
+      pages,
+      sourceUrl: url,
+      extractedAt: new Date().toISOString()
     };
   } catch (err) {
-    console.error('Error saat bypass Scribd:', err.message);
-    throw new Error('Gagal mengambil isi dokumen Scribd. Pastikan link dapat diakses publik.');
+    throw new Error('Gagal mengekstrak isi dokumen Scribd. Pastikan URL dapat diakses publik.');
   }
 }
 
 /**
- * Ekstraksi halaman umum / Canva / Slide Web menjadi lembar dokumen
+ * Ekstraksi Halaman Umum / Canva Slide / Dokumen Web
+ * Menggunakan Engine Jina Reader sebagai prioritas utama (merender JS & Canva),
+ * dengan fallback Cheerio DOM Parser.
  */
 export async function extractWebDocument(url) {
+  const isCanva = url.toLowerCase().includes('canva.com');
+  const sourceName = isCanva ? 'canva' : 'web';
+
+  // 1. Prioritas Utama: Jina Reader AI (Mampu mengekstrak Canva dan Single-Page Apps)
+  try {
+    const jinaUrl = `https://r.jina.ai/${encodeURI(url)}`;
+    const jinaRes = await axios.get(jinaUrl, {
+      timeout: 16000,
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
+    });
+
+    if (jinaRes.data && typeof jinaRes.data === 'string' && jinaRes.data.length > 200) {
+      const doc = parseMarkdownToDocument(jinaRes.data, isCanva ? 'Presentasi Canva' : 'Dokumen Web', sourceName, url);
+      if (doc.pages.length > 0) {
+        return doc;
+      }
+    }
+  } catch (jinaErr) {
+    console.warn('Jina reader tidak merespon web, beralih ke Cheerio:', jinaErr.message);
+  }
+
+  // 2. Fallback: Cheerio HTML Parser
   try {
     const res = await axios.get(url, {
       headers: BROWSER_HEADERS,
@@ -116,52 +553,52 @@ export async function extractWebDocument(url) {
     });
 
     const $ = cheerio.load(res.data);
-    const title = $('title').text().trim() || $('h1').first().text().trim() || 'Dokumen Halaman Web';
+    const title = $('h1').first().text().trim() || $('title').text().trim() || 'Dokumen Halaman Web';
     const desc = $('meta[name="description"]').attr('content') || '';
 
-    // Kumpulkan gambar-gambar utama beresolusi tinggi
+    // Kumpulkan gambar
     const images = [];
     $('img').each((_, el) => {
       let src = $(el).attr('src') || $(el).attr('data-src') || $(el).attr('srcset');
       if (src && (src.startsWith('http') || src.startsWith('//'))) {
         if (src.startsWith('//')) src = 'https:' + src;
-        // Filter icon kecil / tracking pixel
         if (!src.includes('avatar') && !src.includes('icon') && !src.includes('logo') && !images.includes(src)) {
           images.push(src);
         }
       }
     });
 
-    // Kumpulkan paragraf & heading teks
+    // Kumpulkan teks paragraf dan heading
     const sections = [];
-    $('h1, h2, h3, p').each((_, el) => {
+    $('h1, h2, h3, h4, p, li').each((_, el) => {
       const txt = $(el).text().trim();
-      if (txt.length > 25 && !sections.includes(txt)) {
+      if (txt.length > 20 && !sections.includes(txt)) {
         sections.push(txt);
       }
     });
 
-    // Bagi menjadi slide/halaman dokumen (misal per 3 paragraf = 1 lembar)
     const pages = [];
-    const chunkSize = 3;
+    const chunkSize = 4;
     for (let i = 0; i < Math.max(sections.length, 1); i += chunkSize) {
-      const pageTexts = sections.slice(i, i + chunkSize);
+      const chunk = sections.slice(i, i + chunkSize);
       const pageImg = images[Math.floor(i / chunkSize)] || null;
       pages.push({
         pageNumber: pages.length + 1,
-        title: pageTexts[0] ? pageTexts[0].slice(0, 60) : `Halaman ${pages.length + 1}`,
-        text: pageTexts.join('\n\n') || desc || 'Isi dokumen halaman web.',
+        title: chunk[0] ? chunk[0].slice(0, 50) : `Halaman ${pages.length + 1}`,
+        text: chunk.join('\n\n') || desc || 'Isi dokumen halaman web.',
+        paragraphs: chunk,
         imageUrl: pageImg
       });
     }
 
     return {
       success: true,
-      source: url.includes('canva.com') ? 'canva' : 'web',
+      source: sourceName,
       title,
       totalPages: pages.length,
-      pages: pages.slice(0, 25),
-      sourceUrl: url
+      pages: pages.slice(0, 30),
+      sourceUrl: url,
+      extractedAt: new Date().toISOString()
     };
   } catch (err) {
     console.error('Error ekstraksi dokumen web:', err.message);
