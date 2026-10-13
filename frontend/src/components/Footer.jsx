@@ -9,7 +9,7 @@ export default function Footer() {
           <span className="font-bold text-lg text-primary">AllToolsKaze</span>
         </div>
         <p className="text-sm text-on-surface-variant/80">
-          © {new Date().getFullYear()} AllToolsKaze. Unduh video tanpa watermark secara instan.
+          © {new Date().getFullYear()} AllToolsKaze. Ekosistem multi-tools serba bisa: Media Downloader, Doc Extractor, Converter & Creative Studio Suite.
         </p>
       </div>
     </footer>

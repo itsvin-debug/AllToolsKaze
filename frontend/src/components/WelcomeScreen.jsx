@@ -266,7 +266,6 @@ export default function WelcomeScreen({ onSelectPlatform, onOpenTool, theme = 'd
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         theme={theme}
-        onToggleTheme={onToggleTheme}
       />
 
       {/* ─── 2. SECTION NAVIGASI SEMUA ALAT KAZE (FOTO 2 - REVAMPED & ANIMATED) ─── */}
@@ -409,7 +408,7 @@ export default function WelcomeScreen({ onSelectPlatform, onOpenTool, theme = 'd
           </span>
           <span className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
-            <span>Tanpa Watermark</span>
+            <span>Multi-Tools Suite</span>
           </span>
         </div>
 

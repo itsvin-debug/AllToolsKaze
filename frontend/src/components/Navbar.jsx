@@ -1,8 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Home, 
-  Sun, 
-  Moon,
   ChevronDown,
   Sparkles,
   Download,
@@ -176,23 +174,7 @@ export default function Navbar({ currentScreen, onSelectTool, onGoHome, theme = 
             </div>
           )}
 
-          {/* Tombol Ganti Tema (Dark / Light) */}
-          <button
-            onClick={onToggleTheme}
-            className={`p-2 rounded-xl border text-xs font-semibold flex items-center justify-center transition-all cursor-pointer hover:scale-105 active:scale-95 ${
-              isDark 
-                ? 'bg-white/5 hover:bg-white/10 border-white/10 text-amber-300 shadow-sm' 
-                : 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-indigo-600 shadow-sm'
-            }`}
-            title={isDark ? 'Ganti ke Tema Terang' : 'Ganti ke Tema Gelap'}
-            aria-label="Toggle theme"
-          >
-            {isDark ? (
-              <Sun className="w-4 h-4 text-amber-300 animate-spin-slow" />
-            ) : (
-              <Moon className="w-4 h-4 text-indigo-600" />
-            )}
-          </button>
+
 
         </div>
 

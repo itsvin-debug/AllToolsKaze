@@ -7,8 +7,7 @@ import {
   Battery, 
   BatteryCharging, 
   CheckCircle2, 
-  Sun, 
-  Moon, 
+  Sparkles, 
   Search, 
   ExternalLink, 
   MessageCircle, 
@@ -240,28 +239,11 @@ export default function KazeIdentityCard({
             </h2>
           </div>
 
-          {/* Tombol Tema Terang / Gelap */}
-          <button
-            onClick={onToggleTheme}
-            className={`p-2 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
-              isDark 
-                ? 'bg-white/5 hover:bg-white/10 border-white/10 text-amber-300' 
-                : 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-indigo-600'
-            }`}
-            title={isDark ? 'Ganti ke Tema Terang' : 'Ganti ke Tema Gelap'}
-          >
-            {isDark ? (
-              <>
-                <Sun className="w-4 h-4 text-amber-300" />
-                <span className="hidden sm:inline text-[11px] text-amber-200">Terang</span>
-              </>
-            ) : (
-              <>
-                <Moon className="w-4 h-4 text-indigo-600" />
-                <span className="hidden sm:inline text-[11px] text-indigo-900">Gelap</span>
-              </>
-            )}
-          </button>
+          {/* Badge Status Cosmic Space Suite */}
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-slate-300 text-xs font-mono shadow-sm">
+            <Sparkles className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
+            <span className="text-[11px] font-semibold text-cyan-200">Cosmic Suite</span>
+          </div>
         </div>
 
         {/* Input Pencarian Rapi ala Foto Kedua */}

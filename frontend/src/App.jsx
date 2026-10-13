@@ -26,34 +26,22 @@ export default function App() {
   // Platform sosmed yang dipilih jika masuk ke downloader
   const [activePlatform, setActivePlatform] = useState('tiktok');
 
-  // Tema Gelap (dark) & Terang (light)
-  const [theme, setTheme] = useState(() => {
-    return localStorage.getItem('kaze_theme') || 'dark';
-  });
+  // Tema Luar Angkasa Selalu Gelap (Cosmic Dark Space Theme)
+  const theme = 'dark';
+  const isDark = true;
 
-  // Sinkronisasi class dark / light ke documentElement (html)
+  // Pastikan class dark aktif permanen di root html
   useEffect(() => {
     const root = document.documentElement;
-    if (theme === 'dark') {
-      root.classList.add('dark');
-      root.classList.remove('light');
-    } else {
-      root.classList.add('light');
-      root.classList.remove('dark');
-    }
-    localStorage.setItem('kaze_theme', theme);
-  }, [theme]);
-
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
-  };
+    root.classList.add('dark');
+    root.classList.remove('light');
+    localStorage.setItem('kaze_theme', 'dark');
+  }, []);
 
   // Jika pengguna ingin masuk lewat splash screen
   if (currentScreen === 'splash') {
     return <SplashScreen onEnter={() => setCurrentScreen('welcome')} />;
   }
-
-  const isDark = theme === 'dark';
 
   return (
     <div className={`min-h-screen flex flex-col relative overflow-x-clip transition-colors duration-500 ${
@@ -67,7 +55,6 @@ export default function App() {
       <Navbar
         currentScreen={currentScreen}
         theme={theme}
-        onToggleTheme={toggleTheme}
         onSelectTool={(toolId) => {
           if (toolId === 'downloader') {
             setCurrentScreen('downloader');
@@ -82,7 +69,6 @@ export default function App() {
       {currentScreen === 'welcome' && (
         <WelcomeScreen
           theme={theme}
-          onToggleTheme={toggleTheme}
           onSelectPlatform={(platformId) => {
             setActivePlatform(platformId);
             setCurrentScreen('downloader');
