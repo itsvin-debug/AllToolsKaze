@@ -26,11 +26,10 @@ export default function App() {
   // Platform sosmed yang dipilih jika masuk ke downloader
   const [activePlatform, setActivePlatform] = useState('tiktok');
 
-  // Tema Luar Angkasa Selalu Gelap (Cosmic Dark Space Theme)
+  // Tema Luar Angkasa Gelap Permanen (Deep Cosmic Space)
   const theme = 'dark';
   const isDark = true;
 
-  // Pastikan class dark aktif permanen di root html
   useEffect(() => {
     const root = document.documentElement;
     root.classList.add('dark');
@@ -44,17 +43,14 @@ export default function App() {
   }
 
   return (
-    <div className={`min-h-screen flex flex-col relative overflow-x-clip transition-colors duration-500 ${
-      isDark ? 'bg-[#030408] text-slate-100' : 'bg-[#f1f5f9] text-slate-900'
-    }`}>
+    <div className="min-h-screen flex flex-col relative overflow-x-clip transition-colors duration-500 bg-[#030408] text-slate-100">
       
-      {/* Background shader dinamis responsif tema */}
-      <ShaderBackground theme={theme} />
+      {/* Background shader dinamis luar angkasa */}
+      <ShaderBackground theme="dark" />
 
       {/* Header Navigasi Atas Multi-Tools */}
       <Navbar
         currentScreen={currentScreen}
-        theme={theme}
         onSelectTool={(toolId) => {
           if (toolId === 'downloader') {
             setCurrentScreen('downloader');
@@ -68,7 +64,7 @@ export default function App() {
       {/* Render Layar Sesuai State */}
       {currentScreen === 'welcome' && (
         <WelcomeScreen
-          theme={theme}
+          theme="dark"
           onSelectPlatform={(platformId) => {
             setActivePlatform(platformId);
             setCurrentScreen('downloader');

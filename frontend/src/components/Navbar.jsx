@@ -16,10 +16,10 @@ import {
   Check
 } from 'lucide-react';
 
-export default function Navbar({ currentScreen, onSelectTool, onGoHome, theme = 'dark', onToggleTheme }) {
+export default function Navbar({ currentScreen, onSelectTool, onGoHome }) {
   const [toolsDropdownOpen, setToolsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
-  const isDark = theme === 'dark';
+  const isDark = true;
 
   const tools = [
     { id: 'downloader', label: 'Media Downloader', desc: 'TikTok, IG, YouTube & X', icon: Download },
@@ -173,8 +173,6 @@ export default function Navbar({ currentScreen, onSelectTool, onGoHome, theme = 
               </div>
             </div>
           )}
-
-
 
         </div>
 

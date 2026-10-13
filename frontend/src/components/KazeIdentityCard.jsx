@@ -7,7 +7,6 @@ import {
   Battery, 
   BatteryCharging, 
   CheckCircle2, 
-  Sparkles, 
   Search, 
   ExternalLink, 
   MessageCircle, 
@@ -23,8 +22,7 @@ import {
 export default function KazeIdentityCard({ 
   searchQuery, 
   setSearchQuery, 
-  theme, 
-  onToggleTheme, 
+  theme = 'dark', 
   onSearchSubmit 
 }) {
   // 1. Role State: Default adalah 'Member' (pengguna biasa) saat pertama masuk.
@@ -232,17 +230,11 @@ export default function KazeIdentityCard({
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
             <h2 className="text-sm sm:text-base font-extrabold tracking-tight font-mono flex items-center gap-1.5">
-              <span className={isDark ? 'text-white' : 'text-slate-900'}>ALL TOOLS KAZE</span>
+              <span className="text-white">ALL TOOLS KAZE</span>
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/15 border border-indigo-500/30 text-indigo-400 font-bold">
                 VIP
               </span>
             </h2>
-          </div>
-
-          {/* Badge Status Cosmic Space Suite */}
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-slate-300 text-xs font-mono shadow-sm">
-            <Sparkles className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
-            <span className="text-[11px] font-semibold text-cyan-200">Cosmic Suite</span>
           </div>
         </div>
 
@@ -304,12 +296,6 @@ export default function KazeIdentityCard({
             onEnded={triggerWallpaperPlayback}
             className="w-full h-full object-cover object-center pointer-events-none"
           />
-
-          {/* Indikator Wallpaper Gerak Aktif (Elegan & Sinematik) */}
-          <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md border border-cyan-500/20 text-[10px] font-mono text-cyan-300 flex items-center gap-1.5 pointer-events-none shadow-lg">
-            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-            <span className="font-semibold tracking-wider">LIVE WALLPAPER</span>
-          </div>
         </div>
       </div>
 

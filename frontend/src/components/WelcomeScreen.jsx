@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import KazeIdentityCard from './KazeIdentityCard';
 
-export default function WelcomeScreen({ onSelectPlatform, onOpenTool, theme = 'dark', onToggleTheme }) {
+export default function WelcomeScreen({ onSelectPlatform, onOpenTool, theme = 'dark' }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
   const [showPlatformModal, setShowPlatformModal] = useState(false);
@@ -404,11 +404,11 @@ export default function WelcomeScreen({ onSelectPlatform, onOpenTool, theme = 'd
         <div className="flex items-center gap-3">
           <span className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span>Fast Stream Engine</span>
+            <span>Multi-Tool Suite</span>
           </span>
           <span className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
-            <span>Multi-Tools Suite</span>
+            <span>Tanpa Watermark</span>
           </span>
         </div>
 
