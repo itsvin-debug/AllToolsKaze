@@ -16,9 +16,6 @@ const tempDir = path.join(uploadsDir, 'temp');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
 
-/**
- * Format bytes ke string yang manusiawi (KB / MB)
- */
 export function formatBytes(bytes) {
   if (!bytes || bytes === 0) return '0 B';
   const k = 1024;
@@ -27,11 +24,7 @@ export function formatBytes(bytes) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
-/**
- * 1. Kompresi Video Menggunakan FFmpeg
- * Mengurangi ukuran video drastis (bisa dari MB menjadi ratusan KB)
- * tanpa merusak ketajaman resolusi HD
- */
+// Kompresi video dengan ffmpeg.
 export async function compressVideoService({
   videoBase64,
   originalName = 'video.mp4',
@@ -44,31 +37,26 @@ export async function compressVideoService({
   const outputPath = path.join(uploadsDir, `kaze_compressed_${uid}.mp4`);
 
   try {
-    // Ekstrak buffer dari base64
     const base64Data = videoBase64.replace(/^data:video\/[a-zA-Z0-9.-]+;base64,/, '');
     const buffer = Buffer.from(base64Data, 'base64');
     fs.writeFileSync(inputPath, buffer);
 
     const originalSize = buffer.length;
 
-    // Tentukan CRF dan bitrate sesuai preset
     let targetCrf = 28;
     let audioBitrate = '96k';
     let scaleFilter = '';
 
     if (qualityPreset === 'ultra_kb') {
-      // Kompresi Ekstrem (Target ukuran sekecil mungkin sampai ratusan KB)
       targetCrf = 33;
       audioBitrate = '64k';
       if (scale === 'original') {
         scaleFilter = '-vf "scale=trunc(iw/2)*2:trunc(ih/2)*2"';
       }
     } else if (qualityPreset === 'high_hd') {
-      // Kualitas HD Maksimum dengan kompresi efisien
       targetCrf = 23;
       audioBitrate = '128k';
     } else {
-      // Balanced (Preset Standar: Pengurangan 60-80% dengan ketajaman jernih)
       targetCrf = Number(crf) || 28;
       audioBitrate = '96k';
     }
@@ -81,7 +69,6 @@ export async function compressVideoService({
       scaleFilter = '-vf "scale=trunc(iw/2)*2:trunc(ih/2)*2"';
     }
 
-    // Jalankan perintah kompresi FFmpeg
     const ffmpegCmd = `ffmpeg -y -i "${inputPath}" -c:v libx264 -crf ${targetCrf} -preset veryfast ${scaleFilter} -c:a aac -b:a ${audioBitrate} -pix_fmt yuv420p -movflags +faststart "${outputPath}"`;
     
     await execPromise(ffmpegCmd, { timeout: 120000 });
@@ -113,7 +100,6 @@ export async function compressVideoService({
       savedFormatted: formatBytes(savingsBytes)
     };
   } finally {
-    // Bersihkan file input sementara
     try {
       if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
     } catch {
@@ -122,10 +108,7 @@ export async function compressVideoService({
   }
 }
 
-/**
- * 2. Penggabungan Audio (Audio Merger) Menggunakan FFmpeg
- * Mengatur detik & menit setiap track (start & end), lalu menggabungkan semuanya jadi satu track master
- */
+// Penggabungan audio beberapa track dengan ffmpeg concat demuxer.
 export async function mergeAudiosService({ tracks = [] }) {
   if (!tracks || tracks.length === 0) {
     throw new Error('Tidak ada track audio yang diberikan untuk digabungkan.');
@@ -137,13 +120,11 @@ export async function mergeAudiosService({ tracks = [] }) {
   const listFilePath = path.join(tempDir, `concat_list_${uid}.txt`);
 
   try {
-    // 1. Potong (trim) dan sesuaikan volume setiap track audio
     for (let i = 0; i < tracks.length; i++) {
       const track = tracks[i];
       const trackInPath = path.join(tempDir, `track_in_${uid}_${i}.mp3`);
       const trackOutPath = path.join(tempDir, `track_trimmed_${uid}_${i}.mp3`);
 
-      // Ekstrak buffer
       const base64Data = (track.base64 || '').replace(/^data:[a-zA-Z0-9.-]+\/[a-zA-Z0-9.-]+;base64,/, '');
       fs.writeFileSync(trackInPath, Buffer.from(base64Data, 'base64'));
 
@@ -156,7 +137,6 @@ export async function mergeAudiosService({ tracks = [] }) {
         timeFilter += ` -to ${endTime}`;
       }
 
-      // Potong dan normalisasi audio ke format seragam MP3 44.1kHz stereo
       const trimCmd = `ffmpeg -y ${timeFilter} -i "${trackInPath}" -filter:a "volume=${volume}" -vn -ar 44100 -ac 2 -b:a 192k "${trackOutPath}"`;
       await execPromise(trimCmd, { timeout: 45000 });
 
@@ -164,7 +144,6 @@ export async function mergeAudiosService({ tracks = [] }) {
         trimmedFiles.push(trackOutPath);
       }
 
-      // Hapus file track input sementara
       try { if (fs.existsSync(trackInPath)) fs.unlinkSync(trackInPath); } catch {}
     }
 
@@ -172,11 +151,9 @@ export async function mergeAudiosService({ tracks = [] }) {
       throw new Error('Tidak ada potongan audio yang berhasil diproses.');
     }
 
-    // 2. Buat daftar file untuk FFmpeg concat demuxer
     const listContent = trimmedFiles.map(f => `file '${f.replace(/\\/g, '/')}'`).join('\n');
     fs.writeFileSync(listFilePath, listContent, 'utf8');
 
-    // 3. Gabungkan seluruh potongan audio menjadi satu file master
     const concatCmd = `ffmpeg -y -f concat -safe 0 -i "${listFilePath}" -c copy "${outputPath}"`;
     await execPromise(concatCmd, { timeout: 60000 });
 
@@ -197,7 +174,6 @@ export async function mergeAudiosService({ tracks = [] }) {
       totalTracksMerged: trimmedFiles.length
     };
   } finally {
-    // Bersihkan file sementara
     trimmedFiles.forEach(f => {
       try { if (fs.existsSync(f)) fs.unlinkSync(f); } catch {}
     });
@@ -205,10 +181,7 @@ export async function mergeAudiosService({ tracks = [] }) {
   }
 }
 
-/**
- * 3. Upload File Universal (Foto, Video, dan PDF ke Link)
- * Menyimpan secara lokal di server dan mengunggah ke CDN publik jika memungkinkan
- */
+// Simpan file lokal dan unggah ke CDN publik jika tersedia.
 export async function uploadUniversalFileService({
   fileBase64,
   originalName = 'file',
@@ -218,7 +191,6 @@ export async function uploadUniversalFileService({
     throw new Error('File tidak boleh kosong.');
   }
 
-  // Tentukan MIME dan ekstensi
   let detectedMime = mimeType;
   let ext = 'bin';
 
@@ -265,7 +237,6 @@ export async function uploadUniversalFileService({
   const fileName = `kaze_${cleanBaseName}_${uniqueId}.${ext}`;
   const filePath = path.join(uploadsDir, fileName);
 
-  // Simpan ke direktori uploads lokal
   fs.writeFileSync(filePath, buffer);
 
   const localRelativeUrl = `/uploads/${fileName}`;
@@ -289,13 +260,11 @@ export async function uploadUniversalFileService({
     publicUrl = localRelativeUrl;
   }
 
-  // Tipe kategori untuk UI
   let category = 'image';
   if (ext === 'pdf') category = 'pdf';
   else if (['mp4', 'webm', 'mov', 'mkv'].includes(ext)) category = 'video';
   else if (['mp3', 'wav', 'ogg', 'm4a'].includes(ext)) category = 'audio';
 
-  // Embed tags
   let markdownTag = `[${originalName}](${publicUrl})`;
   let htmlTag = `<a href="${publicUrl}" target="_blank" rel="noopener noreferrer">${originalName}</a>`;
 
@@ -324,10 +293,7 @@ export async function uploadUniversalFileService({
   };
 }
 
-/**
- * 4. Pemotong Durasi Video (Video Trimmer / Cutter) Menggunakan FFmpeg Stream Copy (-c copy)
- * Memotong video secara presisi tanpa menurunkan kualitas, resolusi, FPS, atau bitrate (lossless encoding)
- */
+// Pemotong durasi video dengan ffmpeg.
 export async function trimVideoService({
   videoBase64,
   startTime = 0,
@@ -354,14 +320,13 @@ export async function trimVideoService({
   const outputPath = path.join(uploadsDir, `kaze_trimmed_${cleanBase}_${uid}.mp4`);
 
   try {
-    // Ekstrak buffer video dari Base64
     const base64Data = videoBase64.replace(/^data:[a-zA-Z0-9.-]+\/[a-zA-Z0-9.-]+;base64,/, '');
     const buffer = Buffer.from(base64Data, 'base64');
     fs.writeFileSync(inputPath, buffer);
 
     const originalSize = buffer.length;
 
-    // STRATEGI 1: Lossless Stream Copy (-c copy) untuk kecepatan instan dan kualitas 100% utuh tanpa re-encoding
+    // Coba stream copy (-c copy) tanpa re-encoding
     let trimCmd = `ffmpeg -y -ss ${startSec} -to ${endSec} -i "${inputPath}" -c copy -avoid_negative_ts make_zero -movflags +faststart "${outputPath}"`;
     
     let execSuccess = false;
@@ -374,7 +339,7 @@ export async function trimVideoService({
       console.warn('Stream copy gagal pada potongan ini, beralih ke exact frame cut fallback... Detail:', errCopy.message);
     }
 
-    // STRATEGI 2: Fallback Exact Frame Accurate Cut jika -c copy gagal pada batas keyframe / format container
+    // Fallback transcode jika stream copy gagal pada keyframe
     if (!execSuccess) {
       const fallbackCmd = `ffmpeg -y -ss ${startSec} -to ${endSec} -i "${inputPath}" -c:v libx264 -crf 18 -preset ultrafast -c:a aac -b:a 192k -movflags +faststart "${outputPath}"`;
       await execPromise(fallbackCmd, { timeout: 90000 });

@@ -1,14 +1,11 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 
-// Service ekstraksi media TikTok (Video HD 1080p, Slide Video Gerak / Live Photos, Slide Foto HD, MP3)
 export async function downloadTikTok(rawUrl) {
   let lastError = null;
-
-  // Browser user-agent konsisten
   const userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
 
-  // STRATEGI 1: TikWM API Utama (Dukungan penuh untuk Live Photos / Video Slides, Photo Slides, 1080p Video, & MP3)
+  // Ekstraksi via TikWM API.
   try {
     const tikwmEndpoints = ['https://www.tikwm.com/api/', 'https://api.tikwm.com/'];
     let tikwmData = null;
@@ -47,7 +44,6 @@ export async function downloadTikTok(rawUrl) {
       const item = tikwmData;
       const base = 'https://www.tikwm.com';
 
-      // 1. JIKA POSTINGAN FOTO SLIDE (CAROUSEL GAMBAR TIKTOK)
       if (item.images && Array.isArray(item.images) && item.images.length > 0) {
         const photos = item.images.map((imgUrl, idx) => {
           const fullImgUrl = imgUrl.startsWith('http') 
@@ -66,7 +62,6 @@ export async function downloadTikTok(rawUrl) {
 
         const downloadLinks = [...photos];
 
-        // Ekstraksi Audio Lagu Pengiring Slide
         const rawMusicUrl = item.music_info?.play || item.music;
         let fullMusicUrl = null;
         if (rawMusicUrl) {
@@ -104,7 +99,6 @@ export async function downloadTikTok(rawUrl) {
         };
       }
 
-      // 2. JIKA POSTINGAN VIDEO REGULER (RESOLUSI HD 1080p & 720p)
       const downloadLinks = [];
       const fullHdUrl = item.hdplay 
         ? (item.hdplay.startsWith('http') ? item.hdplay : `${base}${item.hdplay}`) 
@@ -113,7 +107,6 @@ export async function downloadTikTok(rawUrl) {
         ? (item.play.startsWith('http') ? item.play : `${base}${item.play}`) 
         : null;
 
-      // Resolusi 1080p Full HD
       if (fullHdUrl || standardPlayUrl) {
         downloadLinks.push({
           id: '1080p',
@@ -126,7 +119,6 @@ export async function downloadTikTok(rawUrl) {
         });
       }
 
-      // Resolusi 720p Standard HD
       if (standardPlayUrl || fullHdUrl) {
         downloadLinks.push({
           id: '720p',
@@ -139,7 +131,6 @@ export async function downloadTikTok(rawUrl) {
         });
       }
 
-      // Audio MP3
       const rawMusicUrl = item.music_info?.play || item.music || standardPlayUrl || fullHdUrl;
       let fullMusicUrl = null;
       if (rawMusicUrl) {
@@ -184,7 +175,7 @@ export async function downloadTikTok(rawUrl) {
     lastError = err;
   }
 
-  // STRATEGI 2: SSSTik Fallback (Scraper cadangan)
+  // Fallback via SSSTik scraper.
   try {
     const homeRes = await axios.get('https://ssstik.io/en', {
       headers: { 
@@ -227,7 +218,6 @@ export async function downloadTikTok(rawUrl) {
     const photoLinks = [];
     let audioLink = null;
 
-    // Cari link download di dalam HTML
     $('a').each((_, elem) => {
       const href = $(elem).attr('href');
       const text = $(elem).text().trim();
@@ -272,7 +262,7 @@ export async function downloadTikTok(rawUrl) {
       });
     }
 
-    // Hanya tambahkan video jika BUKAN postingan foto slide
+    // Tambahkan video hanya jika bukan postingan foto slide
     if (photos.length === 0 && rawVideoLinks.length > 0) {
       const primaryVideoUrl = rawVideoLinks[0];
 

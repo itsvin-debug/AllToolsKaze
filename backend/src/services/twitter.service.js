@@ -14,12 +14,11 @@ function getTweetId(url) {
   return match ? match[1] : null;
 }
 
-// STRATEGI 1: FxTwitter & Syndication API (Mendukung Foto HD uncompressed & Video)
+// Ekstraksi via FxTwitter dan Syndication API.
 async function extractTwitterViaFxAndSyndication(url) {
   const tweetId = getTweetId(url);
   if (!tweetId) throw new Error('ID Tweet tidak valid.');
 
-  // Coba FxTwitter API terlebih dahulu
   try {
     const fxRes = await axios.get(`https://api.fxtwitter.com/status/${tweetId}`, {
       headers: {
@@ -35,7 +34,6 @@ async function extractTwitterViaFxAndSyndication(url) {
       const title = tweet.text || 'Postingan X (Twitter)';
       const author = tweet.author?.screen_name || tweet.author?.name || 'X User';
 
-      // Ekstraksi Foto HD
       if (tweet.media?.photos && Array.isArray(tweet.media.photos) && tweet.media.photos.length > 0) {
         tweet.media.photos.forEach((photo, idx) => {
           let hdUrl = photo.url;
@@ -59,7 +57,6 @@ async function extractTwitterViaFxAndSyndication(url) {
         });
       }
 
-      // Ekstraksi Video HD
       if (tweet.media?.videos && Array.isArray(tweet.media.videos) && tweet.media.videos.length > 0) {
         const vid = tweet.media.videos[0];
         downloadLinks.push({
@@ -100,7 +97,6 @@ async function extractTwitterViaFxAndSyndication(url) {
     console.warn('FxTwitter gagal, mencoba syndication fallback... Detail:', err.message);
   }
 
-  // Coba Syndication API
   const syndRes = await axios.get(`https://cdn.syndication.twimg.com/tweet-result?id=${tweetId}&token=4`, {
     headers: {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
@@ -183,7 +179,7 @@ async function extractTwitterViaFxAndSyndication(url) {
   throw new Error('Tidak dapat menemukan media X lewat Syndication.');
 }
 
-// STRATEGI 2: SnapSave Twitter
+// Fallback via SnapSave.
 async function extractTwitterViaSnapSave(url) {
   const res = await snapsave(url);
   if (res && res.success && res.data && res.data.media && res.data.media.length > 0) {
@@ -232,7 +228,7 @@ async function extractTwitterViaSnapSave(url) {
   throw new Error('SnapSave tidak menemukan media Twitter.');
 }
 
-// STRATEGI 3: Ekstraksi lewat binary yt-dlp lokal
+// Fallback via binary yt-dlp.
 async function extractTwitterViaYtDlp(url) {
   return new Promise((resolve, reject) => {
     execFile(ytDlpPath, ['-J', '--no-warnings', url], { maxBuffer: 10 * 1024 * 1024 }, (error, stdout, stderr) => {
@@ -294,7 +290,7 @@ async function extractTwitterViaYtDlp(url) {
   });
 }
 
-// STRATEGI 4: TwitSave scraper fallback
+// Fallback via TwitSave scraper.
 async function extractTwitterViaTwitSave(url) {
   const twitSaveUrl = `https://twitsave.com/info?url=${encodeURIComponent(url)}`;
   const response = await axios.get(twitSaveUrl, {
@@ -342,7 +338,6 @@ async function extractTwitterViaTwitSave(url) {
   throw new Error('Tidak ada link video dari TwitSave.');
 }
 
-// FUNGSI UTAMA downloadTwitter dengan multi-engine fallback
 export async function downloadTwitter(url) {
   let lastError = null;
 

@@ -98,8 +98,8 @@ export default function LinkToDocScreen({ onBack }) {
   const [activePageIndex, setActivePageIndex] = useState(0);
 
   // Pengaturan Output Dokumen
-  const [selectedTheme, setSelectedTheme] = useState('white'); // Default: Putih Bersih
-  const [includeCover, setIncludeCover] = useState(false);     // Default false: Lembar langsung halaman 1 sesuai dokumen asli
+  const [selectedTheme, setSelectedTheme] = useState('white');
+  const [includeCover, setIncludeCover] = useState(false);
   const [fontSizeMode, setFontSizeMode] = useState('normal');  // 'normal' | 'compact'
   const [previewTab, setPreviewTab] = useState('visual');      // 'visual' | 'fulltext'
   const [copied, setCopied] = useState(false);
@@ -592,20 +592,17 @@ export default function LinkToDocScreen({ onBack }) {
         doc.setLineWidth(0.3);
         doc.line(MARGIN_X, 283, PAGE_W - MARGIN_X, 283);
 
-        // Kiri: Branding & Status
         doc.setFontSize(8);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(theme.textMuted[0], theme.textMuted[1], theme.textMuted[2]);
         doc.text(`Dikonversi oleh AllToolsKaze • ${sourceName}`, MARGIN_X, 288);
 
-        // Kanan: Penomoran Halaman Presisi
         const pageLabel = includeCover 
           ? `Halaman ${p - 1} dari ${totalPages - 1}`
           : `Halaman ${p} dari ${totalPages}`;
         doc.text(pageLabel, PAGE_W - MARGIN_X, 288, { align: 'right' });
       }
 
-      // Unduh file PDF
       const safeName = title.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 50);
       doc.save(`${safeName}.pdf`);
     } catch (err) {

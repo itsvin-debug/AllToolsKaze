@@ -1,11 +1,7 @@
 import axios from 'axios';
 import { downloadTikTok } from './tiktok.service.js';
 
-/**
- * Service Pencari Link & Template Jedag-Jedug (JJ)
- * Mendeteksi link TikTok, mengekstrak deskripsi/komentar berisi link preset XML (Google Drive),
- * link Alight Motion 5MB, ukuran video, dan metadata creator.
- */
+// Cari link preset XML atau Alight Motion dari TikTok atau kata kunci pencarian.
 export async function findJjTemplates(queryOrUrl) {
   if (!queryOrUrl || typeof queryOrUrl !== 'string') {
     throw new Error('Masukkan link video TikTok atau kata kunci pencarian template JJ.');
@@ -14,7 +10,6 @@ export async function findJjTemplates(queryOrUrl) {
   const input = queryOrUrl.trim();
   const isTikTokUrl = /tiktok\.com/i.test(input) || /douyin\.com/i.test(input);
 
-  // Jika input adalah link video TikTok
   if (isTikTokUrl) {
     try {
       const tiktokData = await downloadTikTok(input);
@@ -26,39 +21,31 @@ export async function findJjTemplates(queryOrUrl) {
     }
   }
 
-  // Jika berupa kata kunci pencarian atau fallback creator
   return generateCuratedJjTemplates(input);
 }
 
-/**
- * Ekstraksi Link Google Drive, Alight Motion, dan XML dari teks TikTok
- */
+// Ekstrak link Google Drive, Alight Motion, dan XML dari teks postingan.
 function parseTikTokToJjTemplates(tiktokData, rawUrl) {
   const text = (tiktokData.title || '') + ' ' + (tiktokData.description || '');
   const author = tiktokData.author || '@creator';
   const cleanAuthor = author.startsWith('@') ? author : `@${author}`;
   const thumbnail = tiktokData.thumbnail || null;
   
-  // Deteksi link Google Drive
   const driveRegex = /https?:\/\/(?:drive\.google\.com\/file\/d\/|drive\.google\.com\/open\?id=)([a-zA-Z0-9_-]+)[^\s]*/gi;
   const driveMatches = [...text.matchAll(driveRegex)];
 
-  // Deteksi link Alight Creative / Alight Motion
   const alightRegex = /https?:\/\/(?:alightcreative\.com\/am\/share\/[^\s]+|alight\.link\/[^\s]+)/gi;
   const alightMatches = text.match(alightRegex) || [];
 
-  // Deteksi link Mediafire
   const mediafireRegex = /https?:\/\/(?:www\.)?mediafire\.com\/file\/[^\s]+/gi;
   const mediafireMatches = text.match(mediafireRegex) || [];
 
   const templates = [];
 
-  // Ukuran video default atau dari downloadLinks
   const videoDl = tiktokData.downloadLinks?.find(l => l.quality?.includes('1080p') || l.type === 'video') || tiktokData.downloadLinks?.[0];
   const videoUrl = videoDl?.url || null;
   const videoSize = videoDl?.size || '14.2 MB';
 
-  // 1. Tambahkan hasil match Google Drive (XML)
   driveMatches.forEach((m, idx) => {
     const fullUrl = m[0];
     const fileId = m[1];
@@ -80,7 +67,6 @@ function parseTikTokToJjTemplates(tiktokData, rawUrl) {
     });
   });
 
-  // 2. Tambahkan hasil match Alight Motion (5MB)
   alightMatches.forEach((amUrl, idx) => {
     templates.push({
       id: `alight-${idx + 1}`,
@@ -97,8 +83,7 @@ function parseTikTokToJjTemplates(tiktokData, rawUrl) {
     });
   });
 
-  // Jika di caption tidak ditemukan link eksplisit (karena creator taruh di bio / komen)
-  // Buatkan template terstruktur lengkap sesuai video tersebut
+  // Fallback jika kreator menaruh link preset di bio atau komentar.
   if (templates.length === 0) {
     const titleSnippet = tiktokData.title ? tiktokData.title.slice(0, 25).trim() : 'Template Jedag Jedug';
     
@@ -161,9 +146,7 @@ function parseTikTokToJjTemplates(tiktokData, rawUrl) {
   };
 }
 
-/**
- * Menyediakan Preset & Template JJ Kurasi Berkualitas Tinggi sesuai Foto 2
- */
+// Template kurasi untuk pencarian kata kunci atau fallback.
 function generateCuratedJjTemplates(query) {
   const isKeywordFajar = /fajar|uzumaki/i.test(query);
   const creatorName = isKeywordFajar ? 'FaJaruzumaki 🦊' : (query.length < 20 ? query : 'Kaze Editor');

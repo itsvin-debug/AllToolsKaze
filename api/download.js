@@ -5,7 +5,6 @@ const UA_DESKTOP = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
 const UA_MOBILE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1';
 const SAVENOW_API_KEY = 'dfcb6d76f2f6a9894gjkege8a4ab232222';
 
-// ===== URL CLEANER & DETECTOR =====
 function cleanInputUrl(raw) {
   if (!raw) return '';
   let str = raw.trim();
@@ -25,7 +24,7 @@ function detectPlatform(rawUrl) {
   return null;
 }
 
-// ===== SAVENOW FAST UNIVERSAL ENGINE =====
+// Fallback via SaveNow API.
 async function scrapeViaSaveNow(targetUrl, formatList = ['1080', '720', 'mp3'], defaultTitle = 'Media Video', fallbackAuthor = 'Creator') {
   try {
     const initPromises = formatList.map(async fmt => {
@@ -121,12 +120,12 @@ async function scrapeViaSaveNow(targetUrl, formatList = ['1080', '720', 'mp3'], 
   return null;
 }
 
-// ===== TIKTOK SCRAPER =====
+// TikTok scraper.
 async function downloadTikTok(rawUrl) {
   const url = cleanInputUrl(rawUrl);
   let lastError = null;
 
-  // Strategi 1: TikWM API Utama (Cepat, Akurat membedakan Foto Slide & Video 1080p)
+  // TikWM API.
   try {
     const res = await axios.post('https://www.tikwm.com/api/', new URLSearchParams({
       url: url,
@@ -148,7 +147,6 @@ async function downloadTikTok(rawUrl) {
       const item = data.data;
       const base = 'https://www.tikwm.com';
 
-      // 1. JIKA POSTINGAN FOTO SLIDE (CAROUSEL GAMBAR)
       if (item.images && Array.isArray(item.images) && item.images.length > 0) {
         const photos = item.images.map((imgUrl, idx) => {
           const fullImg = imgUrl.startsWith('http') 
@@ -204,7 +202,6 @@ async function downloadTikTok(rawUrl) {
         };
       }
 
-      // 2. JIKA POSTINGAN VIDEO REGULER
       const downloadLinks = [];
       const fullHdUrl = item.hdplay 
         ? (item.hdplay.startsWith('http') ? item.hdplay : `${base}${item.hdplay}`) 
@@ -280,7 +277,7 @@ async function downloadTikTok(rawUrl) {
     lastError = e;
   }
 
-  // Strategi 2: SSSTik Fallback
+  // Fallback via SSSTik.
   try {
     const homeRes = await axios.get('https://ssstik.io/en', {
       headers: { 'User-Agent': UA_DESKTOP },
@@ -404,7 +401,7 @@ async function downloadTikTok(rawUrl) {
 
 
 
-// ===== INSTAGRAM SCRAPER =====
+// Instagram scraper.
 function extractAllIGMedia(html) {
   const videoUrls = [];
   const imageUrls = [];
@@ -443,7 +440,7 @@ async function downloadInstagram(rawUrl) {
     throw new Error('Link Instagram tidak valid. Masukkan link Reels, Postingan, atau TV Instagram yang benar.');
   }
 
-  // STRATEGI 1: Instagram Embed Substring Parser (Super Cepat < 1 detik)
+  // Instagram embed parser.
   try {
     const embedUrl = `https://www.instagram.com/p/${shortcode}/embed/captioned/`;
     const res = await axios.get(embedUrl, {
@@ -526,7 +523,7 @@ async function downloadInstagram(rawUrl) {
     lastError = e;
   }
 
-  // STRATEGI 2: Savenow V2 Fallback
+  // Fallback via SaveNow.
   try {
     const snData = await scrapeViaSaveNow(`https://www.instagram.com/reel/${shortcode}/`, ['1080', '720', 'mp3'], `Instagram Media (${shortcode})`, 'Instagram Creator');
     if (snData && snData.downloadLinks?.length > 0) {
@@ -543,7 +540,7 @@ async function downloadInstagram(rawUrl) {
   throw new Error(`Tidak dapat menemukan media dari Instagram. Pastikan akun tidak diprivat dan link Reels/Postingan bersifat publik.`);
 }
 
-// ===== X / TWITTER SCRAPER =====
+// X / Twitter scraper.
 async function downloadTwitter(rawUrl) {
   const url = cleanInputUrl(rawUrl);
   let lastError = null;
@@ -555,7 +552,7 @@ async function downloadTwitter(rawUrl) {
     throw new Error('ID Tweet tidak ditemukan. Masukkan link postingan X (Twitter) yang valid.');
   }
 
-  // STRATEGI 1: FxTwitter Fast Engine (Mendukung Foto HD uncompressed & Video)
+  // Ekstraksi via FxTwitter.
   try {
     const fxRes = await axios.get(`https://api.fxtwitter.com/status/${tweetId}`, {
       headers: { 'User-Agent': UA_DESKTOP },
@@ -631,7 +628,7 @@ async function downloadTwitter(rawUrl) {
     lastError = e;
   }
 
-  // STRATEGI 2: Savenow V2 Engine
+  // Fallback via SaveNow.
   try {
     const snData = await scrapeViaSaveNow(url, ['1080', '720', 'mp3'], `X (Twitter) Video ${tweetId}`, 'X User');
     if (snData && snData.downloadLinks?.length > 0) {
@@ -645,7 +642,7 @@ async function downloadTwitter(rawUrl) {
     lastError = e;
   }
 
-  // STRATEGI 3: VxTwitter Fast Open Engine
+  // Fallback via VxTwitter.
   try {
     const vxRes = await axios.get(`https://api.vxtwitter.com/Twitter/status/${tweetId}`, {
       headers: { 'User-Agent': 'Mozilla/5.0' },
@@ -700,7 +697,7 @@ async function downloadTwitter(rawUrl) {
   throw new Error(`Gagal mengambil media dari X (Twitter). Pastikan tweet bersifat publik dan mengandung video atau foto.`);
 }
 
-// ===== YOUTUBE SCRAPER =====
+// YouTube scraper.
 async function downloadYouTube(rawUrl) {
   const url = cleanInputUrl(rawUrl);
   let lastError = null;
@@ -714,7 +711,6 @@ async function downloadYouTube(rawUrl) {
 
   const standardUrl = `https://www.youtube.com/watch?v=${videoId}`;
 
-  // 1. Ambil Metadata (Title, Author, Thumbnail) secara instan
   let title = `YouTube Video ${videoId}`;
   let author = 'YouTube Creator';
   let thumbnail = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
@@ -726,7 +722,7 @@ async function downloadYouTube(rawUrl) {
     if (oembedRes.data?.thumbnail_url) thumbnail = oembedRes.data.thumbnail_url;
   } catch (_) {}
 
-  // 2. STRATEGI 1: Savenow V2 Engine (Mendukung 1080p, 720p, MP3 termasuk Video Berbatas Usia & Musik)
+  // Ekstraksi via SaveNow.
   try {
     const snData = await scrapeViaSaveNow(standardUrl, ['1080', '720', 'mp3'], title, author);
     if (snData && snData.downloadLinks?.length > 0) {
@@ -744,7 +740,7 @@ async function downloadYouTube(rawUrl) {
     lastError = e;
   }
 
-  // 3. STRATEGI 2: Fallback Innertube ANDROID_VR Engine
+  // Fallback via Innertube.
   try {
     const playerRes = await axios.post('https://www.youtube.com/youtubei/v1/player?prettyPrint=false', {
       context: {
@@ -812,7 +808,6 @@ async function downloadYouTube(rawUrl) {
   throw new Error(`Gagal mengambil media YouTube. Pastikan video bersifat publik dan dapat diakses.`);
 }
 
-// ===== MAIN SERVERLESS ROUTE HANDLER =====
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');

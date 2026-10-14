@@ -493,12 +493,10 @@ export default function QrStudioScreen({ onBack, initialUrl = '' }) {
               ctx.closePath();
               ctx.fill();
             } else if (dataPattern === 'rounded') {
-              // Titik Squircle Halus Presisi Tinggi
               ctx.beginPath();
               ctx.roundRect(x + 0.5, y + 0.5, moduleSize - 1, moduleSize - 1, moduleSize * 0.32);
               ctx.fill();
             } else if (dataPattern === 'diamond') {
-              // Belah Ketupat Tebal Solid
               const dr = moduleSize * 0.58;
               ctx.beginPath();
               ctx.moveTo(cx, cy - dr);

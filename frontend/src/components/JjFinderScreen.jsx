@@ -24,7 +24,6 @@ export default function JjFinderScreen({ onBack, theme = 'dark' }) {
   const [copiedId, setCopiedId] = useState(null);
   const [toastMessage, setToastMessage] = useState('');
 
-  // Default data awal yang merepresentasikan foto kedua
   const [resultData, setResultData] = useState({
     title: 'FaJaruzumaki 🦊 | Preset JJ Kane Alight Motion',
     author: '@yuanthecliper',
@@ -123,12 +122,10 @@ export default function JjFinderScreen({ onBack, theme = 'dark' }) {
 
   return (
     <main className="flex-grow relative z-10 w-full max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-      {/* Tombol Kembali */}
       <div className="mb-6">
         <CosmicBackButton onClick={onBack} label="Kembali ke Beranda" />
       </div>
 
-      {/* Header Fitur Cari Link JJ */}
       <div className={`rounded-3xl p-6 sm:p-7 border mb-6 transition-all ${
         isDark ? 'bg-[#12151f] border-white/10 shadow-xl' : 'bg-white border-slate-200 shadow-md'
       }`}>
@@ -146,7 +143,6 @@ export default function JjFinderScreen({ onBack, theme = 'dark' }) {
           </div>
         </div>
 
-        {/* Input Form Pencarian */}
         <form onSubmit={handleSearch} className="mt-5 space-y-3">
           <div className="relative">
             <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -183,7 +179,6 @@ export default function JjFinderScreen({ onBack, theme = 'dark' }) {
             </button>
           </div>
 
-          {/* Quick chips contoh */}
           <div className="flex flex-wrap items-center gap-1.5 pt-1">
             <span className="text-[11px] text-slate-500 font-mono mr-1">Contoh:</span>
             {[
@@ -211,7 +206,6 @@ export default function JjFinderScreen({ onBack, theme = 'dark' }) {
         )}
       </div>
 
-      {/* Info Ringkasan Metadata Video JJ */}
       {resultData && (
         <div className="mb-4 flex items-center justify-between px-2 text-xs text-slate-400 font-mono">
           <div className="flex items-center gap-2">
@@ -224,7 +218,6 @@ export default function JjFinderScreen({ onBack, theme = 'dark' }) {
         </div>
       )}
 
-      {/* DAFTAR CARD OUTPUT TEMPLATE JJ SESUAI FOTO KEDUA */}
       <div className="space-y-3.5">
         {resultData?.templates?.map((item) => {
           const isCopied = copiedId === item.id;
@@ -240,9 +233,7 @@ export default function JjFinderScreen({ onBack, theme = 'dark' }) {
                   : 'bg-white border-slate-200 hover:border-slate-300 shadow-md'
               }`}
             >
-              {/* Kolom Kiri: Thumbnail / Viewfinder Box */}
               <div className="flex items-start sm:items-center gap-3.5 flex-1 min-w-0">
-                {/* Visual Aspect Ratio Box ala Foto Kedua */}
                 {item.thumbnail ? (
                   <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden bg-black/60 shrink-0 border border-white/10 shadow-md">
                     <img 

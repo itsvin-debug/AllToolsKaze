@@ -11,13 +11,12 @@ const __dirname = path.dirname(__filename);
 const ytDlpPath = path.join(__dirname, '..', '..', 'bin', 'yt-dlp.exe');
 const agent = new https.Agent({ rejectUnauthorized: false });
 
-// pembantu buat ambil shortcode dari berbagai format URL Instagram
 function getInstagramShortcode(url) {
   const match = url.match(/(?:reel|reels|p|tv|share)\/([A-Za-z0-9_-]+)/i);
   return match ? match[1] : null;
 }
 
-// STRATEGI 1: Ekstraksi lewat Instagram Embed Page (Mendukung Video, Foto Tunggal, dan Multi-Foto / Carousel)
+// Ekstraksi via embed page (mendukung video, foto, dan carousel).
 async function extractInstagramViaEmbed(url) {
   const shortcode = getInstagramShortcode(url);
   if (!shortcode) throw new Error('Shortcode Instagram tidak valid.');
@@ -37,7 +36,6 @@ async function extractInstagramViaEmbed(url) {
   const caption = $('.Caption').text().trim() || $('div.Caption').text().trim() || 'Instagram Media';
   const author = $('.Avatar img').attr('alt') || 'Instagram Creator';
 
-  // cari semua video_url
   const videoMatches = [...html.matchAll(/video_url\\?":\\?"([^"]+)\\?"/gi), ...html.matchAll(/video_url\s*:\s*"([^"]+)"/g)];
   const uniqueVideos = [];
   for (const m of videoMatches) {
@@ -49,7 +47,6 @@ async function extractInstagramViaEmbed(url) {
     }
   }
 
-  // cari semua display_url dan display_resources (foto HD)
   const displayMatches = [...html.matchAll(/display_url\\?":\\?"([^"]+)\\?"/gi), ...html.matchAll(/display_url\s*:\s*"([^"]+)"/g)];
   const uniqueImages = [];
   for (const m of displayMatches) {
@@ -64,7 +61,6 @@ async function extractInstagramViaEmbed(url) {
   const downloadLinks = [];
   const photos = [];
 
-  // jika ada video (Reels / Postingan Video)
   if (uniqueVideos.length > 0) {
     const mainVideo = uniqueVideos[0];
     downloadLinks.push({
@@ -93,7 +89,6 @@ async function extractInstagramViaEmbed(url) {
     });
   }
 
-  // proses foto-foto (baik postingan foto tunggal maupun carousel multi-foto)
   if (uniqueImages.length > 0) {
     uniqueImages.forEach((imgUrl, idx) => {
       const photoObj = {
@@ -129,7 +124,7 @@ async function extractInstagramViaEmbed(url) {
   throw new Error('Tidak dapat menemukan media dari embed Instagram.');
 }
 
-// STRATEGI 2: FastDL / SaveIG scraper fallback (Mendukung penuh carousel multi-foto)
+// Fallback via FastDL / SaveIG scraper.
 async function extractInstagramViaFastDL(url) {
   const res = await axios.post('https://fastdl.app/c/', new URLSearchParams({
     url: url,
@@ -194,7 +189,7 @@ async function extractInstagramViaFastDL(url) {
   throw new Error('Gagal mengekstrak media dari FastDL.');
 }
 
-// STRATEGI 3: SnapSave Media Downloader (Fallback handal untuk carousel foto/video)
+// Fallback via SnapSave.
 async function extractInstagramViaSnapSave(url) {
   const res = await snapsave(url);
   if (res && res.success && res.data && res.data.media && res.data.media.length > 0) {
@@ -244,7 +239,7 @@ async function extractInstagramViaSnapSave(url) {
   throw new Error('SnapSave tidak dapat menemukan media Instagram.');
 }
 
-// STRATEGI 4: Ekstraksi lewat binary yt-dlp lokal
+// Fallback via binary yt-dlp.
 async function extractInstagramViaYtDlp(url) {
   return new Promise((resolve, reject) => {
     execFile(ytDlpPath, [
@@ -312,7 +307,6 @@ async function extractInstagramViaYtDlp(url) {
   });
 }
 
-// FUNGSI UTAMA downloadInstagram dengan multi-engine fallback
 export async function downloadInstagram(url) {
   let lastError = null;
 

@@ -6,10 +6,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ytDlpPath = path.join(__dirname, '..', '..', 'bin', 'yt-dlp.exe');
 
-// service buat extract video YouTube dan YouTube Shorts dalam resolusi HD 1080p dan 720p
 export async function downloadYouTube(url) {
   return new Promise((resolve, reject) => {
-    // panggil binary yt-dlp secara lokal buat ambil metadata format lengkap
     execFile(ytDlpPath, ['-J', '--no-warnings', '--no-playlist', url], { maxBuffer: 10 * 1024 * 1024 }, (error, stdout, stderr) => {
       if (error) {
         console.error('Error saat menjalankan yt-dlp untuk YouTube:', stderr || error.message);
@@ -25,13 +23,10 @@ export async function downloadYouTube(url) {
 
         const downloadLinks = [];
 
-        // filter format video mp4 yang playable
         const formats = info.formats || [];
         const combinedFormats = formats.filter(f => f.url && (f.ext === 'mp4' || f.container === 'mp4'));
 
-        // cari format kualitas 1080p atau resolusi tertinggi
         const hd1080 = combinedFormats.find(f => f.height >= 1080) || combinedFormats[0] || { url: info.url };
-        // cari format kualitas 720p atau standard
         const hd720 = combinedFormats.find(f => f.height >= 720 && f.height < 1080) || combinedFormats[1] || combinedFormats[0] || { url: info.url };
 
         if (hd1080 && hd1080.url) {
@@ -56,7 +51,6 @@ export async function downloadYouTube(url) {
           });
         }
 
-        // jika format spesifik tidak ditemukan namun url direct ada
         if (downloadLinks.length === 0 && info.url) {
           downloadLinks.push({
             label: 'Resolusi HD (Default)',

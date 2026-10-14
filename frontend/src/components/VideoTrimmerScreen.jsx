@@ -380,7 +380,7 @@ export default function VideoTrimmerScreen({ onBack }) {
 
       let processedResult = null;
 
-      // STRATEGI 1: Coba Backend FFmpeg Stream Copy (-c copy)
+      // Stream copy backend ffmpeg (-c copy).
       try {
         const reader = new FileReader();
         const base64Promise = new Promise((resolve, reject) => {
@@ -412,7 +412,7 @@ export default function VideoTrimmerScreen({ onBack }) {
         console.warn('Backend trim gagal/offline, beralih otomatis ke Client-Side Browser Engine fallback... Detail:', backendErr.message);
       }
 
-      // STRATEGI 2: Fallback ke Browser Client-Side Recorder jika backend offline / status 500
+      // Fallback recorder browser client-side jika backend gagal.
       if (!processedResult) {
         setExportProgress(50);
         processedResult = await trimVideoClientSide(videoFile, startTime, endTime);
@@ -714,10 +714,8 @@ export default function VideoTrimmerScreen({ onBack }) {
 
             </div>
 
-            {/* Bar Timestamp Presisi & Tombol Micro-Stepper */}
+            {/* Timestamp stepper */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-              
-              {/* Kotak Start Time */}
               <div className="p-3.5 rounded-2xl bg-black/40 border border-cyan-500/20 flex flex-col gap-2">
                 <div className="flex items-center justify-between text-slate-400 text-[11px] font-mono">
                   <span className="text-cyan-400 font-bold">WAKTU MULAI (START)</span>

@@ -29,27 +29,21 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
     return null;
   }
 
-  // ─── 1. DETEKSI TIPE KONTEN SECARA KETAT (FOTO SLIDE VS VIDEO REGULER) ───
-  // Ekstrak semua foto
   const allPhotos = (result.photos && result.photos.length > 0)
     ? result.photos
     : (result.downloadLinks?.filter((l) => l.type === 'image') || []);
 
   const hasPhotos = allPhotos.length > 0;
-  // Jika postingan memiliki foto, ini PASTI Foto Slide (Carousel), BUKAN video!
   const isSlidePost = result.mediaType === 'slide' || result.isSlide || hasPhotos;
 
-  // Video reguler (HANYA jika bukan postingan foto slide)
   const regularVideoLinks = !isSlidePost
     ? (result.downloadLinks?.filter((l) => l.type === 'video') || [])
     : [];
   const hasVideo = regularVideoLinks.length > 0;
 
-  // Audio MP3 (Tersedia baik di postingan video maupun di postingan foto slide)
   const audioLinks = result.downloadLinks?.filter((l) => l.type === 'audio') || [];
   const activeAudio = audioLinks[0] || null;
 
-  // ─── 2. STATE INTERAKTIF ───
   const [selectedQualityIndex, setSelectedQualityIndex] = useState(0);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [downloading, setDownloading] = useState(false);
@@ -57,7 +51,6 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
   const [downloadAllProgressText, setDownloadAllProgressText] = useState('');
   const [detectedDuration, setDetectedDuration] = useState('');
 
-  // Audio Player State (Real-time Running Seconds & Progress)
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [isAudioLoading, setIsAudioLoading] = useState(false);
   const [audioCurrentTime, setAudioCurrentTime] = useState(0);
@@ -65,13 +58,12 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
   const [isAudioMuted, setIsAudioMuted] = useState(false);
   const [currentAudioSrcIndex, setCurrentAudioSrcIndex] = useState(0);
 
-  // Swipe Touch State untuk HP
   const [touchStartX, setTouchStartX] = useState(null);
 
   const audioRef = useRef(null);
   const videoRef = useRef(null);
 
-  // Urutan fallback sumber audio (Stream Proxy -> Stream Direct Proxy -> Proxy Download -> URL Asli)
+  // Fallback sumber audio: stream proxy -> direct proxy -> download proxy -> url asli.
   const audioSources = useMemo(() => {
     if (!activeAudio) return [];
     const list = [];
@@ -108,7 +100,6 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
   const activeRegularVideo = regularVideoLinks[selectedQualityIndex] || regularVideoLinks[0];
   const activePhoto = allPhotos[currentPhotoIndex] || allPhotos[0];
 
-  // ─── 3. FUNGSI DOWNLOAD KE GALERI / PERANGKAT (MOBILE & DESKTOP) ───
   const downloadToDevice = async (mediaItem, customFilename = null, triggerCelebration = true) => {
     setDownloading(true);
     if (triggerCelebration) {
@@ -169,7 +160,6 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
     }
   };
 
-  // ─── 4. DOWNLOAD ALL SLIDE (ZIP ALBUM & BATCH KE GALERI) ───
   const handleDownloadAllPhotosZip = async () => {
     if (!allPhotos || allPhotos.length === 0 || downloadingAllPhotos) return;
     setDownloadingAllPhotos(true);
@@ -216,7 +206,6 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
       setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
     } catch (zipErr) {
       console.error('Error saat membuat ZIP:', zipErr);
-      // Fallback: Unduh satu per satu secara berurutan
       for (let i = 0; i < allPhotos.length; i++) {
         setDownloadAllProgressText(`Unduh otomatis #${i + 1}...`);
         await downloadToDevice(allPhotos[i], null, false);
@@ -230,7 +219,6 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
     }
   };
 
-  // ─── 5. KONTROL AUDIO PLAYER REAL-TIME DENGAN MENIT & DETIK BERJALAN ───
   const formatTime = (seconds) => {
     if (!seconds || isNaN(seconds) || !isFinite(seconds)) return '00:00';
     const m = Math.floor(seconds / 60);
@@ -353,13 +341,10 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
   return (
     <div className="w-full flex flex-col gap-6 animate-fadeIn mt-2">
 
-      {/* ═════════════════════════════════════════════════════════════════ */}
-      {/* ─── A. JIKA KONTEN ADALAH FOTO SLIDE (CAROUSEL SLIDE BISA DIGESER) ─── */}
-      {/* ═════════════════════════════════════════════════════════════════ */}
+      {/* Foto slide carousel */}
       {isSlidePost && hasPhotos && (
         <div className="w-full bg-[#12151f] border border-white/10 rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-2xl flex flex-col gap-5 animate-fadeIn">
           
-          {/* Header Kartu Slide */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-white/5">
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
@@ -383,7 +368,6 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
             </span>
           </div>
 
-          {/* Area Preview Foto Slide Utama (Bisa Diusap / Swipe di HP & Tombol Next/Prev) */}
           <div 
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
@@ -401,7 +385,6 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
               <div className="text-xs text-slate-400">Foto Siap Diunduh</div>
             )}
 
-            {/* Tombol Navigasi Panah Kiri / Kanan */}
             {allPhotos.length > 1 && (
               <>
                 <button
@@ -423,18 +406,15 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
               </>
             )}
 
-            {/* Badge Posisi Slide */}
             <div className="absolute bottom-3 right-3 px-3 py-1 rounded-full bg-black/80 backdrop-blur-md text-[11px] font-mono text-white pointer-events-none border border-white/10">
               {currentPhotoIndex + 1} / {allPhotos.length}
             </div>
 
-            {/* Tag Kualitas Asli HD */}
             <div className="absolute top-3 left-3 px-2.5 py-0.5 rounded-full bg-emerald-500/20 backdrop-blur-md text-[10px] font-mono text-emerald-300 pointer-events-none border border-emerald-500/30 font-bold">
               HD 1080p Image
             </div>
           </div>
 
-          {/* Thumbnail Strip: Klik untuk Langsung Lompat ke Slide Tertentu */}
           {allPhotos.length > 1 && (
             <div className="w-full flex items-center justify-start sm:justify-center gap-2.5 overflow-x-auto py-2 px-1 no-scrollbar touch-pan-x">
               {allPhotos.map((photo, idx) => {
@@ -464,10 +444,7 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
             </div>
           )}
 
-          {/* ─── 2 JENIS TOMBOL DOWNLOAD FOTO SLIDE (SESUAI PERMINTAAN) ─── */}
           <div className="flex flex-col sm:flex-row items-center gap-3 pt-2 w-full">
-            
-            {/* 1. DOWNLOAD THIS SLIDE */}
             {activePhoto && (
               <button
                 onClick={() => downloadToDevice(activePhoto, `tiktok_slide_${currentPhotoIndex + 1}_1080p.jpg`)}
@@ -483,7 +460,6 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
               </button>
             )}
 
-            {/* 2. DOWNLOAD ALL SLIDE */}
             {allPhotos.length > 1 && (
               <button
                 onClick={handleDownloadAllPhotosZip}
@@ -499,7 +475,6 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
               </button>
             )}
 
-            {/* 2. DOWNLOAD ALL SLIDE */}
             {allPhotos.length > 1 && (
               <button
                 onClick={handleDownloadAllPhotosZip}
@@ -525,13 +500,10 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
         </div>
       )}
 
-      {/* ═════════════════════════════════════════════════════════════════ */}
-      {/* ─── B. JIKA KONTEN ADALAH VIDEO REGULER (RESOLUSI 1080p & 720p HD) ─── */}
-      {/* ═════════════════════════════════════════════════════════════════ */}
+      {/* Video reguler */}
       {!isSlidePost && hasVideo && (
         <div className="w-full bg-[#12151f] border border-white/10 rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-2xl flex flex-col md:flex-row gap-6 items-start relative overflow-hidden">
           
-          {/* Player Video dengan Suara Jernih */}
           <div className="w-full md:w-72 aspect-[9/16] sm:aspect-[3/4] max-h-[380px] rounded-2xl bg-black/90 border border-white/10 overflow-hidden relative group shrink-0 flex items-center justify-center mx-auto md:mx-0 shadow-xl">
             
             {activeRegularVideo?.url ? (
@@ -559,12 +531,10 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
               </div>
             )}
 
-            {/* Badge No Watermark */}
             <div className="absolute top-2.5 left-2.5 bg-black/75 backdrop-blur-md text-emerald-400 font-bold text-[10px] px-2.5 py-0.5 rounded-full shadow-md border border-emerald-400/30 pointer-events-none">
               ✓ No Watermark
             </div>
 
-            {/* Durasi Menit Video */}
             {displayDuration && (
               <div className="absolute bottom-2.5 right-2.5 bg-black/80 backdrop-blur-md text-white font-mono text-[10px] px-2 py-0.5 rounded-md shadow-md border border-white/20 pointer-events-none flex items-center gap-1">
                 <Clock className="w-3 h-3 text-cyan-400" />
@@ -573,7 +543,6 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
             )}
           </div>
 
-          {/* Rincian Video & Pilihan Resolusi HD */}
           <div className="flex-grow flex flex-col justify-between gap-5 w-full">
             
             <div className="flex flex-col gap-2">
@@ -601,7 +570,6 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
               </p>
             </div>
 
-            {/* Pilihan Resolusi (1080p Full HD vs 720p Standard HD) */}
             <div className="flex flex-col gap-3">
               <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap w-full">
                 {regularVideoLinks.map((link, idx) => {
@@ -627,7 +595,6 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
                 })}
               </div>
 
-              {/* Tombol Download Video Utama */}
               {activeRegularVideo && (
                 <button
                   onClick={() => downloadToDevice(activeRegularVideo)}
@@ -651,17 +618,13 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
         </div>
       )}
 
-      {/* ═════════════════════════════════════════════════════════════════ */}
-      {/* ─── C. REVISI DESAIN: MODERN STUDIO AUDIO PLAYER (RESPONSIF & RAPIH) ─── */}
-      {/* ═════════════════════════════════════════════════════════════════ */}
+      {/* Audio player */}
       {activeAudio && (
         <div className="w-full bg-gradient-to-b from-[#131722]/95 via-[#10131d]/95 to-[#0b0d14]/98 border border-white/10 rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-2xl relative overflow-hidden backdrop-blur-xl flex flex-col gap-5 sm:gap-6 animate-fadeIn">
           
-          {/* Ambient Cosmic Lights */}
           <div className="absolute -top-24 -right-24 w-52 h-52 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute -bottom-24 -left-24 w-52 h-52 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
 
-          {/* Tag Audio Tersembunyi dengan Multi-Fallback Proxy */}
           <audio
             ref={audioRef}
             src={activeAudioSrc}
@@ -683,11 +646,9 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
             className="hidden"
           />
 
-          {/* Header Track: Artwork Vinyl, Info Lagu, dan Equalizer Badge */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
             
             <div className="flex items-center gap-3.5 sm:gap-4 overflow-hidden">
-              {/* Piringan Vinyl / Disc Berputar saat Play */}
               <div className="relative shrink-0">
                 <div className={`w-13 h-13 sm:w-15 sm:h-15 rounded-full bg-gradient-to-tr from-slate-950 via-slate-900 to-slate-800 border-2 border-emerald-500/30 flex items-center justify-center shadow-lg shadow-emerald-500/10 ${isPlayingAudio ? 'animate-[spin_6s_linear_infinite]' : ''}`}>
                   <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-white/10 flex items-center justify-center bg-black/40">
@@ -697,7 +658,6 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
                 <span className={`absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-2 border-[#12151f] ${isPlayingAudio ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`} />
               </div>
 
-              {/* Rincian Judul & Creator Lagu */}
               <div className="flex flex-col min-w-0 overflow-hidden">
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
@@ -717,7 +677,6 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
               </div>
             </div>
 
-            {/* Equalizer Badge Status */}
             <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-1 sm:pt-0 border-t border-white/5 sm:border-0">
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-black/40 border border-white/10">
                 <div className="flex items-end gap-1 h-3.5">
@@ -734,10 +693,8 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
 
           </div>
 
-          {/* Area Scrubber / Seeker Bar dengan Running Time Lega & Jelas */}
           <div className="flex flex-col gap-2 p-4 sm:p-5 rounded-2xl bg-black/50 border border-white/10 relative z-10 shadow-inner">
             
-            {/* Range Input Slider yang Halus */}
             <div className="relative flex items-center w-full py-1">
               <input
                 type="range"
@@ -753,7 +710,6 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
               />
             </div>
 
-            {/* Penunjuk Menit & Detik Berjalan Real-Time (Kiri: Detik Berjalan, Kanan: Durasi Total) */}
             <div className="flex items-center justify-between text-xs font-mono select-none px-0.5">
               <div className="flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
@@ -771,10 +727,8 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
               </span>
             </div>
 
-            {/* Tombol Kontrol Audio Interaktif: Seek Back, Play/Pause, Seek Forward, Mute */}
             <div className="flex items-center justify-center gap-4 sm:gap-6 pt-3 mt-1 border-t border-white/5">
               
-              {/* Mundur 5 Detik */}
               <button
                 type="button"
                 onClick={() => handleSeekDelta(-5)}
@@ -786,7 +740,6 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
                 <span className="text-[9px] font-mono ml-0.5 font-bold">-5s</span>
               </button>
 
-              {/* Tombol Utama Play / Pause */}
               <button
                 type="button"
                 onClick={togglePlayAudio}
@@ -802,7 +755,6 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
                 )}
               </button>
 
-              {/* Maju 5 Detik */}
               <button
                 type="button"
                 onClick={() => handleSeekDelta(5)}
@@ -814,7 +766,6 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
                 <span className="text-[9px] font-mono ml-0.5 font-bold">+5s</span>
               </button>
 
-              {/* Tombol Mute / Unmute */}
               <button
                 type="button"
                 onClick={toggleAudioMute}
@@ -833,7 +784,6 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
 
           </div>
 
-          {/* Tombol Download Sound MP3 Langsung ke Galeri / Penyimpanan HP & Laptop */}
           <button
             onClick={() => downloadToDevice(activeAudio, `tiktok_sound_${Date.now()}.mp3`)}
             disabled={downloading}
@@ -850,9 +800,6 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
         </div>
       )}
 
-      {/* ═════════════════════════════════════════════════════════════════ */}
-      {/* ─── D. NAVIGASI AKSI BAWAH ─── */}
-      {/* ═════════════════════════════════════════════════════════════════ */}
       <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2 w-full">
         {onBack && (
           <CosmicBackButton onClick={onBack} label="Kembali ke Beranda" />
