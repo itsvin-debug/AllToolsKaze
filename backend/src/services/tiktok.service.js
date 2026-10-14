@@ -67,8 +67,10 @@ export async function downloadTikTok(rawUrl) {
         const downloadLinks = [...photos];
 
         // Ekstraksi Audio Lagu Pengiring Slide
-        if (item.music) {
-          const fullMusicUrl = item.music.startsWith('http') ? item.music : `${base}${item.music}`;
+        const rawMusicUrl = item.music_info?.play || item.music;
+        let fullMusicUrl = null;
+        if (rawMusicUrl) {
+          fullMusicUrl = rawMusicUrl.startsWith('http') ? rawMusicUrl : `${base}${rawMusicUrl}`;
           downloadLinks.push({
             id: 'audio',
             label: 'Audio MP3',
@@ -94,8 +96,9 @@ export async function downloadTikTok(rawUrl) {
           videoSlides: [],
           hasVideoSlides: false,
           musicInfo: {
-            title: item.music_info?.title || 'Original Sound',
-            author: item.music_info?.author || item.author?.nickname || 'TikTok'
+            title: item.music_info?.title || item.title || 'Original Sound',
+            author: item.music_info?.author || item.author?.nickname || 'TikTok Creator',
+            url: fullMusicUrl || null
           },
           downloadLinks
         };
@@ -137,12 +140,14 @@ export async function downloadTikTok(rawUrl) {
       }
 
       // Audio MP3
-      if (item.music) {
-        const fullMusicUrl = item.music.startsWith('http') ? item.music : `${base}${item.music}`;
+      const rawMusicUrl = item.music_info?.play || item.music || standardPlayUrl || fullHdUrl;
+      let fullMusicUrl = null;
+      if (rawMusicUrl) {
+        fullMusicUrl = rawMusicUrl.startsWith('http') ? rawMusicUrl : `${base}${rawMusicUrl}`;
         downloadLinks.push({
           id: 'audio',
           label: 'Audio MP3',
-          quality: '128kbps',
+          quality: '128kbps (Original Sound)',
           url: fullMusicUrl,
           type: 'audio',
           extension: 'mp3',
@@ -166,8 +171,9 @@ export async function downloadTikTok(rawUrl) {
           videoSlides: [],
           hasVideoSlides: false,
           musicInfo: {
-            title: item.music_info?.title || 'Original Sound',
-            author: item.music_info?.author || item.author?.nickname || 'TikTok'
+            title: item.music_info?.title || item.title || 'Original Sound',
+            author: item.music_info?.author || item.author?.nickname || 'TikTok Creator',
+            url: fullMusicUrl || null
           },
           downloadLinks
         };

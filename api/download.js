@@ -167,8 +167,10 @@ async function downloadTikTok(rawUrl) {
 
         const downloadLinks = [...photos];
 
-        if (item.music) {
-          const fullMusic = item.music.startsWith('http') ? item.music : `${base}${item.music}`;
+        const rawMusic = item.music_info?.play || item.music;
+        let fullMusic = null;
+        if (rawMusic) {
+          fullMusic = rawMusic.startsWith('http') ? rawMusic : `${base}${rawMusic}`;
           downloadLinks.push({
             id: 'audio',
             label: 'Audio MP3',
@@ -195,8 +197,9 @@ async function downloadTikTok(rawUrl) {
           hasVideoSlides: false,
           downloadLinks,
           musicInfo: {
-            title: item.music_info?.title || 'Original Sound',
-            author: item.music_info?.author || item.author?.nickname || 'TikTok'
+            title: item.music_info?.title || item.title || 'Original Sound',
+            author: item.music_info?.author || item.author?.nickname || 'TikTok Creator',
+            url: fullMusic || null
           }
         };
       }
@@ -234,12 +237,14 @@ async function downloadTikTok(rawUrl) {
         });
       }
 
-      if (item.music) {
-        const fullMusic = item.music.startsWith('http') ? item.music : `${base}${item.music}`;
+      const rawMusic = item.music_info?.play || item.music || standardPlayUrl || fullHdUrl;
+      let fullMusic = null;
+      if (rawMusic) {
+        fullMusic = rawMusic.startsWith('http') ? rawMusic : `${base}${rawMusic}`;
         downloadLinks.push({
           id: 'audio',
           label: 'Audio MP3',
-          quality: '128kbps',
+          quality: '128kbps (Original Sound)',
           url: fullMusic,
           type: 'audio',
           extension: 'mp3',
@@ -264,8 +269,9 @@ async function downloadTikTok(rawUrl) {
           hasVideoSlides: false,
           downloadLinks,
           musicInfo: {
-            title: item.music_info?.title || 'Original Sound',
-            author: item.music_info?.author || item.author?.nickname || 'TikTok'
+            title: item.music_info?.title || item.title || 'Original Sound',
+            author: item.music_info?.author || item.author?.nickname || 'TikTok Creator',
+            url: fullMusic || null
           }
         };
       }
@@ -851,12 +857,20 @@ export default async function handler(req, res) {
     else if (platform === 'twitter') data = await downloadTwitter(cleaned);
     else if (platform === 'youtube') data = await downloadYouTube(cleaned);
 
-    // Format proxy URL untuk download mobile langsung ke penyimpanan/galeri
+    // Format proxy URL untuk download mobile langsung ke penyimpanan/galeri & streamUrl untuk inline streaming
     if (data?.downloadLinks) {
       data.downloadLinks = data.downloadLinks.map(item => ({
         ...item,
-        proxyUrl: `/api/proxy-download?url=${encodeURIComponent(item.url)}&filename=${encodeURIComponent(item.filename || 'kaze_media.mp4')}`
+        proxyUrl: `/api/proxy-download?url=${encodeURIComponent(item.url)}&filename=${encodeURIComponent(item.filename || (item.type === 'audio' ? 'kaze_audio.mp3' : 'kaze_media.mp4'))}`,
+        streamUrl: (item.type === 'video' || item.type === 'audio')
+          ? `/api/proxy-stream?url=${encodeURIComponent(item.url)}&type=${item.type}`
+          : undefined
       }));
+    }
+
+    if (data?.musicInfo && data.musicInfo.url) {
+      data.musicInfo.proxyUrl = `/api/proxy-download?url=${encodeURIComponent(data.musicInfo.url)}&filename=tiktok_audio.mp3`;
+      data.musicInfo.streamUrl = `/api/proxy-stream?url=${encodeURIComponent(data.musicInfo.url)}&type=audio`;
     }
 
     if (data?.photos && Array.isArray(data.photos)) {

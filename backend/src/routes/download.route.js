@@ -79,9 +79,16 @@ router.post('/download', async (req, res) => {
     if (mediaData && mediaData.downloadLinks) {
       mediaData.downloadLinks = mediaData.downloadLinks.map((item) => ({
         ...item,
-        proxyUrl: `/api/proxy-download?url=${encodeURIComponent(item.url)}&filename=${encodeURIComponent(item.filename || 'kaze_download.mp4')}`,
-        streamUrl: item.type === 'video' ? `/api/proxy-stream?url=${encodeURIComponent(item.url)}` : undefined
+        proxyUrl: `/api/proxy-download?url=${encodeURIComponent(item.url)}&filename=${encodeURIComponent(item.filename || (item.type === 'audio' ? 'kaze_audio.mp3' : 'kaze_download.mp4'))}`,
+        streamUrl: (item.type === 'video' || item.type === 'audio')
+          ? `/api/proxy-stream?url=${encodeURIComponent(item.url)}&type=${item.type}`
+          : undefined
       }));
+    }
+
+    if (mediaData && mediaData.musicInfo && mediaData.musicInfo.url) {
+      mediaData.musicInfo.proxyUrl = `/api/proxy-download?url=${encodeURIComponent(mediaData.musicInfo.url)}&filename=tiktok_audio.mp3`;
+      mediaData.musicInfo.streamUrl = `/api/proxy-stream?url=${encodeURIComponent(mediaData.musicInfo.url)}&type=audio`;
     }
 
     // tambahkan proxyUrl & streamUrl ke setiap video slide di mediaData.videoSlides
@@ -89,7 +96,7 @@ router.post('/download', async (req, res) => {
       mediaData.videoSlides = mediaData.videoSlides.map((item, idx) => ({
         ...item,
         proxyUrl: `/api/proxy-download?url=${encodeURIComponent(item.url)}&filename=${encodeURIComponent(item.filename || `kaze_videoslide_${idx + 1}.mp4`)}`,
-        streamUrl: `/api/proxy-stream?url=${encodeURIComponent(item.url)}`
+        streamUrl: `/api/proxy-stream?url=${encodeURIComponent(item.url)}&type=video`
       }));
     }
 
@@ -116,18 +123,20 @@ router.post('/download', async (req, res) => {
   }
 });
 
-// Endpoint Streaming Video: GET /api/proxy-stream
-// Mengalirkan video secara inline dengan dukungan Range Header (206 Partial Content) untuk pemutaran video gerak yang lancar
+// Endpoint Streaming Video & Audio: GET /api/proxy-stream
+// Mengalirkan video & audio secara inline dengan dukungan Range Header (206 Partial Content) untuk pemutaran lancar tanpa buffer
 router.get('/proxy-stream', async (req, res) => {
   try {
-    const { url } = req.query;
+    const { url, type } = req.query;
     if (!url) return res.status(400).send('URL target tidak boleh kosong.');
 
     const targetUrl = decodeURIComponent(url);
     const range = req.headers.range;
 
     let referer = undefined;
-    if (targetUrl.includes('tiktok') || targetUrl.includes('tikcdn')) {
+    if (targetUrl.includes('tikwm.com')) {
+      referer = 'https://www.tikwm.com/';
+    } else if (targetUrl.includes('tiktok') || targetUrl.includes('tikcdn') || targetUrl.includes('bytegecko') || targetUrl.includes('ibytedtos')) {
       referer = 'https://www.tiktok.com/';
     } else if (targetUrl.includes('instagram') || targetUrl.includes('cdninstagram') || targetUrl.includes('fbcdn')) {
       referer = 'https://www.instagram.com/';
@@ -152,9 +161,18 @@ router.get('/proxy-stream', async (req, res) => {
       validateStatus: (status) => status >= 200 && status < 400
     });
 
+    const isAudio = type === 'audio' || targetUrl.includes('.mp3') || targetUrl.includes('/music/');
+    let contentType = response.headers['content-type'];
+    if (!contentType || contentType === 'application/octet-stream') {
+      contentType = isAudio ? 'audio/mpeg' : 'video/mp4';
+    }
+
     res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Headers', 'Range, Content-Type, Accept');
     res.setHeader('Accept-Ranges', 'bytes');
-    res.setHeader('Content-Type', response.headers['content-type'] || 'video/mp4');
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', 'inline');
+
     if (response.headers['content-range']) {
       res.setHeader('Content-Range', response.headers['content-range']);
     }
@@ -165,7 +183,7 @@ router.get('/proxy-stream', async (req, res) => {
     res.status(response.status);
     response.data.pipe(res);
   } catch (error) {
-    console.error('Error proxy stream video:', error.message);
+    console.error('Error proxy stream media:', error.message);
     if (!res.headersSent) {
       return res.redirect(decodeURIComponent(req.query.url));
     }

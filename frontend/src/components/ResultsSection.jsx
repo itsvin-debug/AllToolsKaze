@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import confetti from 'canvas-confetti';
 import JSZip from 'jszip';
 import CosmicBackButton from './CosmicBackButton';
@@ -18,7 +18,10 @@ import {
   Volume2,
   VolumeX,
   FileArchive,
-  Film
+  Film,
+  RotateCcw,
+  RotateCw,
+  Disc3
 } from 'lucide-react';
 
 export default function ResultsSection({ result, preferredFormat = '1080p', onReset, onBack }) {
@@ -56,9 +59,11 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
 
   // Audio Player State (Real-time Running Seconds & Progress)
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const [isAudioLoading, setIsAudioLoading] = useState(false);
   const [audioCurrentTime, setAudioCurrentTime] = useState(0);
   const [audioDuration, setAudioDuration] = useState(0);
   const [isAudioMuted, setIsAudioMuted] = useState(false);
+  const [currentAudioSrcIndex, setCurrentAudioSrcIndex] = useState(0);
 
   // Swipe Touch State untuk HP
   const [touchStartX, setTouchStartX] = useState(null);
@@ -66,10 +71,27 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
   const audioRef = useRef(null);
   const videoRef = useRef(null);
 
+  // Urutan fallback sumber audio (Stream Proxy -> Stream Direct Proxy -> Proxy Download -> URL Asli)
+  const audioSources = useMemo(() => {
+    if (!activeAudio) return [];
+    const list = [];
+    if (activeAudio.streamUrl) list.push(activeAudio.streamUrl);
+    if (activeAudio.url) {
+      list.push(`/api/proxy-stream?url=${encodeURIComponent(activeAudio.url)}&type=audio`);
+    }
+    if (activeAudio.proxyUrl) list.push(activeAudio.proxyUrl);
+    if (activeAudio.url) list.push(activeAudio.url);
+    return [...new Set(list)];
+  }, [activeAudio]);
+
+  const activeAudioSrc = audioSources[currentAudioSrcIndex] || audioSources[0] || '';
+
   useEffect(() => {
     setCurrentPhotoIndex(0);
     setIsPlayingAudio(false);
+    setIsAudioLoading(false);
     setAudioCurrentTime(0);
+    setCurrentAudioSrcIndex(0);
     if (audioRef.current) {
       audioRef.current.currentTime = 0;
     }
@@ -222,10 +244,17 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
       audioRef.current.pause();
       setIsPlayingAudio(false);
     } else {
+      setIsAudioLoading(true);
       audioRef.current.play().then(() => {
         setIsPlayingAudio(true);
+        setIsAudioLoading(false);
       }).catch((e) => {
-        console.warn('Audio play failed:', e);
+        console.warn('Audio play failed, switching to next stream source:', e);
+        setIsAudioLoading(false);
+        setIsPlayingAudio(false);
+        if (currentAudioSrcIndex < audioSources.length - 1) {
+          setCurrentAudioSrcIndex((prev) => prev + 1);
+        }
       });
     }
   };
@@ -239,6 +268,17 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
   const handleAudioLoadedMetadata = () => {
     if (audioRef.current) {
       setAudioDuration(audioRef.current.duration || 0);
+      setIsAudioLoading(false);
+    }
+  };
+
+  const handleAudioError = () => {
+    console.warn(`Audio source ${activeAudioSrc} failed, attempting next fallback...`);
+    setIsAudioLoading(false);
+    if (currentAudioSrcIndex < audioSources.length - 1) {
+      setCurrentAudioSrcIndex((prev) => prev + 1);
+    } else {
+      setIsPlayingAudio(false);
     }
   };
 
@@ -248,6 +288,14 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
     if (audioRef.current) {
       audioRef.current.currentTime = newTime;
     }
+  };
+
+  const handleSeekDelta = (deltaSeconds) => {
+    if (!audioRef.current) return;
+    const maxDur = audioDuration || 100;
+    const newTime = Math.max(0, Math.min(maxDur, (audioRef.current.currentTime || 0) + deltaSeconds));
+    audioRef.current.currentTime = newTime;
+    setAudioCurrentTime(newTime);
   };
 
   const toggleAudioMute = () => {
@@ -339,7 +387,7 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
           <div 
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
-            className="relative w-full max-w-xl mx-auto aspect-square sm:aspect-[4/3] rounded-2xl overflow-hidden bg-black/90 flex items-center justify-center shadow-2xl border border-white/5 select-none"
+            className="relative w-full max-w-xl mx-auto min-h-[380px] xs:min-h-[430px] sm:min-h-[480px] max-h-[520px] rounded-2xl overflow-hidden bg-black/95 flex items-center justify-center shadow-2xl border border-white/10 select-none"
           >
             {activePhoto ? (
               <img
@@ -359,7 +407,7 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
                 <button
                   type="button"
                   onClick={handlePrevPhoto}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/75 hover:bg-black text-white flex items-center justify-center transition-all cursor-pointer backdrop-blur-md shadow-xl border border-white/10 active:scale-90"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-black/80 hover:bg-black text-white flex items-center justify-center transition-all cursor-pointer backdrop-blur-md shadow-xl border border-white/15 active:scale-90"
                   aria-label="Slide Sebelumnya"
                 >
                   <ChevronLeft className="w-6 h-6" />
@@ -367,7 +415,7 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
                 <button
                   type="button"
                   onClick={handleNextPhoto}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/75 hover:bg-black text-white flex items-center justify-center transition-all cursor-pointer backdrop-blur-md shadow-xl border border-white/10 active:scale-90"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-black/80 hover:bg-black text-white flex items-center justify-center transition-all cursor-pointer backdrop-blur-md shadow-xl border border-white/15 active:scale-90"
                   aria-label="Slide Selanjutnya"
                 >
                   <ChevronRight className="w-6 h-6" />
@@ -388,26 +436,26 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
 
           {/* Thumbnail Strip: Klik untuk Langsung Lompat ke Slide Tertentu */}
           {allPhotos.length > 1 && (
-            <div className="w-full flex items-center justify-center gap-2 overflow-x-auto py-1 px-2 no-scrollbar">
+            <div className="w-full flex items-center justify-start sm:justify-center gap-2.5 overflow-x-auto py-2 px-1 no-scrollbar touch-pan-x">
               {allPhotos.map((photo, idx) => {
                 const isCurrent = idx === currentPhotoIndex;
                 return (
                   <button
                     key={idx}
                     onClick={() => setCurrentPhotoIndex(idx)}
-                    className={`relative w-12 h-12 rounded-xl overflow-hidden shrink-0 border-2 transition-all cursor-pointer ${
+                    className={`relative w-12 h-12 sm:w-14 sm:h-14 rounded-xl overflow-hidden shrink-0 border-2 transition-all cursor-pointer ${
                       isCurrent 
-                        ? 'border-amber-400 scale-105 shadow-md shadow-amber-500/20' 
+                        ? 'border-amber-400 scale-105 shadow-md shadow-amber-500/25 ring-2 ring-amber-400/30' 
                         : 'border-white/10 opacity-60 hover:opacity-100 hover:border-white/30'
                     }`}
                   >
                     <img 
                       src={photo.url} 
                       alt={`Thumb ${idx + 1}`} 
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover pointer-events-none"
                       referrerPolicy="no-referrer"
                     />
-                    <span className="absolute bottom-0 right-0 px-1 text-[8px] font-mono bg-black/80 text-white rounded-tl">
+                    <span className="absolute bottom-0 right-0 px-1 text-[8px] font-mono bg-black/85 text-white rounded-tl font-bold">
                       {idx + 1}
                     </span>
                   </button>
@@ -417,14 +465,30 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
           )}
 
           {/* ─── 2 JENIS TOMBOL DOWNLOAD FOTO SLIDE (SESUAI PERMINTAAN) ─── */}
-          <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+          <div className="flex flex-col sm:flex-row items-center gap-3 pt-2 w-full">
             
             {/* 1. DOWNLOAD THIS SLIDE */}
             {activePhoto && (
               <button
                 onClick={() => downloadToDevice(activePhoto, `tiktok_slide_${currentPhotoIndex + 1}_1080p.jpg`)}
                 disabled={downloading}
-                className="w-full sm:flex-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-extrabold text-xs sm:text-sm rounded-xl py-3.5 flex items-center justify-center gap-2 shadow-lg shadow-amber-500/15 active:scale-98 transition-all cursor-pointer disabled:opacity-50"
+                className="w-full sm:flex-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-extrabold text-xs sm:text-sm rounded-xl sm:rounded-2xl py-3.5 sm:py-4 flex items-center justify-center gap-2 shadow-lg shadow-amber-500/15 active:scale-98 transition-all cursor-pointer disabled:opacity-50"
+              >
+                {downloading ? (
+                  <RefreshCw className="w-4 h-4 animate-spin text-slate-950" />
+                ) : (
+                  <Download className="w-4 h-4 text-slate-950" />
+                )}
+                <span>Download This Slide (Foto #{currentPhotoIndex + 1})</span>
+              </button>
+            )}
+
+            {/* 2. DOWNLOAD ALL SLIDE */}
+            {allPhotos.length > 1 && (
+              <button
+                onClick={handleDownloadAllPhotosZip}
+                disabled={downloadingAllPhotos}
+                className="w-full sm:flex-1 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-extrabold text-xs sm:text-sm rounded-xl sm:rounded-2xl py-3.5 sm:py-4 flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20 active:scale-98 transition-all cursor-pointer border border-indigo-400/30 disabled:opacity-50"
               >
                 {downloading ? (
                   <RefreshCw className="w-4 h-4 animate-spin text-slate-950" />
@@ -588,110 +652,199 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
       )}
 
       {/* ═════════════════════════════════════════════════════════════════ */}
-      {/* ─── C. CUSTOM AUDIO PLAYER DENGAN MENIT & DETIK BERJALAN REAL-TIME ─── */}
+      {/* ─── C. REVISI DESAIN: MODERN STUDIO AUDIO PLAYER (RESPONSIF & RAPIH) ─── */}
       {/* ═════════════════════════════════════════════════════════════════ */}
       {activeAudio && (
-        <div className="w-full bg-[#12151f] border border-white/10 rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-2xl flex flex-col gap-4 animate-fadeIn">
+        <div className="w-full bg-gradient-to-b from-[#131722]/95 via-[#10131d]/95 to-[#0b0d14]/98 border border-white/10 rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-2xl relative overflow-hidden backdrop-blur-xl flex flex-col gap-5 sm:gap-6 animate-fadeIn">
           
-          {/* Tag Audio Tersembunyi untuk Kontrol Penuh */}
+          {/* Ambient Cosmic Lights */}
+          <div className="absolute -top-24 -right-24 w-52 h-52 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-24 -left-24 w-52 h-52 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
+
+          {/* Tag Audio Tersembunyi dengan Multi-Fallback Proxy */}
           <audio
             ref={audioRef}
-            src={activeAudio.url}
+            src={activeAudioSrc}
             onTimeUpdate={handleAudioTimeUpdate}
             onLoadedMetadata={handleAudioLoadedMetadata}
+            onWaiting={() => setIsAudioLoading(true)}
+            onPlaying={() => {
+              setIsAudioLoading(false);
+              setIsPlayingAudio(true);
+            }}
+            onPause={() => setIsPlayingAudio(false)}
+            onError={handleAudioError}
             onEnded={() => {
               setIsPlayingAudio(false);
               setAudioCurrentTime(0);
+              if (audioRef.current) audioRef.current.currentTime = 0;
             }}
             preload="metadata"
             className="hidden"
           />
 
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3 overflow-hidden">
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
-                <Music2 className="w-5 h-5 animate-pulse" />
+          {/* Header Track: Artwork Vinyl, Info Lagu, dan Equalizer Badge */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
+            
+            <div className="flex items-center gap-3.5 sm:gap-4 overflow-hidden">
+              {/* Piringan Vinyl / Disc Berputar saat Play */}
+              <div className="relative shrink-0">
+                <div className={`w-13 h-13 sm:w-15 sm:h-15 rounded-full bg-gradient-to-tr from-slate-950 via-slate-900 to-slate-800 border-2 border-emerald-500/30 flex items-center justify-center shadow-lg shadow-emerald-500/10 ${isPlayingAudio ? 'animate-[spin_6s_linear_infinite]' : ''}`}>
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-white/10 flex items-center justify-center bg-black/40">
+                    <Disc3 className="w-5 h-5 text-emerald-400" />
+                  </div>
+                </div>
+                <span className={`absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-2 border-[#12151f] ${isPlayingAudio ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`} />
               </div>
-              <div className="flex flex-col overflow-hidden">
-                <h3 className="text-sm font-bold text-white truncate">
-                  {result.musicInfo?.title || 'Sound Musik / Audio Asli'}
+
+              {/* Rincian Judul & Creator Lagu */}
+              <div className="flex flex-col min-w-0 overflow-hidden">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                    Audio Asli
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-mono">
+                    Official Track
+                  </span>
+                </div>
+                <h3 className="text-sm sm:text-base font-bold text-white truncate mt-1 tracking-wide">
+                  {result.musicInfo?.title || result.title || 'Sound Musik Asli'}
                 </h3>
-                <p className="text-slate-400 text-xs truncate font-mono">
-                  {result.musicInfo?.author || result.author || 'Audio MP3'}
+                <p className="text-slate-400 text-xs truncate font-mono flex items-center gap-1.5 mt-0.5">
+                  <Music2 className="w-3 h-3 text-emerald-400 shrink-0" />
+                  <span className="truncate">{result.musicInfo?.author || result.author || 'TikTok Creator'}</span>
                 </p>
               </div>
             </div>
 
-            <span className="text-[10px] font-mono font-bold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 shrink-0">
-              MP3 HD 128kbps
-            </span>
+            {/* Equalizer Badge Status */}
+            <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-1 sm:pt-0 border-t border-white/5 sm:border-0">
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-black/40 border border-white/10">
+                <div className="flex items-end gap-1 h-3.5">
+                  <span className={`w-0.5 sm:w-1 bg-emerald-400 rounded-full transition-all duration-200 ${isPlayingAudio ? 'h-3.5 animate-pulse' : 'h-1.5 opacity-40'}`} />
+                  <span className={`w-0.5 sm:w-1 bg-teal-400 rounded-full transition-all duration-300 ${isPlayingAudio ? 'h-2.5 animate-bounce' : 'h-2 opacity-40'}`} style={{ animationDelay: '120ms' }} />
+                  <span className={`w-0.5 sm:w-1 bg-emerald-300 rounded-full transition-all duration-200 ${isPlayingAudio ? 'h-3.5 animate-pulse' : 'h-1 opacity-40'}`} style={{ animationDelay: '240ms' }} />
+                  <span className={`w-0.5 sm:w-1 bg-cyan-400 rounded-full transition-all duration-300 ${isPlayingAudio ? 'h-2 animate-bounce' : 'h-1.5 opacity-40'}`} style={{ animationDelay: '60ms' }} />
+                </div>
+                <span className="text-[11px] font-mono font-bold text-emerald-300">
+                  {isPlayingAudio ? 'Sedang Diputar' : 'MP3 HD 128kbps'}
+                </span>
+              </div>
+            </div>
+
           </div>
 
-          {/* Bar Kontrol Audio Interaktif */}
-          <div className="flex flex-col gap-2 p-3.5 rounded-2xl bg-black/40 border border-white/5">
-            <div className="flex items-center gap-3">
+          {/* Area Scrubber / Seeker Bar dengan Running Time Lega & Jelas */}
+          <div className="flex flex-col gap-2 p-4 sm:p-5 rounded-2xl bg-black/50 border border-white/10 relative z-10 shadow-inner">
+            
+            {/* Range Input Slider yang Halus */}
+            <div className="relative flex items-center w-full py-1">
+              <input
+                type="range"
+                min="0"
+                max={audioDuration || 100}
+                step="0.1"
+                value={audioCurrentTime}
+                onChange={handleAudioSeek}
+                className="w-full h-2 bg-slate-800 rounded-full appearance-none cursor-pointer accent-emerald-400 focus:outline-none transition-all hover:bg-slate-700"
+                style={{
+                  background: `linear-gradient(to right, #10b981 0%, #14b8a6 ${audioDuration ? (audioCurrentTime / audioDuration) * 100 : 0}%, #1e293b ${audioDuration ? (audioCurrentTime / audioDuration) * 100 : 0}%, #1e293b 100%)`
+                }}
+              />
+            </div>
+
+            {/* Penunjuk Menit & Detik Berjalan Real-Time (Kiri: Detik Berjalan, Kanan: Durasi Total) */}
+            <div className="flex items-center justify-between text-xs font-mono select-none px-0.5">
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                <span className="text-emerald-400 font-bold tracking-wider text-xs sm:text-sm">
+                  {formatTime(audioCurrentTime)}
+                </span>
+              </div>
+
+              <span className="text-[10px] sm:text-xs text-slate-500 font-medium">
+                {isAudioLoading ? 'Memuat stream audio...' : isPlayingAudio ? 'Pemutaran Real-time' : 'Geser untuk memilih detik'}
+              </span>
+
+              <span className="text-slate-400 font-semibold tracking-wider text-xs sm:text-sm">
+                {formatTime(audioDuration)}
+              </span>
+            </div>
+
+            {/* Tombol Kontrol Audio Interaktif: Seek Back, Play/Pause, Seek Forward, Mute */}
+            <div className="flex items-center justify-center gap-4 sm:gap-6 pt-3 mt-1 border-t border-white/5">
               
-              {/* Tombol Play / Pause */}
+              {/* Mundur 5 Detik */}
+              <button
+                type="button"
+                onClick={() => handleSeekDelta(-5)}
+                className="p-2 sm:p-2.5 rounded-full text-slate-400 hover:text-emerald-400 hover:bg-white/5 active:scale-90 transition-all cursor-pointer flex items-center justify-center"
+                title="Mundur 5 detik"
+                aria-label="Mundur 5 detik"
+              >
+                <RotateCcw className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="text-[9px] font-mono ml-0.5 font-bold">-5s</span>
+              </button>
+
+              {/* Tombol Utama Play / Pause */}
               <button
                 type="button"
                 onClick={togglePlayAudio}
-                className="w-10 h-10 rounded-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 flex items-center justify-center shadow-lg shadow-emerald-500/20 hover:scale-105 active:scale-95 transition-all cursor-pointer shrink-0"
+                className="relative w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-gradient-to-tr from-emerald-500 via-teal-400 to-emerald-400 text-slate-950 flex items-center justify-center shadow-xl shadow-emerald-500/30 hover:scale-105 active:scale-95 transition-all cursor-pointer shrink-0"
                 aria-label={isPlayingAudio ? 'Jeda Audio' : 'Putar Audio'}
               >
-                {isPlayingAudio ? (
-                  <Pause className="w-5 h-5 fill-current" />
+                {isAudioLoading ? (
+                  <RefreshCw className="w-5 h-5 animate-spin text-slate-950" />
+                ) : isPlayingAudio ? (
+                  <Pause className="w-6 h-6 fill-current text-slate-950" />
                 ) : (
-                  <Play className="w-5 h-5 fill-current ml-0.5" />
+                  <Play className="w-6 h-6 fill-current text-slate-950 ml-0.5" />
                 )}
               </button>
 
-              {/* Progress Slider & Waktu Detik Berjalan */}
-              <div className="flex-grow flex flex-col gap-1.5 min-w-0">
-                <input
-                  type="range"
-                  min="0"
-                  max={audioDuration || 100}
-                  step="0.1"
-                  value={audioCurrentTime}
-                  onChange={handleAudioSeek}
-                  className="w-full h-1.5 bg-white/10 rounded-full appearance-none cursor-pointer accent-emerald-400 focus:outline-none"
-                />
-
-                <div className="flex items-center justify-between text-[11px] font-mono text-slate-400">
-                  <span className="text-emerald-400 font-bold">
-                    {formatTime(audioCurrentTime)}
-                  </span>
-                  <span>
-                    {formatTime(audioDuration)}
-                  </span>
-                </div>
-              </div>
+              {/* Maju 5 Detik */}
+              <button
+                type="button"
+                onClick={() => handleSeekDelta(5)}
+                className="p-2 sm:p-2.5 rounded-full text-slate-400 hover:text-emerald-400 hover:bg-white/5 active:scale-90 transition-all cursor-pointer flex items-center justify-center"
+                title="Maju 5 detik"
+                aria-label="Maju 5 detik"
+              >
+                <RotateCw className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="text-[9px] font-mono ml-0.5 font-bold">+5s</span>
+              </button>
 
               {/* Tombol Mute / Unmute */}
               <button
                 type="button"
                 onClick={toggleAudioMute}
-                className="p-2 rounded-xl text-slate-400 hover:text-white transition-colors cursor-pointer shrink-0"
+                className="p-2 sm:p-2.5 rounded-full text-slate-400 hover:text-white hover:bg-white/5 active:scale-90 transition-all cursor-pointer flex items-center justify-center"
                 title={isAudioMuted ? 'Nyalakan Suara' : 'Bisukan Suara'}
+                aria-label={isAudioMuted ? 'Nyalakan Suara' : 'Bisukan Suara'}
               >
                 {isAudioMuted ? (
-                  <VolumeX className="w-4 h-4 text-rose-400" />
+                  <VolumeX className="w-4 h-4 sm:w-5 sm:h-5 text-rose-400" />
                 ) : (
-                  <Volume2 className="w-4 h-4 text-slate-300" />
+                  <Volume2 className="w-4 h-4 sm:w-5 sm:h-5 text-slate-300" />
                 )}
               </button>
 
             </div>
+
           </div>
 
-          {/* Tombol Download Sound MP3 Langsung ke Perangkat */}
+          {/* Tombol Download Sound MP3 Langsung ke Galeri / Penyimpanan HP & Laptop */}
           <button
             onClick={() => downloadToDevice(activeAudio, `tiktok_sound_${Date.now()}.mp3`)}
             disabled={downloading}
-            className="w-full py-3 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30 text-emerald-300 hover:text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+            className="w-full py-3.5 sm:py-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2.5 shadow-lg shadow-emerald-600/25 active:scale-98 transition-all cursor-pointer disabled:opacity-50 relative z-10"
           >
-            <Download className="w-4 h-4 text-emerald-400" />
-            <span>Download Lagu / Sound MP3 Ini</span>
+            {downloading ? (
+              <RefreshCw className="w-4 h-4 animate-spin text-white" />
+            ) : (
+              <Download className="w-4 h-4 text-white" />
+            )}
+            <span>Download Lagu / Sound MP3 Ini (Kualitas Jernih)</span>
           </button>
 
         </div>
