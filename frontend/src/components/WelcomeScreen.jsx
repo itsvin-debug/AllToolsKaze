@@ -110,19 +110,7 @@ export default function WelcomeScreen({ onSelectPlatform, onOpenTool, theme = 'd
       icon: Flame,
       onClick: () => onOpenTool('jjFinder')
     },
-    {
-      id: 'channelReact',
-      category: 'utility',
-      name: 'React Saluran WA',
-      desc: 'Kirim reaksi emoji saluran WhatsApp real-time',
-      tag: 'WA REACT',
-      accentColor: 'from-emerald-500/20 via-teal-500/10 to-transparent',
-      borderColor: 'group-hover:border-emerald-500/50',
-      iconColor: 'text-emerald-400',
-      iconBg: 'bg-emerald-500/10 border-emerald-500/20',
-      icon: MessageCircle,
-      onClick: () => onOpenTool('channelReact')
-    },
+
     {
       id: 'linkToDoc',
       category: 'file',

@@ -111,12 +111,15 @@ async function extractInstagramViaEmbed(url) {
   }
 
   if (downloadLinks.length > 0) {
+    const isSlide = uniqueVideos.length === 0 && photos.length > 1;
     return {
       success: true,
       platform: 'Instagram',
       title: caption,
       author: author,
       thumbnail: uniqueImages[0] || null,
+      mediaType: isSlide ? 'slide' : (uniqueVideos.length > 0 ? 'video' : 'image'),
+      isSlide,
       photos,
       downloadLinks,
       musicInfo: uniqueVideos.length > 0 ? { title: 'Instagram Audio', author } : null

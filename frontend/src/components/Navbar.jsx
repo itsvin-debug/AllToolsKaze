@@ -24,7 +24,6 @@ export default function Navbar({ currentScreen, onSelectTool, onGoHome }) {
   const tools = [
     { id: 'downloader', label: 'Media Downloader', desc: 'TikTok, IG, YouTube & X', icon: Download },
     { id: 'jjFinder', label: 'Cari Link JJ', desc: 'Template XML & 5MB TikTok', icon: Flame },
-    { id: 'channelReact', label: 'React Saluran WA', desc: 'Reaksi emoji live saluran', icon: MessageCircle },
     { id: 'linkToDoc', label: 'Link to PDF/PPT', desc: 'Bypass Scribd & Canva', icon: FileText },
     { id: 'imageToLink', label: 'File ke Link', desc: 'Foto, Video, PDF jadi URL', icon: Link2 },
     { id: 'compressor', label: 'Kompres Media HD', desc: 'MB ke KB tanpa pecah', icon: Minimize2 },
@@ -94,7 +93,7 @@ export default function Navbar({ currentScreen, onSelectTool, onGoHome }) {
             <div className="flex items-center gap-2">
               <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-medium border bg-emerald-500/10 border-emerald-500/20 text-emerald-400">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping inline-block" />
-                <span>12 Tools Aktif</span>
+                <span>{tools.length} Tools Aktif</span>
               </div>
             </div>
           ) : (

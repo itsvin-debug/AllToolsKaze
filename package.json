@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "concurrently -k -n \"BACKEND,FRONTEND\" -c \"cyan.bold,green.bold\" \"npm --prefix backend run dev\" \"npm --prefix frontend run dev:vite\"",
-    "dev:backend": "npm --prefix backend run dev",
+    "dev": "concurrently -k -n \"BACKEND,FRONTEND\" -c \"cyan.bold,green.bold\" \"npm --prefix backend run dev:server\" \"npm --prefix frontend run dev:vite\"",
+    "dev:backend": "npm --prefix backend run dev:server",
     "dev:frontend": "npm --prefix frontend run dev:vite",
     "build": "cd frontend && npm install && npm run build"
   },

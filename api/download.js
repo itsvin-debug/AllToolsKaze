@@ -70,7 +70,7 @@ async function scrapeViaSaveNow(targetUrl, formatList = ['1080', '720', 'mp3'], 
           }
         }
 
-        const effectiveUrl = finalUrl || task.progressUrl;
+        const effectiveUrl = finalUrl || task.progressUrl; 
         const isAudio = task.format === 'mp3';
         const is1080 = task.format === '1080';
 
@@ -126,7 +126,155 @@ async function downloadTikTok(rawUrl) {
   const url = cleanInputUrl(rawUrl);
   let lastError = null;
 
-  // Strategi 1: SSSTik Scraper
+  // Strategi 1: TikWM API Utama (Cepat, Akurat membedakan Foto Slide & Video 1080p)
+  try {
+    const res = await axios.post('https://www.tikwm.com/api/', new URLSearchParams({
+      url: url,
+      count: '12',
+      cursor: '0',
+      web: '1',
+      hd: '1'
+    }), {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        'User-Agent': UA_DESKTOP,
+        'Referer': 'https://www.tikwm.com/'
+      },
+      timeout: 8000
+    });
+
+    const data = res.data;
+    if (data?.code === 0 && data.data) {
+      const item = data.data;
+      const base = 'https://www.tikwm.com';
+
+      // 1. JIKA POSTINGAN FOTO SLIDE (CAROUSEL GAMBAR)
+      if (item.images && Array.isArray(item.images) && item.images.length > 0) {
+        const photos = item.images.map((imgUrl, idx) => {
+          const fullImg = imgUrl.startsWith('http') 
+            ? imgUrl 
+            : (imgUrl.startsWith('//') ? `https:${imgUrl}` : `${base}${imgUrl}`);
+          return {
+            id: idx + 1,
+            label: `Foto Slide #${idx + 1}`,
+            quality: 'HD 1080p Image',
+            url: fullImg,
+            type: 'image',
+            extension: 'jpg',
+            filename: `tiktok_slide_${item.id || Date.now()}_${idx + 1}.jpg`
+          };
+        });
+
+        const downloadLinks = [...photos];
+
+        if (item.music) {
+          const fullMusic = item.music.startsWith('http') ? item.music : `${base}${item.music}`;
+          downloadLinks.push({
+            id: 'audio',
+            label: 'Audio MP3',
+            quality: '128kbps (Original Sound)',
+            url: fullMusic,
+            type: 'audio',
+            extension: 'mp3',
+            filename: `tiktok_audio_${item.id || Date.now()}.mp3`
+          });
+        }
+
+        return {
+          success: true,
+          platform: 'TikTok',
+          mediaType: 'slide',
+          isSlide: true,
+          id: item.id || '',
+          title: item.title || 'TikTok Photo Slide',
+          author: item.author?.nickname || item.author?.unique_id || 'TikTok Creator',
+          thumbnail: photos[0]?.url || item.cover || null,
+          photos,
+          hasPhotos: true,
+          videoSlides: [],
+          hasVideoSlides: false,
+          downloadLinks,
+          musicInfo: {
+            title: item.music_info?.title || 'Original Sound',
+            author: item.music_info?.author || item.author?.nickname || 'TikTok'
+          }
+        };
+      }
+
+      // 2. JIKA POSTINGAN VIDEO REGULER
+      const downloadLinks = [];
+      const fullHdUrl = item.hdplay 
+        ? (item.hdplay.startsWith('http') ? item.hdplay : `${base}${item.hdplay}`) 
+        : null;
+      const standardPlayUrl = item.play 
+        ? (item.play.startsWith('http') ? item.play : `${base}${item.play}`) 
+        : null;
+
+      if (fullHdUrl || standardPlayUrl) {
+        downloadLinks.push({
+          id: '1080p',
+          label: 'Resolusi HD 1080p',
+          quality: '1080p (Full HD)',
+          url: fullHdUrl || standardPlayUrl,
+          type: 'video',
+          extension: 'mp4',
+          filename: `tiktok_${item.id || Date.now()}_1080p.mp4`
+        });
+      }
+
+      if (standardPlayUrl || fullHdUrl) {
+        downloadLinks.push({
+          id: '720p',
+          label: 'Resolusi HD 720p',
+          quality: '720p (Standard HD)',
+          url: standardPlayUrl || fullHdUrl,
+          type: 'video',
+          extension: 'mp4',
+          filename: `tiktok_${item.id || Date.now()}_720p.mp4`
+        });
+      }
+
+      if (item.music) {
+        const fullMusic = item.music.startsWith('http') ? item.music : `${base}${item.music}`;
+        downloadLinks.push({
+          id: 'audio',
+          label: 'Audio MP3',
+          quality: '128kbps',
+          url: fullMusic,
+          type: 'audio',
+          extension: 'mp3',
+          filename: `tiktok_audio_${item.id || Date.now()}.mp3`
+        });
+      }
+
+      if (downloadLinks.length > 0) {
+        return {
+          success: true,
+          platform: 'TikTok',
+          mediaType: 'video',
+          isSlide: false,
+          id: item.id || '',
+          title: item.title || 'TikTok Video',
+          author: item.author?.nickname || item.author?.unique_id || 'TikTok Creator',
+          thumbnail: item.cover || item.origin_cover || null,
+          duration: item.duration ? `${item.duration}s` : null,
+          photos: [],
+          hasPhotos: false,
+          videoSlides: [],
+          hasVideoSlides: false,
+          downloadLinks,
+          musicInfo: {
+            title: item.music_info?.title || 'Original Sound',
+            author: item.music_info?.author || item.author?.nickname || 'TikTok'
+          }
+        };
+      }
+    }
+  } catch (e) {
+    lastError = e;
+  }
+
+  // Strategi 2: SSSTik Fallback
   try {
     const homeRes = await axios.get('https://ssstik.io/en', {
       headers: { 'User-Agent': UA_DESKTOP },
@@ -153,10 +301,11 @@ async function downloadTikTok(rawUrl) {
     });
 
     const $ = cheerio.load(postRes.data);
-    const title = $('.maintext').text().trim() || $('p').first().text().trim() || 'TikTok Video';
+    const title = $('.maintext').text().trim() || $('p').first().text().trim() || 'TikTok Media';
     const thumbnail = $('img.result_author').attr('src') || $('img').first().attr('src') || null;
     const author = $('.result_author h2, .result_author span').first().text().trim() || 'TikTok Creator';
     const rawVideoLinks = [];
+    const photoLinks = [];
     let audioLink = null;
 
     $('a').each((_, el) => {
@@ -165,6 +314,7 @@ async function downloadTikTok(rawUrl) {
       if (!href || !href.startsWith('http')) return;
       if (text.toLowerCase().includes('mp3') || href.includes('/m/')) {
         audioLink = {
+          id: 'audio',
           label: 'Audio MP3',
           quality: '128kbps',
           url: href,
@@ -172,37 +322,69 @@ async function downloadTikTok(rawUrl) {
           extension: 'mp3',
           filename: `tiktok_audio_${Date.now()}.mp3`
         };
+      } else if (href.includes('.jpg') || href.includes('.jpeg') || href.includes('.png') || text.toLowerCase().includes('photo') || text.toLowerCase().includes('slide')) {
+        photoLinks.push(href);
       } else {
         rawVideoLinks.push(href);
       }
     });
 
-    if (rawVideoLinks.length > 0) {
-      const downloadLinks = [
-        {
-          label: 'Resolusi HD 1080p',
-          quality: '1080p (Full HD)',
-          url: rawVideoLinks[0],
-          type: 'video',
-          extension: 'mp4',
-          filename: `tiktok_1080p_${Date.now()}.mp4`
-        },
-        {
-          label: 'Resolusi HD 720p',
-          quality: '720p (Standard HD)',
-          url: rawVideoLinks[1] || rawVideoLinks[0],
-          type: 'video',
-          extension: 'mp4',
-          filename: `tiktok_720p_${Date.now()}.mp4`
-        }
-      ];
-      if (audioLink) downloadLinks.push(audioLink);
+    const photos = [];
+    const downloadLinks = [];
+
+    if (photoLinks.length > 0) {
+      photoLinks.forEach((imgUrl, idx) => {
+        const photoObj = {
+          id: idx + 1,
+          label: `Foto Slide #${idx + 1}`,
+          quality: 'HD Image',
+          url: imgUrl,
+          type: 'image',
+          extension: 'jpg',
+          filename: `tiktok_slide_${Date.now()}_${idx + 1}.jpg`
+        };
+        photos.push(photoObj);
+        downloadLinks.push(photoObj);
+      });
+    }
+
+    // Hanya jika bukan foto slide, tambahkan video
+    if (photos.length === 0 && rawVideoLinks.length > 0) {
+      downloadLinks.push({
+        id: '1080p',
+        label: 'Resolusi HD 1080p',
+        quality: '1080p (Full HD)',
+        url: rawVideoLinks[0],
+        type: 'video',
+        extension: 'mp4',
+        filename: `tiktok_1080p_${Date.now()}.mp4`
+      });
+      downloadLinks.push({
+        id: '720p',
+        label: 'Resolusi HD 720p',
+        quality: '720p (Standard HD)',
+        url: rawVideoLinks[1] || rawVideoLinks[0],
+        type: 'video',
+        extension: 'mp4',
+        filename: `tiktok_720p_${Date.now()}.mp4`
+      });
+    }
+
+    if (audioLink) downloadLinks.push(audioLink);
+
+    if (downloadLinks.length > 0) {
       return {
         success: true,
         platform: 'TikTok',
+        mediaType: photos.length > 0 ? 'slide' : 'video',
+        isSlide: photos.length > 0,
         title,
         author,
-        thumbnail,
+        thumbnail: thumbnail || photos[0]?.url || null,
+        photos,
+        hasPhotos: photos.length > 0,
+        videoSlides: [],
+        hasVideoSlides: false,
         downloadLinks,
         musicInfo: { title: 'Original TikTok Audio', author }
       };
@@ -211,111 +393,10 @@ async function downloadTikTok(rawUrl) {
     lastError = e;
   }
 
-  // Strategi 2: TikWM Fallback
-  try {
-    const res = await axios.post('https://www.tikwm.com/api/', new URLSearchParams({
-      url: url,
-      count: '12',
-      cursor: '0',
-      web: '1',
-      hd: '1'
-    }), {
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-        'User-Agent': UA_DESKTOP,
-        'Referer': 'https://www.tikwm.com/'
-      },
-      timeout: 6000
-    });
-    const data = res.data;
-    if (data?.code === 0 && data.data) {
-      const item = data.data;
-      const downloadLinks = [];
-      const base = 'https://www.tikwm.com';
-      const photos = [];
-      if (item.images && Array.isArray(item.images) && item.images.length > 0) {
-        item.images.forEach((imgUrl, idx) => {
-          const fullImg = imgUrl.startsWith('http') ? imgUrl : base + imgUrl;
-          const photoObj = {
-            id: idx + 1,
-            label: `Foto HD #${idx + 1}`,
-            quality: 'HD Image (No Watermark)',
-            url: fullImg,
-            type: 'image',
-            extension: 'jpg',
-            filename: `tiktok_${item.id || Date.now()}_${idx + 1}.jpg`
-          };
-          photos.push(photoObj);
-          downloadLinks.push(photoObj);
-        });
-      }
-
-      if (item.hdplay) {
-        downloadLinks.push({
-          label: 'Resolusi HD 1080p',
-          quality: '1080p (Full HD)',
-          url: item.hdplay.startsWith('http') ? item.hdplay : base + item.hdplay,
-          type: 'video',
-          extension: 'mp4',
-          filename: `tiktok_${item.id}_1080p.mp4`
-        });
-      }
-      if (item.play) {
-        downloadLinks.push({
-          label: 'Resolusi HD 720p',
-          quality: '720p (Standard HD)',
-          url: item.play.startsWith('http') ? item.play : base + item.play,
-          type: 'video',
-          extension: 'mp4',
-          filename: `tiktok_${item.id}_720p.mp4`
-        });
-      }
-      if (item.music) {
-        downloadLinks.push({
-          label: 'Audio MP3',
-          quality: '128kbps',
-          url: item.music.startsWith('http') ? item.music : base + item.music,
-          type: 'audio',
-          extension: 'mp3',
-          filename: `tiktok_audio_${item.id}.mp3`
-        });
-      }
-      if (downloadLinks.length > 0) {
-        return {
-          success: true,
-          platform: 'TikTok',
-          title: item.title || 'TikTok Media',
-          author: item.author?.nickname || item.author?.unique_id || 'Creator',
-          thumbnail: photos[0]?.url || item.cover || item.origin_cover,
-          photos,
-          downloadLinks,
-          musicInfo: {
-            title: item.music_info?.title || 'Original Sound',
-            author: item.music_info?.author || ''
-          }
-        };
-      }
-    }
-  } catch (e) {
-    lastError = e;
-  }
-
-  // Strategi 3: Savenow V2 Fallback
-  try {
-    const snData = await scrapeViaSaveNow(url, ['1080', '720', 'mp3'], 'TikTok Video', 'TikTok Creator');
-    if (snData && snData.downloadLinks?.length > 0) {
-      return {
-        success: true,
-        platform: 'TikTok',
-        ...snData
-      };
-    }
-  } catch (e) {
-    lastError = e;
-  }
-
-  throw new Error(`Gagal memproses TikTok: ${lastError?.message || 'Video tidak ditemukan'}`);
+  throw new Error(`Gagal memproses media TikTok: ${lastError?.message || 'Media tidak ditemukan'}`);
 }
+
+
 
 // ===== INSTAGRAM SCRAPER =====
 function extractAllIGMedia(html) {
@@ -429,6 +510,8 @@ async function downloadInstagram(rawUrl) {
         title: caption,
         author: author,
         thumbnail: imageUrls[0],
+        mediaType: photos.length > 1 ? 'slide' : 'image',
+        isSlide: photos.length > 1,
         photos,
         downloadLinks: photos
       };
@@ -523,12 +606,16 @@ async function downloadTwitter(rawUrl) {
       }
 
       if (downloadLinks.length > 0) {
+        const hasVideos = tweet.media?.videos && Array.isArray(tweet.media.videos) && tweet.media.videos.length > 0;
+        const isSlide = !hasVideos && photos.length > 1;
         return {
           success: true,
           platform: 'X (Twitter)',
           title,
           author,
           thumbnail: photos[0]?.url || tweet.media?.videos?.[0]?.thumbnail_url || null,
+          mediaType: isSlide ? 'slide' : (hasVideos ? 'video' : (photos.length > 0 ? 'image' : 'video')),
+          isSlide,
           photos,
           downloadLinks
         };

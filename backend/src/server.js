@@ -76,7 +76,8 @@ app.use((err, req, res, next) => {
 // nyalain server express
 app.listen(PORT, () => {
   console.log(`=============================================`);
-  console.log(`🚀 Server Backend Kaze Downloader nyala di:`);
-  console.log(`👉 http://localhost:${PORT}`);
+  console.log(`🚀 AllToolsKaze Fullstack Suite Aktif!`);
+  console.log(`🌐 Frontend (Web UI)  : http://localhost:5173`);
+  console.log(`⚙️  Backend (API Server): http://localhost:${PORT}`);
   console.log(`=============================================`);
 });

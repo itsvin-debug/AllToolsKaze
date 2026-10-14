@@ -5,7 +5,6 @@ import { fileURLToPath } from 'url';
 import axios from 'axios';
 import { extractScribdDocument, extractWebDocument } from '../services/scribd.service.js';
 import { findJjTemplates } from '../services/jj.service.js';
-import { sendChannelReactions } from '../services/channelReact.service.js';
 import { 
   compressVideoService, 
   mergeAudiosService, 
@@ -279,44 +278,6 @@ router.post('/jj-finder', async (req, res) => {
     return res.status(500).json({
       success: false,
       message: err.message || 'Gagal mencari template JJ.'
-    });
-  }
-});
-
-/**
- * 5. POST /api/channel-react
- * Mengirim reaksi emoji ke pesan saluran WhatsApp secara real-time via API NexaDev (rahasia di .env)
- */
-router.post('/channel-react', async (req, res) => {
-  try {
-    const { channelLink, messageLink, messageId, reactions, targetCount, count, customKey } = req.body;
-
-    if (!channelLink && !messageLink) {
-      return res.status(400).json({
-        success: false,
-        message: 'Mohon masukkan tautan saluran WhatsApp dan link/ID pesan.'
-      });
-    }
-
-    const result = await sendChannelReactions({
-      channelLink,
-      messageLink,
-      messageId,
-      reactions,
-      targetCount: targetCount || count || 100,
-      customKey
-    });
-
-    return res.json({
-      success: result.success,
-      message: result.overallMessage || 'Proses reaksi saluran selesai.',
-      data: result
-    });
-  } catch (err) {
-    console.error('Error channel-react:', err.message);
-    return res.status(500).json({
-      success: false,
-      message: err.message || 'Gagal mengirim reaksi ke saluran WhatsApp.'
     });
   }
 });

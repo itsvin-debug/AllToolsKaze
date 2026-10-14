@@ -81,12 +81,16 @@ async function extractTwitterViaFxAndSyndication(url) {
       }
 
       if (downloadLinks.length > 0) {
+        const hasVideos = tweet.media?.videos && Array.isArray(tweet.media.videos) && tweet.media.videos.length > 0;
+        const isSlide = !hasVideos && photos.length > 1;
         return {
           success: true,
           platform: 'X (Twitter)',
           title,
           author,
           thumbnail: photos[0]?.url || tweet.media?.videos?.[0]?.thumbnail_url || null,
+          mediaType: isSlide ? 'slide' : (hasVideos ? 'video' : (photos.length > 0 ? 'image' : 'video')),
+          isSlide,
           photos,
           downloadLinks
         };
@@ -160,12 +164,16 @@ async function extractTwitterViaFxAndSyndication(url) {
     }
 
     if (downloadLinks.length > 0) {
+      const hasVideos = !!(data.video && data.video.variants);
+      const isSlide = !hasVideos && photos.length > 1;
       return {
         success: true,
         platform: 'X (Twitter)',
         title,
         author,
         thumbnail: photos[0]?.url || data.video?.poster || null,
+        mediaType: isSlide ? 'slide' : (hasVideos ? 'video' : (photos.length > 0 ? 'image' : 'video')),
+        isSlide,
         photos,
         downloadLinks
       };

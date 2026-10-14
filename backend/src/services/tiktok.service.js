@@ -45,78 +45,105 @@ export async function downloadTikTok(rawUrl) {
 
     if (tikwmData) {
       const item = tikwmData;
-      const downloadLinks = [];
-      const photos = [];
-      const videoSlides = [];
+      const base = 'https://www.tikwm.com';
 
-      // 1. Ekstraksi Live Images (Slide Video Gerak / Live Photos MP4)
-      if (item.live_images && Array.isArray(item.live_images) && item.live_images.length > 0) {
-        item.live_images.forEach((vidUrl, idx) => {
-          const fullVidUrl = vidUrl.startsWith('http') ? vidUrl : `https://www.tikwm.com${vidUrl}`;
-          const vidObj = {
-            id: idx + 1,
-            label: `Slide Video Gerak #${idx + 1}`,
-            quality: 'HD Video Slide (Gerak)',
-            url: fullVidUrl,
-            type: 'video',
-            isVideoSlide: true,
-            extension: 'mp4',
-            filename: `tiktok_videoslide_${item.id || Date.now()}_${idx + 1}.mp4`
-          };
-          videoSlides.push(vidObj);
-          downloadLinks.push(vidObj);
-        });
-      }
-
-      // 2. Ekstraksi Foto Slide (Static Images HD)
+      // 1. JIKA POSTINGAN FOTO SLIDE (CAROUSEL GAMBAR TIKTOK)
       if (item.images && Array.isArray(item.images) && item.images.length > 0) {
-        item.images.forEach((imgUrl, idx) => {
-          const fullImgUrl = imgUrl.startsWith('http') ? imgUrl : `https://www.tikwm.com${imgUrl}`;
-          const photoObj = {
+        const photos = item.images.map((imgUrl, idx) => {
+          const fullImgUrl = imgUrl.startsWith('http') 
+            ? imgUrl 
+            : (imgUrl.startsWith('//') ? `https:${imgUrl}` : `${base}${imgUrl}`);
+          return {
             id: idx + 1,
-            label: `Foto HD #${idx + 1}`,
-            quality: 'HD Image (No Watermark)',
+            label: `Foto Slide #${idx + 1}`,
+            quality: 'HD 1080p Image',
             url: fullImgUrl,
             type: 'image',
             extension: 'jpg',
             filename: `tiktok_slide_${item.id || Date.now()}_${idx + 1}.jpg`
           };
-          photos.push(photoObj);
-          downloadLinks.push(photoObj);
+        });
+
+        const downloadLinks = [...photos];
+
+        // Ekstraksi Audio Lagu Pengiring Slide
+        if (item.music) {
+          const fullMusicUrl = item.music.startsWith('http') ? item.music : `${base}${item.music}`;
+          downloadLinks.push({
+            id: 'audio',
+            label: 'Audio MP3',
+            quality: '128kbps (Original Sound)',
+            url: fullMusicUrl,
+            type: 'audio',
+            extension: 'mp3',
+            filename: `tiktok_audio_${item.id || Date.now()}.mp3`
+          });
+        }
+
+        return {
+          success: true,
+          platform: 'TikTok',
+          mediaType: 'slide',
+          isSlide: true,
+          id: item.id || '',
+          title: item.title || 'TikTok Photo Slide',
+          author: item.author?.nickname || item.author?.unique_id || 'TikTok Creator',
+          thumbnail: photos[0]?.url || item.cover || null,
+          photos,
+          hasPhotos: true,
+          videoSlides: [],
+          hasVideoSlides: false,
+          musicInfo: {
+            title: item.music_info?.title || 'Original Sound',
+            author: item.music_info?.author || item.author?.nickname || 'TikTok'
+          },
+          downloadLinks
+        };
+      }
+
+      // 2. JIKA POSTINGAN VIDEO REGULER (RESOLUSI HD 1080p & 720p)
+      const downloadLinks = [];
+      const fullHdUrl = item.hdplay 
+        ? (item.hdplay.startsWith('http') ? item.hdplay : `${base}${item.hdplay}`) 
+        : null;
+      const standardPlayUrl = item.play 
+        ? (item.play.startsWith('http') ? item.play : `${base}${item.play}`) 
+        : null;
+
+      // Resolusi 1080p Full HD
+      if (fullHdUrl || standardPlayUrl) {
+        downloadLinks.push({
+          id: '1080p',
+          label: 'Resolusi HD 1080p',
+          quality: '1080p (Full HD)',
+          url: fullHdUrl || standardPlayUrl,
+          type: 'video',
+          extension: 'mp4',
+          filename: `tiktok_${item.id || Date.now()}_1080p.mp4`
         });
       }
 
-      // 3. Ekstraksi Video Regular (Resolusi HD 1080p & 720p) jika bukan postingan foto-only
-      if (!item.images || item.images.length === 0) {
-        if (item.hdplay) {
-          downloadLinks.push({
-            label: 'Resolusi HD 1080p',
-            quality: '1080p (Full HD)',
-            url: item.hdplay.startsWith('http') ? item.hdplay : `https://www.tikwm.com${item.hdplay}`,
-            type: 'video',
-            extension: 'mp4',
-            filename: `tiktok_${item.id || Date.now()}_1080p.mp4`
-          });
-        }
-
-        if (item.play) {
-          downloadLinks.push({
-            label: 'Resolusi HD 720p',
-            quality: '720p (Standard HD)',
-            url: item.play.startsWith('http') ? item.play : `https://www.tikwm.com${item.play}`,
-            type: 'video',
-            extension: 'mp4',
-            filename: `tiktok_${item.id || Date.now()}_720p.mp4`
-          });
-        }
+      // Resolusi 720p Standard HD
+      if (standardPlayUrl || fullHdUrl) {
+        downloadLinks.push({
+          id: '720p',
+          label: 'Resolusi HD 720p',
+          quality: '720p (Standard HD)',
+          url: standardPlayUrl || fullHdUrl,
+          type: 'video',
+          extension: 'mp4',
+          filename: `tiktok_${item.id || Date.now()}_720p.mp4`
+        });
       }
 
-      // 4. Ekstraksi Audio MP3
+      // Audio MP3
       if (item.music) {
+        const fullMusicUrl = item.music.startsWith('http') ? item.music : `${base}${item.music}`;
         downloadLinks.push({
+          id: 'audio',
           label: 'Audio MP3',
           quality: '128kbps',
-          url: item.music.startsWith('http') ? item.music : `https://www.tikwm.com${item.music}`,
+          url: fullMusicUrl,
           type: 'audio',
           extension: 'mp3',
           filename: `tiktok_audio_${item.id || Date.now()}.mp3`
@@ -127,16 +154,17 @@ export async function downloadTikTok(rawUrl) {
         return {
           success: true,
           platform: 'TikTok',
+          mediaType: 'video',
+          isSlide: false,
           id: item.id || '',
-          title: item.title || 'TikTok Media',
+          title: item.title || 'TikTok Video',
           author: item.author?.nickname || item.author?.unique_id || 'TikTok Creator',
-          thumbnail: photos[0]?.url || item.cover || item.origin_cover || null,
+          thumbnail: item.cover || item.origin_cover || null,
           duration: item.duration ? `${item.duration}s` : null,
-          videoSlides,
-          hasVideoSlides: videoSlides.length > 0,
-          photos,
-          hasPhotos: photos.length > 0,
-          isSlide: (videoSlides.length > 0 || photos.length > 0),
+          photos: [],
+          hasPhotos: false,
+          videoSlides: [],
+          hasVideoSlides: false,
           musicInfo: {
             title: item.music_info?.title || 'Original Sound',
             author: item.music_info?.author || item.author?.nickname || 'TikTok'
@@ -238,10 +266,12 @@ export async function downloadTikTok(rawUrl) {
       });
     }
 
-    if (rawVideoLinks.length > 0) {
+    // Hanya tambahkan video jika BUKAN postingan foto slide
+    if (photos.length === 0 && rawVideoLinks.length > 0) {
       const primaryVideoUrl = rawVideoLinks[0];
 
       downloadLinks.push({
+        id: '1080p',
         label: 'Resolusi HD 1080p',
         quality: '1080p (Full HD)',
         url: primaryVideoUrl,
@@ -252,6 +282,7 @@ export async function downloadTikTok(rawUrl) {
 
       const standardUrl = rawVideoLinks[1] || primaryVideoUrl;
       downloadLinks.push({
+        id: '720p',
         label: 'Resolusi HD 720p',
         quality: '720p (Standard HD)',
         url: standardUrl,
@@ -269,6 +300,7 @@ export async function downloadTikTok(rawUrl) {
       return {
         success: true,
         platform: 'TikTok',
+        mediaType: photos.length > 0 ? 'slide' : 'video',
         title,
         author,
         thumbnail: thumbnail || photos[0]?.url || null,

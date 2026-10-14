@@ -9,7 +9,6 @@ import VideoStudioScreen from './components/VideoStudioScreen';
 import VideoTrimmerScreen from './components/VideoTrimmerScreen';
 import BgRemoverScreen from './components/BgRemoverScreen';
 import JjFinderScreen from './components/JjFinderScreen';
-import ChannelReactScreen from './components/ChannelReactScreen';
 import MediaCompressorScreen from './components/MediaCompressorScreen';
 import QrStudioScreen from './components/QrStudioScreen';
 import AudioMergerScreen from './components/AudioMergerScreen';
@@ -148,12 +147,6 @@ export default function App() {
         />
       )}
 
-      {currentScreen === 'channelReact' && (
-        <ChannelReactScreen
-          theme={theme}
-          onBack={() => setCurrentScreen('welcome')}
-        />
-      )}
 
       {/* Footer Bawah */}
       <Footer />
