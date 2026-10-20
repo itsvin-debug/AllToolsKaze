@@ -329,26 +329,26 @@ export default function BgRemoverScreen({ onBack }) {
       
       {/* Tombol Navigasi Kembali */}
       <div className="w-full flex items-center justify-between mb-4">
-        <CosmicBackButton onClick={onBack} label="Kembali ke Beranda Tools" />
+        <CosmicBackButton onClick={onBack} label="Kembali ke Beranda" />
       </div>
 
-      {/* Header Judul Fitur (Tanpa embel-embel AI) */}
+      {/* Header Judul Fitur */}
       <div className="text-center mb-6 max-w-xl">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold uppercase tracking-wider mb-2 font-mono">
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded border-2 border-black bg-neutral-100 text-black text-xs font-mono font-bold uppercase tracking-wider mb-2">
           <Scissors className="w-3.5 h-3.5" />
           <span>Hapus Background & Pas Foto</span>
         </div>
-        <h1 className="text-xl sm:text-3xl font-extrabold text-slate-900 dark:text-white mb-1.5">
+        <h1 className="text-xl sm:text-3xl font-black text-black mb-1.5 font-display tracking-tight">
           Remove Background Foto & Logo
         </h1>
-        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+        <p className="text-xs sm:text-sm text-neutral-600">
           Hapus latar belakang putih pada logo atau foto formal, ganti warna latar pas foto merah/biru, atau ganti latar dengan foto baru secara instan.
         </p>
       </div>
 
       {/* Upload Box jika belum ada gambar */}
       {!imageSrc ? (
-        <div className="w-full max-w-xl rounded-3xl p-10 flex flex-col items-center justify-center text-center border-2 border-dashed border-slate-300 dark:border-white/15 bg-white dark:bg-[#12151f] shadow-lg">
+        <div className="w-full max-w-xl rounded-xl p-8 sm:p-10 flex flex-col items-center justify-center text-center border-2 border-dashed border-black bg-white shadow-[4px_4px_0px_#000000]">
           <input
             type="file"
             accept="image/*"
@@ -357,16 +357,16 @@ export default function BgRemoverScreen({ onBack }) {
             className="hidden"
           />
           <label htmlFor="bg-upload-input" className="cursor-pointer flex flex-col items-center">
-            <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-400 mb-3">
-              <Upload className="w-8 h-8" />
+            <div className="w-14 h-14 rounded-lg bg-neutral-100 border-2 border-black flex items-center justify-center text-black mb-3">
+              <Upload className="w-7 h-7 stroke-[2.2]" />
             </div>
-            <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-1">
+            <h3 className="text-base sm:text-lg font-extrabold text-black mb-1 font-sans">
               Pilih Foto atau Logo Sekolah
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mb-5">
+            <p className="text-xs text-neutral-600 max-w-sm mb-4">
               Cocok untuk logo sekolah dengan background putih, foto selfie, produk, dan pas foto ijazah/KTP.
             </p>
-            <span className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-all">
+            <span className="px-5 py-2.5 rounded-lg border-2 border-black bg-black text-white hover:bg-neutral-800 font-bold text-xs shadow-[2px_2px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all">
               Pilih File Gambar
             </span>
           </label>

@@ -843,15 +843,15 @@ export default function QrStudioScreen({ onBack, initialUrl = '' }) {
 
       {/* Header Judul Fitur */}
       <div className="text-center mb-8 max-w-2xl">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-xs font-bold uppercase tracking-wider mb-3">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded border-2 border-black bg-neutral-100 text-black text-xs font-mono font-bold uppercase tracking-wider mb-3">
           <QrCode className="w-3.5 h-3.5" />
-          <span>Advanced QR Code Studio & Customizer</span>
+          <span>QR Code Studio</span>
         </div>
-        <h1 className="text-2xl sm:text-4xl font-extrabold text-white mb-2">
+        <h1 className="text-2xl sm:text-4xl font-black text-black mb-2 tracking-tight font-display">
           Customizer Kode QR Tingkat Lanjut
         </h1>
-        <p className="text-xs sm:text-sm text-slate-400">
-          Kustomisasi visual QR Code dengan bentuk titik cinta/bintang/daun, siluet masking perisai/hati, logo tengah berpresisi, dan gradasi multi-stop.
+        <p className="text-xs sm:text-sm text-neutral-600 leading-relaxed">
+          Kustomisasi visual QR Code dengan bentuk titik cinta/bintang/daun, siluet masking perisai/hati, logo tengah berpresisi, dan format ekspor HD.
         </p>
       </div>
 

@@ -453,18 +453,18 @@ export default function VideoTrimmerScreen({ onBack }) {
     <main className="flex-grow flex flex-col items-center justify-start px-4 sm:px-6 md:px-margin-desktop py-6 sm:py-8 max-w-5xl mx-auto w-full relative z-10 animate-fadeIn">
       
       {/* ─── 1. HEADER NAVIGASI ─── */}
-      <div className="w-full flex items-center justify-between pb-4 mb-4 border-b border-black/5 dark:border-white/5">
-        <div className="flex items-center gap-3">
+      <div className="w-full flex items-center justify-between pb-4 mb-4 border-b-2 border-black">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
           <CosmicBackButton onClick={onBack} label="Kembali ke Beranda" />
           <div>
-            <h1 className="text-base sm:text-xl font-extrabold tracking-tight font-mono flex items-center gap-2">
-              <span className="text-white">Video Trimmer & Cutter</span>
-              <span className="text-[10px] font-sans font-bold px-2 py-0.5 rounded-full bg-indigo-500/15 border border-indigo-500/30 text-indigo-400">
+            <h1 className="text-base sm:text-xl font-black tracking-tight font-display text-black flex items-center gap-2">
+              <span>Video Trimmer & Cutter</span>
+              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded border border-black bg-neutral-100 text-black">
                 LOSSLESS CUT
               </span>
             </h1>
-            <p className="text-xs text-slate-400">
-              Potong durasi video presisi milidetik tanpa merender ulang — 100% resolusi & FPS asli utuh
+            <p className="text-xs text-neutral-600">
+              Potong durasi video presisi milidetik tanpa merender ulang, 100% resolusi dan FPS asli tetap utuh.
             </p>
           </div>
         </div>

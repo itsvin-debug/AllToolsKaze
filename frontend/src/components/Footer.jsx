@@ -1,15 +1,19 @@
 import React from 'react';
 
-// komponen footer bawah website
 export default function Footer() {
   return (
-    <footer className="bg-surface-container-lowest/80 border-t border-outline-variant/15 w-full mt-auto py-8 relative z-10">
-      <div className="max-w-container-max mx-auto px-4 md:px-margin-desktop flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left">
+    <footer className="bg-white border-t-2 border-black w-full mt-auto py-6">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
         <div className="flex items-center gap-2">
-          <span className="font-bold text-lg text-primary">AllToolsKaze</span>
+          <span className="font-black text-base tracking-tight font-display text-black">
+            KAZE STUDIO
+          </span>
+          <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border border-black bg-neutral-100 text-black">
+            UTILITY SUITE
+          </span>
         </div>
-        <p className="text-sm text-on-surface-variant/80">
-          © {new Date().getFullYear()} AllToolsKaze. Platform utilitas all-in-one untuk media, dokumen, audio, dan alat kreatif digital.
+        <p className="text-xs text-neutral-600 font-sans">
+          © {new Date().getFullYear()} Kaze Studio. Platform utilitas all-in-one untuk media, dokumen, audio, dan alat kreatif digital.
         </p>
       </div>
     </footer>

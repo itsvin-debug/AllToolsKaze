@@ -14,56 +14,38 @@ import QrStudioScreen from './components/QrStudioScreen';
 import AudioMergerScreen from './components/AudioMergerScreen';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
-import ShaderBackground from './components/ShaderBackground';
 
 export default function App() {
-  // State layar aktif:
-  // 'splash' | 'welcome' | 'downloader' | 'linkToDoc' | 'imageToLink' | 'photoStudio' | 'videoStudio' | 'bgRemover'
   const [currentScreen, setCurrentScreen] = useState('welcome');
   const [qrInitialUrl, setQrInitialUrl] = useState('');
-  
-  // Platform sosmed yang dipilih jika masuk ke downloader
   const [activePlatform, setActivePlatform] = useState('tiktok');
-
-  // Tema Luar Angkasa Gelap Permanen (Deep Cosmic Space)
-  const theme = 'dark';
-  const isDark = true;
 
   useEffect(() => {
     const root = document.documentElement;
-    root.classList.add('dark');
-    root.classList.remove('light');
-    localStorage.setItem('kaze_theme', 'dark');
+    root.classList.remove('dark');
+    root.classList.add('light');
+    localStorage.setItem('kaze_theme', 'light');
   }, []);
 
-  // Jika pengguna ingin masuk lewat splash screen
   if (currentScreen === 'splash') {
     return <SplashScreen onEnter={() => setCurrentScreen('welcome')} />;
   }
 
   return (
-    <div className="min-h-screen flex flex-col relative overflow-x-clip transition-colors duration-500 bg-[#030408] text-slate-100">
-      
-      {/* Background shader dinamis luar angkasa */}
-      <ShaderBackground theme="dark" />
-
-      {/* Header Navigasi Atas Multi-Tools */}
+    <div className="min-h-screen flex flex-col bg-white text-black font-sans selection:bg-black selection:text-white">
+      {/* Top Header Navigation */}
       <Navbar
         currentScreen={currentScreen}
         onSelectTool={(toolId) => {
-          if (toolId === 'downloader') {
-            setCurrentScreen('downloader');
-          } else {
-            setCurrentScreen(toolId);
-          }
+          setCurrentScreen(toolId);
         }}
         onGoHome={() => setCurrentScreen('welcome')}
       />
 
-      {/* Render Layar Sesuai State */}
+      {/* Screen Routing */}
       {currentScreen === 'welcome' && (
         <WelcomeScreen
-          theme="dark"
+          theme="light"
           onSelectPlatform={(platformId) => {
             setActivePlatform(platformId);
             setCurrentScreen('downloader');
@@ -142,13 +124,12 @@ export default function App() {
 
       {currentScreen === 'jjFinder' && (
         <JjFinderScreen
-          theme={theme}
+          theme="light"
           onBack={() => setCurrentScreen('welcome')}
         />
       )}
 
-
-      {/* Footer Bawah */}
+      {/* Footer */}
       <Footer />
     </div>
   );

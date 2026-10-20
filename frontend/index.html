@@ -1,16 +1,16 @@
 <!DOCTYPE html>
-<html class="dark" lang="id">
+<html class="light" lang="id">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AllToolsKaze</title>
+    <title>Kaze Studio - Multi-Tool Platform</title>
     
-    <!-- Google Fonts Inter -->
+    <!-- Google Fonts Inter & Outfit -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     
-    <!-- Tailwind CSS with custom Stitch theme -->
+    <!-- Tailwind CSS with custom Neobrutalist theme -->
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <script id="tailwind-config">
       tailwind.config = {
@@ -18,78 +18,39 @@
         theme: {
           extend: {
             colors: {
-              "on-primary-fixed-variant": "#2f2ebe",
-              "surface-container-lowest": "#060e20",
-              "surface-tint": "#c0c1ff",
-              "secondary-fixed-dim": "#ddb7ff",
-              "on-tertiary": "#00344d",
-              "background": "#0b1326",
-              "surface-container": "#171f33",
-              "error": "#ffb4ab",
-              "secondary-fixed": "#f0dbff",
-              "on-error": "#690005",
-              "tertiary-fixed-dim": "#89ceff",
-              "surface": "#0b1326",
-              "on-surface-variant": "#c7c4d7",
-              "on-tertiary-fixed": "#001e2f",
-              "on-secondary-fixed": "#2c0051",
-              "tertiary-fixed": "#c9e6ff",
-              "inverse-surface": "#dae2fd",
-              "primary-fixed-dim": "#c0c1ff",
-              "on-background": "#dae2fd",
-              "on-tertiary-container": "#002d43",
-              "secondary": "#ddb7ff",
-              "primary-container": "#8083ff",
-              "on-primary-container": "#0d0096",
-              "outline-variant": "#464554",
-              "on-tertiary-fixed-variant": "#004c6e",
-              "outline": "#908fa0",
-              "tertiary-container": "#009ada",
-              "secondary-container": "#6f00be",
-              "on-primary": "#1000a9",
-              "primary-fixed": "#e1e0ff",
-              "surface-bright": "#31394d",
-              "on-primary-fixed": "#07006c",
-              "on-secondary": "#490080",
-              "surface-dim": "#0b1326",
-              "surface-container-low": "#131b2e",
-              "on-secondary-fixed-variant": "#6900b3",
-              "error-container": "#93000a",
-              "on-error-container": "#ffdad6",
-              "on-surface": "#dae2fd",
-              "surface-container-highest": "#2d3449",
-              "inverse-on-surface": "#283044",
-              "inverse-primary": "#494bd6",
-              "surface-variant": "#2d3449",
-              "surface-container-high": "#222a3d",
-              "tertiary": "#89ceff",
-              "on-secondary-container": "#d6a9ff",
-              "primary": "#c0c1ff"
+              background: "#ffffff",
+              surface: "#ffffff",
+              "on-surface": "#000000",
+              "on-surface-variant": "#333333",
+              border: "#000000",
+              primary: "#000000",
+              "on-primary": "#ffffff"
             },
             borderRadius: {
-              "DEFAULT": "0.25rem",
-              "lg": "0.5rem",
-              "xl": "0.75rem",
+              DEFAULT: "0.5rem",
+              sm: "0.25rem",
+              md: "0.375rem",
+              lg: "0.5rem",
+              xl: "0.75rem",
               "2xl": "1rem",
-              "3xl": "1.5rem",
-              "full": "9999px"
-            },
-            spacing: {
-              "gutter": "24px",
-              "margin-desktop": "48px",
-              "container-max": "1200px",
-              "margin-mobile": "16px",
-              "unit": "4px"
+              full: "9999px"
             },
             fontFamily: {
-              sans: ["Inter", "sans-serif"]
+              sans: ["Inter", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "sans-serif"],
+              display: ["Outfit", "Inter", "sans-serif"],
+              mono: ["JetBrains Mono", "monospace"]
+            },
+            boxShadow: {
+              brutal: "3px 3px 0px #000000",
+              "brutal-lg": "5px 5px 0px #000000",
+              "brutal-sm": "2px 2px 0px #000000"
             }
           }
         }
       }
     </script>
   </head>
-  <body class="bg-background text-on-surface font-sans min-h-screen antialiased selection:bg-primary-container selection:text-on-primary-container overflow-x-hidden">
+  <body class="bg-white text-black font-sans min-h-screen antialiased selection:bg-black selection:text-white overflow-x-hidden">
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

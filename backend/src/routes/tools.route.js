@@ -254,10 +254,10 @@ router.post('/trim-video', async (req, res) => {
 });
 
 /**
- * 4. POST /api/jj-finder
+ * 4. POST /api/jj-finder & /api/jj/find
  * Mencari link template JJ (XML Google Drive & 5MB Alight Motion) dari link TikTok atau kata kunci
  */
-router.post('/jj-finder', async (req, res) => {
+router.post(['/jj-finder', '/jj/find'], async (req, res) => {
   try {
     const { query } = req.body;
     if (!query || typeof query !== 'string') {
