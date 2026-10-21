@@ -1473,7 +1473,7 @@ export default function QrStudioScreen({ onBack, initialUrl = '' }) {
                 )}
                 <div className="flex-1">
                   <div className="text-xs font-bold font-mono tracking-wide flex items-center gap-1.5">
-                    <span>{scanResult.scannable ? 'REAL-TIME SCAN: TERVERIFIKASI 100% ✅' : 'REAL-TIME SCAN: PERINGATAN KONTRAS ⚠️'}</span>
+                    <span>{scanResult.scannable ? 'Status Pemindaian: Terbaca Jelas ✅' : 'Status Pemindaian: Periksa Kontras ⚠️'}</span>
                   </div>
                   <div className="text-[10px] text-slate-300">
                     {scanResult.scannable 

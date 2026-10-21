@@ -160,7 +160,7 @@ export default function JjFinderScreen({ onBack }) {
               Cari Link JJ (Jedag-Jedug)
             </h1>
             <p className="text-xs text-neutral-600">
-              Salin dan tempel tautan video TikTok JJ. Sistem mendeteksi Template CapCut, Preset 5MB Alight Motion, berkas XML Google Drive, dan trek audio secara real-time.
+              Salin dan tempel tautan video TikTok JJ untuk mengekstrak template CapCut, preset 5MB Alight Motion, berkas XML Google Drive, dan trek sound audio secara langsung.
             </p>
           </div>
         </div>
@@ -383,11 +383,11 @@ export default function JjFinderScreen({ onBack }) {
               <div className="flex flex-wrap items-center gap-2 pt-1">
                 {resultData.videoInfo?.audioUrl && (
                   <a
-                    href={resultData.videoInfo.audioUrl}
+                    href={resultData.videoInfo.proxyAudioUrl || resultData.videoInfo.audioUrl}
                     download="sound_jedag_jedug.mp3"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="px-3.5 py-2 rounded-lg border-2 border-black bg-white hover:bg-neutral-100 text-black font-bold text-xs flex items-center gap-1.5 shadow-[2px_2px_0px_#000000] cursor-pointer"
+                    className="min-h-[44px] px-3.5 py-2 rounded-lg border-2 border-black bg-white hover:bg-neutral-100 text-black font-bold text-xs flex items-center gap-1.5 shadow-[2px_2px_0px_#000000] cursor-pointer"
                   >
                     <Download className="w-3.5 h-3.5 stroke-[2.5]" />
                     <span>Unduh Sound MP3</span>
@@ -396,10 +396,11 @@ export default function JjFinderScreen({ onBack }) {
 
                 {resultData.videoInfo?.videoUrl && (
                   <a
-                    href={resultData.videoInfo.videoUrl}
+                    href={resultData.videoInfo.proxyVideoUrl || resultData.videoInfo.videoUrl}
+                    download="video_jedag_jedug.mp4"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="px-3.5 py-2 rounded-lg border-2 border-black bg-black hover:bg-neutral-800 text-white font-bold text-xs flex items-center gap-1.5 shadow-[2px_2px_0px_#000000] cursor-pointer"
+                    className="min-h-[44px] px-3.5 py-2 rounded-lg border-2 border-black bg-black hover:bg-neutral-800 text-white font-bold text-xs flex items-center gap-1.5 shadow-[2px_2px_0px_#000000] cursor-pointer"
                   >
                     <Download className="w-3.5 h-3.5 stroke-[2.5]" />
                     <span>Unduh Video JJ</span>
@@ -539,7 +540,7 @@ export default function JjFinderScreen({ onBack }) {
                             href={item.link}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="px-3.5 py-2.5 rounded-lg text-xs font-extrabold bg-black hover:bg-neutral-800 text-white border-2 border-black shadow-[2px_2px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all flex items-center gap-1.5 cursor-pointer"
+                            className="min-h-[44px] px-3.5 py-2.5 rounded-lg text-xs font-extrabold bg-black hover:bg-neutral-800 text-white border-2 border-black shadow-[2px_2px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                           >
                             <ExternalLink className="w-3.5 h-3.5 stroke-[2.5]" />
                             <span>Pakai di CapCut</span>
@@ -550,11 +551,11 @@ export default function JjFinderScreen({ onBack }) {
                               href={item.inAppUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="px-3 py-2.5 rounded-lg text-xs font-bold bg-white hover:bg-neutral-100 text-black border-2 border-black shadow-[2px_2px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all flex items-center gap-1.5 cursor-pointer"
+                              className="min-h-[44px] px-3 py-2.5 rounded-lg text-xs font-bold bg-white hover:bg-neutral-100 text-black border-2 border-black shadow-[2px_2px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                               title="Buka video di aplikasi TikTok untuk menekan tombol template langsung"
                             >
                               <Smartphone className="w-3.5 h-3.5 stroke-[2.5]" />
-                              <span className="hidden sm:inline">Buka di TikTok</span>
+                              <span>Buka di TikTok</span>
                             </a>
                           )}
                         </>
@@ -566,7 +567,7 @@ export default function JjFinderScreen({ onBack }) {
                           href={item.downloadUrl || item.link}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="px-3.5 py-2.5 rounded-lg text-xs font-extrabold bg-black hover:bg-neutral-800 text-white border-2 border-black shadow-[2px_2px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all flex items-center gap-1.5 cursor-pointer"
+                          className="min-h-[44px] px-3.5 py-2.5 rounded-lg text-xs font-extrabold bg-black hover:bg-neutral-800 text-white border-2 border-black shadow-[2px_2px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                         >
                           <ExternalLink className="w-3.5 h-3.5 stroke-[2.5]" />
                           <span>Buka Alight</span>
@@ -580,7 +581,7 @@ export default function JjFinderScreen({ onBack }) {
                             href={item.link}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="px-3.5 py-2.5 rounded-lg text-xs font-extrabold bg-black hover:bg-neutral-800 text-white border-2 border-black shadow-[2px_2px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all flex items-center gap-1.5 cursor-pointer"
+                            className="min-h-[44px] px-3.5 py-2.5 rounded-lg text-xs font-extrabold bg-black hover:bg-neutral-800 text-white border-2 border-black shadow-[2px_2px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                           >
                             <ExternalLink className="w-3.5 h-3.5 stroke-[2.5]" />
                             <span>Buka Drive</span>
@@ -592,11 +593,11 @@ export default function JjFinderScreen({ onBack }) {
                               target="_blank"
                               rel="noopener noreferrer"
                               download
-                              className="px-3 py-2.5 rounded-lg text-xs font-bold bg-white hover:bg-neutral-100 text-black border-2 border-black shadow-[2px_2px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all flex items-center gap-1.5 cursor-pointer"
+                              className="min-h-[44px] px-3 py-2.5 rounded-lg text-xs font-bold bg-white hover:bg-neutral-100 text-black border-2 border-black shadow-[2px_2px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                               title="Unduh berkas XML langsung"
                             >
                               <FolderDown className="w-3.5 h-3.5 stroke-[2.5]" />
-                              <span className="hidden sm:inline">Unduh XML</span>
+                              <span>Unduh XML</span>
                             </a>
                           )}
                         </>
@@ -606,7 +607,7 @@ export default function JjFinderScreen({ onBack }) {
                       <button
                         type="button"
                         onClick={() => handleCopy(item.link, item.id)}
-                        className="px-3.5 py-2.5 rounded-lg text-xs font-bold bg-white hover:bg-neutral-100 text-black border-2 border-black shadow-[2px_2px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all flex items-center gap-1.5 cursor-pointer"
+                        className="min-h-[44px] px-3.5 py-2.5 rounded-lg text-xs font-bold bg-white hover:bg-neutral-100 text-black border-2 border-black shadow-[2px_2px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                         title="Salin tautan preset atau template"
                       >
                         {isCopied ? (

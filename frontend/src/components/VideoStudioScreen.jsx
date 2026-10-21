@@ -198,39 +198,44 @@ export default function VideoStudioScreen({ onBack, onOpenTrimmer }) {
   const cssFilter = `blur(${blur}px) contrast(${contrast}%) brightness(${brightness}%) saturate(${saturation}%) sepia(${sepia}%)`;
 
   return (
-    <main className="flex-grow relative z-10 flex flex-col items-center justify-start px-4 sm:px-6 md:px-margin-desktop py-6 sm:py-10 w-full max-w-6xl mx-auto">
+    <main className="flex-grow w-full max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8 text-black">
       
-      {/* Tombol Navigasi Kembali */}
-      <div className="w-full flex items-center justify-between mb-6">
-        <CosmicBackButton onClick={onBack} label="Kembali ke Beranda Tools" />
-
+      {/* Tombol Navigasi Kembali & Opsi Trimmer */}
+      <div className="w-full flex items-center justify-between mb-5 gap-3">
+        <CosmicBackButton onClick={onBack} label="Kembali ke Beranda" />
         {onOpenTrimmer && (
           <button
             onClick={onOpenTrimmer}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/25 text-indigo-400 font-semibold text-xs transition-all cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white hover:bg-neutral-100 border-2 border-black text-black font-bold text-xs shadow-[2px_2px_0px_#000000] transition-all cursor-pointer min-h-[44px]"
           >
-            <span>✂️ Buka Video Trimmer (Potong Video)</span>
+            <span>✂️ Buka Video Trimmer</span>
           </button>
         )}
       </div>
 
       {/* Header Judul Fitur */}
-      <div className="text-center mb-8 max-w-2xl">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/30 text-violet-400 text-xs font-bold uppercase tracking-wider mb-3">
-          <Film className="w-3.5 h-3.5" />
-          <span>Standalone Real-Time Video Studio</span>
+      <div className="rounded-xl p-5 sm:p-6 border-2 border-black bg-white shadow-[4px_4px_0px_#000000] mb-6">
+        <div className="flex items-center gap-3 pb-3 border-b-2 border-black">
+          <div className="w-10 h-10 rounded-md border-2 border-black bg-black text-white flex items-center justify-center shrink-0">
+            <Film className="w-5 h-5 stroke-[2.2]" />
+          </div>
+          <div>
+            <h1 className="text-base sm:text-xl font-black tracking-tight font-display text-black">
+              Video Studio & Filter FX
+            </h1>
+            <p className="text-xs text-neutral-600">
+              Sesuaikan kontras visual, efek blur, saturasi warna, dan kecepatan putar video dengan kontrol presisi.
+            </p>
+          </div>
         </div>
-        <h1 className="text-2xl sm:text-4xl font-extrabold text-on-surface mb-2">
-          Video Studio HD & Filter FX
-        </h1>
-        <p className="text-xs sm:text-sm text-on-surface-variant">
-          Tingkatkan ketajaman HD video, efek blur dinamis, filter warna sinematik, dan kecepatan putar slow-mo/fast-motion dengan render instan di browser.
-        </p>
       </div>
 
-      {/* Upload Banner jika belum ada video */}
+      {/* Upload Box jika belum ada video */}
       {!videoSrc ? (
-        <div className="w-full max-w-2xl glass-panel rounded-2xl p-10 flex flex-col items-center justify-center text-center border-2 border-dashed border-outline-variant/40 hover:border-violet-400 transition-all cursor-pointer shadow-xl">
+        <div 
+          onClick={() => document.getElementById('video-upload-input').click()}
+          className="w-full p-8 sm:p-12 rounded-xl border-2 border-dashed border-black bg-white flex flex-col items-center justify-center text-center cursor-pointer hover:bg-neutral-50 shadow-[3px_3px_0px_#000000] transition-all"
+        >
           <input
             type="file"
             accept="video/*"
@@ -238,31 +243,32 @@ export default function VideoStudioScreen({ onBack, onOpenTrimmer }) {
             id="video-upload-input"
             className="hidden"
           />
-          <label htmlFor="video-upload-input" className="cursor-pointer flex flex-col items-center">
-            <div className="w-20 h-20 rounded-full bg-violet-500/10 border border-violet-500/30 flex items-center justify-center text-violet-400 mb-4 shadow-lg">
-              <Upload className="w-10 h-10" />
-            </div>
-            <h3 className="text-lg font-bold text-on-surface mb-2">
-              Pilih Video Untuk Diedit & Ditingkatkan ke HD
-            </h3>
-            <p className="text-xs text-on-surface-variant max-w-md mb-6">
-              Mendukung semua format video (MP4, WebM, MOV, dll). Diproses langsung secara privat di perangkatmu.
-            </p>
-            <span className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 text-white font-bold text-xs shadow-lg shadow-violet-500/20 hover:scale-103 transition-all">
-              Pilih File Video Dari Perangkat
-            </span>
-          </label>
+          <div className="w-12 h-12 rounded-lg border-2 border-black bg-neutral-100 flex items-center justify-center text-black mb-3 shadow-[2px_2px_0px_#000000]">
+            <Upload className="w-6 h-6 stroke-[2]" />
+          </div>
+          <h3 className="font-extrabold text-sm sm:text-base text-black font-sans mb-1">
+            Pilih Video Untuk Diedit & Ditingkatkan ke HD
+          </h3>
+          <p className="text-xs text-neutral-600 max-w-sm mb-4">
+            Mendukung semua format video (MP4, WebM, MOV). Diproses secara langsung di peramban Anda.
+          </p>
+          <button
+            type="button"
+            className="min-h-[44px] px-5 py-2.5 rounded-lg border-2 border-black bg-black text-white font-bold text-xs shadow-[2px_2px_0px_#000000] hover:bg-neutral-800 cursor-pointer"
+          >
+            Pilih File Video Dari Perangkat
+          </button>
         </div>
       ) : (
         /* Workspace Studio Video */
         <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           
-          {/* Kolom Kiri: Pemutar Video & Timeline Controls */}
-          <div className="lg:col-span-8 flex flex-col items-center gap-4">
+          {/* Kolom Kiri: Pemutar Video & Controls */}
+          <div className="lg:col-span-8 flex flex-col gap-4">
             
-            <div className="w-full glass-panel rounded-2xl p-4 flex flex-col items-center justify-center relative overflow-hidden bg-black/40 min-h-[380px] sm:min-h-[480px]">
+            <div className="w-full rounded-xl border-2 border-black bg-black p-4 flex flex-col items-center justify-center relative overflow-hidden shadow-[4px_4px_0px_#000000] min-h-[340px] sm:min-h-[440px]">
               
-              {/* Video Element dengan CSS Filter GPU Acceleration */}
+              {/* Video Element */}
               <video
                 ref={videoRef}
                 src={videoSrc}
@@ -272,27 +278,28 @@ export default function VideoStudioScreen({ onBack, onOpenTrimmer }) {
                 muted={isMuted}
                 playsInline
                 style={{ filter: cssFilter }}
-                className="max-w-full max-h-[460px] rounded-xl shadow-2xl transition-all"
+                className="max-w-full max-h-[440px] rounded-lg transition-all"
               />
 
               {/* Overlay Play Icon saat pause */}
               {!isPlaying && (
                 <button
+                  type="button"
                   onClick={togglePlay}
-                  className="absolute w-16 h-16 rounded-full bg-violet-600/80 hover:bg-violet-600 text-white flex items-center justify-center shadow-2xl backdrop-blur-md cursor-pointer transition-all hover:scale-110"
+                  className="absolute w-14 h-14 rounded-full border-2 border-black bg-white text-black flex items-center justify-center shadow-[3px_3px_0px_#000000] cursor-pointer transition-transform hover:scale-105"
                 >
-                  <Play className="w-8 h-8 fill-white ml-1" />
+                  <Play className="w-6 h-6 fill-black ml-1" />
                 </button>
               )}
 
             </div>
 
             {/* Video Controls Bar */}
-            <div className="w-full glass-panel rounded-xl p-4 flex flex-col gap-3">
+            <div className="w-full rounded-xl border-2 border-black bg-white p-4 shadow-[3px_3px_0px_#000000] flex flex-col gap-3">
               
               {/* Timeline Seek Bar */}
               <div className="flex items-center gap-3 w-full">
-                <span className="text-[11px] font-mono text-on-surface-variant w-12 text-right">
+                <span className="text-[11px] font-mono font-bold text-black w-12 text-right">
                   {formatTime(currentTime)}
                 </span>
                 <input
@@ -302,48 +309,51 @@ export default function VideoStudioScreen({ onBack, onOpenTrimmer }) {
                   step="0.1"
                   value={currentTime}
                   onChange={handleSeek}
-                  className="flex-grow accent-violet-500 cursor-pointer h-1.5 rounded-lg bg-surface-container"
+                  className="flex-grow accent-black cursor-pointer h-2 rounded bg-neutral-200"
                 />
-                <span className="text-[11px] font-mono text-on-surface-variant w-12">
+                <span className="text-[11px] font-mono font-bold text-black w-12">
                   {formatTime(duration)}
                 </span>
               </div>
 
               {/* Buttons Row */}
-              <div className="flex items-center justify-between flex-wrap gap-3">
+              <div className="flex items-center justify-between flex-wrap gap-2.5">
                 <div className="flex items-center gap-2">
                   <button
+                    type="button"
                     onClick={togglePlay}
-                    className="p-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-white cursor-pointer"
+                    className="p-2 rounded-lg border-2 border-black bg-black text-white cursor-pointer shadow-[1.5px_1.5px_0px_#000000]"
                   >
                     {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
                   </button>
 
                   <button
+                    type="button"
                     onClick={() => setIsMuted(!isMuted)}
-                    className="p-2 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface cursor-pointer"
+                    className="p-2 rounded-lg border-2 border-black bg-white hover:bg-neutral-100 text-black cursor-pointer"
                   >
-                    {isMuted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4" />}
+                    {isMuted ? <VolumeX className="w-4 h-4 text-black" /> : <Volume2 className="w-4 h-4" />}
                   </button>
 
-                  <span className="text-xs text-on-surface-variant ml-2 truncate max-w-[160px]">
+                  <span className="text-xs font-bold text-black ml-1 truncate max-w-[160px]">
                     {fileName}
                   </span>
                 </div>
 
                 {/* Speed Controls */}
                 <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-bold text-on-surface-variant flex items-center gap-1 mr-1">
-                    <Gauge className="w-3.5 h-3.5 text-violet-400" /> Speed:
+                  <span className="text-xs font-bold text-black flex items-center gap-1 mr-1">
+                    <Gauge className="w-3.5 h-3.5" /> Kecepatan:
                   </span>
                   {[0.5, 1.0, 1.5, 2.0].map((s) => (
                     <button
                       key={s}
+                      type="button"
                       onClick={() => changeSpeed(s)}
-                      className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                      className={`px-2.5 py-1 rounded border-2 border-black text-xs font-bold transition-all cursor-pointer ${
                         playbackSpeed === s
-                          ? 'bg-violet-600 text-white'
-                          : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
+                          ? 'bg-black text-white shadow-[1px_1px_0px_#000000]'
+                          : 'bg-white text-black hover:bg-neutral-100'
                       }`}
                     >
                       {s}x
@@ -357,29 +367,30 @@ export default function VideoStudioScreen({ onBack, onOpenTrimmer }) {
           </div>
 
           {/* Kolom Kanan: Pengaturan Filter & Ekspor */}
-          <div className="lg:col-span-4 glass-panel rounded-2xl p-6 shadow-xl space-y-5">
+          <div className="lg:col-span-4 rounded-xl border-2 border-black bg-white p-5 shadow-[4px_4px_0px_#000000] space-y-4">
             
-            <div className="flex items-center justify-between pb-3 border-b border-outline-variant/30">
-              <h3 className="text-sm font-bold text-on-surface flex items-center gap-2">
-                <Sliders className="w-4 h-4 text-violet-400" />
-                <span>Efek & Filter Video HD</span>
+            <div className="flex items-center justify-between pb-3 border-b-2 border-black">
+              <h3 className="text-sm font-extrabold text-black flex items-center gap-2 font-sans">
+                <Sliders className="w-4 h-4" />
+                <span>Efek & Filter Video</span>
               </h3>
               <button
+                type="button"
                 onClick={resetFilters}
-                className="text-xs text-on-surface-variant hover:text-on-surface flex items-center gap-1 cursor-pointer"
+                className="text-xs font-bold text-black hover:underline flex items-center gap-1 cursor-pointer"
               >
                 <RotateCcw className="w-3 h-3" />
                 <span>Reset</span>
               </button>
             </div>
 
-            {/* 1. HD Contrast & Definition */}
+            {/* 1. HD Contrast */}
             <div className="space-y-1">
-              <div className="flex justify-between text-xs">
-                <span className="font-semibold text-cyan-300 flex items-center gap-1.5">
-                  <Zap className="w-3.5 h-3.5" /> Ketajaman & Kontras HD
+              <div className="flex justify-between text-xs font-bold text-black">
+                <span className="flex items-center gap-1.5">
+                  <Zap className="w-3.5 h-3.5" /> Kontras & Definisi
                 </span>
-                <span className="font-mono text-on-surface-variant">{contrast}%</span>
+                <span className="font-mono">{contrast}%</span>
               </div>
               <input
                 type="range"
@@ -387,17 +398,17 @@ export default function VideoStudioScreen({ onBack, onOpenTrimmer }) {
                 max="250"
                 value={contrast}
                 onChange={(e) => setContrast(Number(e.target.value))}
-                className="w-full accent-cyan-400 cursor-pointer"
+                className="w-full accent-black cursor-pointer"
               />
             </div>
 
             {/* 2. Efek Blur Video */}
             <div className="space-y-1">
-              <div className="flex justify-between text-xs">
-                <span className="font-semibold text-on-surface flex items-center gap-1.5">
-                  <Droplet className="w-3.5 h-3.5 text-blue-400" /> Efek Blur (Latar)
+              <div className="flex justify-between text-xs font-bold text-black">
+                <span className="flex items-center gap-1.5">
+                  <Droplet className="w-3.5 h-3.5" /> Efek Blur
                 </span>
-                <span className="font-mono text-on-surface-variant">{blur}px</span>
+                <span className="font-mono">{blur}px</span>
               </div>
               <input
                 type="range"
@@ -406,17 +417,17 @@ export default function VideoStudioScreen({ onBack, onOpenTrimmer }) {
                 step="0.5"
                 value={blur}
                 onChange={(e) => setBlur(Number(e.target.value))}
-                className="w-full accent-blue-400 cursor-pointer"
+                className="w-full accent-black cursor-pointer"
               />
             </div>
 
-            {/* 3. Kecerahan (Brightness) */}
+            {/* 3. Kecerahan */}
             <div className="space-y-1">
-              <div className="flex justify-between text-xs">
-                <span className="font-semibold text-on-surface flex items-center gap-1.5">
-                  <Sun className="w-3.5 h-3.5 text-amber-400" /> Kecerahan Video
+              <div className="flex justify-between text-xs font-bold text-black">
+                <span className="flex items-center gap-1.5">
+                  <Sun className="w-3.5 h-3.5" /> Kecerahan Video
                 </span>
-                <span className="font-mono text-on-surface-variant">{brightness}%</span>
+                <span className="font-mono">{brightness}%</span>
               </div>
               <input
                 type="range"
@@ -424,15 +435,15 @@ export default function VideoStudioScreen({ onBack, onOpenTrimmer }) {
                 max="200"
                 value={brightness}
                 onChange={(e) => setBrightness(Number(e.target.value))}
-                className="w-full accent-amber-400 cursor-pointer"
+                className="w-full accent-black cursor-pointer"
               />
             </div>
 
             {/* 4. Saturasi Warna */}
             <div className="space-y-1">
-              <div className="flex justify-between text-xs">
-                <span className="font-semibold text-on-surface">Saturasi Warna (Vibrance)</span>
-                <span className="font-mono text-on-surface-variant">{saturation}%</span>
+              <div className="flex justify-between text-xs font-bold text-black">
+                <span>Saturasi Warna</span>
+                <span className="font-mono">{saturation}%</span>
               </div>
               <input
                 type="range"
@@ -440,15 +451,15 @@ export default function VideoStudioScreen({ onBack, onOpenTrimmer }) {
                 max="250"
                 value={saturation}
                 onChange={(e) => setSaturation(Number(e.target.value))}
-                className="w-full accent-pink-400 cursor-pointer"
+                className="w-full accent-black cursor-pointer"
               />
             </div>
 
             {/* 5. Sepia / Film Klasik */}
             <div className="space-y-1">
-              <div className="flex justify-between text-xs">
-                <span className="font-semibold text-on-surface">Efek Film Klasik (Sepia)</span>
-                <span className="font-mono text-on-surface-variant">{sepia}%</span>
+              <div className="flex justify-between text-xs font-bold text-black">
+                <span>Efek Film Klasik (Sepia)</span>
+                <span className="font-mono">{sepia}%</span>
               </div>
               <input
                 type="range"
@@ -456,35 +467,36 @@ export default function VideoStudioScreen({ onBack, onOpenTrimmer }) {
                 max="100"
                 value={sepia}
                 onChange={(e) => setSepia(Number(e.target.value))}
-                className="w-full accent-amber-500 cursor-pointer"
+                className="w-full accent-black cursor-pointer"
               />
             </div>
 
             {/* Ekspor & Render Video Button */}
-            <div className="pt-4 border-t border-outline-variant/30 space-y-3">
+            <div className="pt-3 border-t-2 border-black space-y-3">
               <button
+                type="button"
                 onClick={handleExportVideo}
                 disabled={isExporting}
-                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-violet-600 via-purple-600 to-pink-600 text-white font-extrabold text-sm shadow-xl shadow-violet-600/25 hover:scale-102 active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                className="w-full min-h-[44px] py-3 rounded-lg border-2 border-black bg-black text-white font-extrabold text-xs sm:text-sm shadow-[3px_3px_0px_#000000] hover:bg-neutral-800 disabled:opacity-50 active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 {isExporting ? (
                   <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <Loader2 className="w-4 h-4 animate-spin" />
                     <span>Merender Video ({exportProgress}%)...</span>
                   </>
                 ) : (
                   <>
-                    <Sparkles className="w-5 h-5" />
-                    <span>Render & Download Video HD</span>
+                    <Download className="w-4 h-4 stroke-[2.5]" />
+                    <span>Render & Unduh Video</span>
                   </>
                 )}
               </button>
 
               {/* Progress bar render */}
               {isExporting && (
-                <div className="w-full bg-surface-container rounded-full h-2 overflow-hidden">
+                <div className="w-full bg-neutral-100 border border-black rounded-full h-2.5 overflow-hidden">
                   <div 
-                    className="bg-gradient-to-r from-violet-500 to-pink-500 h-full transition-all duration-200"
+                    className="bg-black h-full transition-all duration-200"
                     style={{ width: `${exportProgress}%` }}
                   />
                 </div>
@@ -495,10 +507,10 @@ export default function VideoStudioScreen({ onBack, onOpenTrimmer }) {
                 <a
                   href={exportedUrl}
                   download={`kuro_enhanced_${fileName.replace(/\.[^/.]+$/, '')}.mp4`}
-                  className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 cursor-pointer transition-all animate-fadeIn"
+                  className="w-full min-h-[44px] py-3 rounded-lg border-2 border-black bg-white hover:bg-neutral-100 text-black font-extrabold text-xs sm:text-sm shadow-[2px_2px_0px_#000000] flex items-center justify-center gap-2 cursor-pointer transition-all animate-fadeIn"
                 >
-                  <Download className="w-4 h-4" />
-                  <span>Download Video Hasil Render</span>
+                  <Download className="w-4 h-4 stroke-[2.5]" />
+                  <span>Simpan Berkas Video</span>
                 </a>
               )}
             </div>

@@ -146,40 +146,38 @@ export default function ImageToLinkScreen({ onBack, onOpenQrStudio }) {
   };
 
   return (
-    <main className="flex-grow relative z-10 flex flex-col items-center justify-start px-4 sm:px-6 md:px-margin-desktop py-6 sm:py-10 w-full max-w-4xl mx-auto">
+    <main className="flex-grow w-full max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8 text-black">
       
       {/* Tombol Navigasi Kembali */}
-      <div className="w-full flex items-center justify-between mb-6">
-        <CosmicBackButton onClick={onBack} label="Kembali ke Beranda Tools" />
-
-        <div className="flex items-center gap-2 text-xs text-indigo-400 bg-indigo-500/10 px-3 py-1 rounded-full border border-indigo-500/20">
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>Foto, Video & PDF ke Link</span>
-        </div>
+      <div className="mb-5">
+        <CosmicBackButton onClick={onBack} label="Kembali ke Beranda" />
       </div>
 
       {/* Header Judul Fitur */}
-      <div className="text-center mb-8 max-w-2xl">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-xs font-bold uppercase tracking-wider mb-3">
-          <Link2 className="w-3.5 h-3.5" />
-          <span>Universal Media & Document Hosting</span>
+      <div className="rounded-xl p-5 sm:p-6 border-2 border-black bg-white shadow-[4px_4px_0px_#000000] mb-6">
+        <div className="flex items-center gap-3 pb-3 border-b-2 border-black">
+          <div className="w-10 h-10 rounded-md border-2 border-black bg-black text-white flex items-center justify-center shrink-0">
+            <Link2 className="w-5 h-5 stroke-[2.2]" />
+          </div>
+          <div>
+            <h1 className="text-base sm:text-xl font-black tracking-tight font-display text-black">
+              Ubah File Menjadi Link
+            </h1>
+            <p className="text-xs text-neutral-600">
+              Unggah foto, video, atau dokumen PDF untuk mendapatkan tautan publik langsung yang dapat diakses dari perangkat manapun.
+            </p>
+          </div>
         </div>
-        <h1 className="text-2xl sm:text-4xl font-extrabold text-on-surface mb-2">
-          Ubah Foto, Video & PDF Menjadi Link
-        </h1>
-        <p className="text-xs sm:text-sm text-on-surface-variant">
-          Unggah media apapun dan dapatkan URL link langsung secara instan yang dapat dibuka, dibagikan, disematkan di web, atau dijadikan Kode QR.
-        </p>
       </div>
 
       {/* Upload Box Zone */}
-      <div className="w-full glass-panel rounded-2xl p-6 sm:p-8 shadow-xl mb-8">
+      <div className="w-full rounded-xl p-6 sm:p-8 border-2 border-black bg-white shadow-[4px_4px_0px_#000000] mb-6">
         
         {/* Drop Area */}
         <div
           onDrop={handleDrop}
           onDragOver={(e) => e.preventDefault()}
-          className="border-2 border-dashed border-outline-variant/50 hover:border-indigo-500/80 rounded-2xl p-6 sm:p-10 flex flex-col items-center justify-center text-center transition-all bg-surface-container/30 hover:bg-surface-container/50 relative cursor-pointer group"
+          className="border-2 border-dashed border-black rounded-xl p-6 sm:p-10 flex flex-col items-center justify-center text-center transition-all bg-neutral-50 hover:bg-neutral-100 cursor-pointer"
           onClick={() => document.getElementById('file-upload-input').click()}
         >
           <input
@@ -193,54 +191,54 @@ export default function ImageToLinkScreen({ onBack, onOpenQrStudio }) {
           {previewUrl ? (
             <div className="w-full flex flex-col items-center gap-4">
               {fileType === 'image' && (
-                <div className="max-w-xs max-h-60 rounded-xl overflow-hidden shadow-lg border border-outline-variant/40 bg-black/40">
+                <div className="max-w-xs max-h-60 rounded-lg overflow-hidden border-2 border-black bg-neutral-100 shadow-[2px_2px_0px_#000000]">
                   <img src={previewUrl} alt="Preview" className="w-full h-full object-contain" />
                 </div>
               )}
 
               {fileType === 'video' && (
-                <div className="max-w-md w-full rounded-xl overflow-hidden shadow-lg border border-outline-variant/40 bg-black">
+                <div className="max-w-md w-full rounded-lg overflow-hidden border-2 border-black bg-black shadow-[2px_2px_0px_#000000]">
                   <video src={previewUrl} controls className="w-full max-h-60 object-contain" />
                 </div>
               )}
 
               {fileType === 'pdf' && (
-                <div className="flex items-center gap-3 p-4 rounded-xl bg-surface-container border border-outline-variant/40 max-w-md w-full">
-                  <div className="w-12 h-12 rounded-lg bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-400 shrink-0">
+                <div className="flex items-center gap-3 p-4 rounded-lg bg-neutral-100 border-2 border-black max-w-md w-full shadow-[2px_2px_0px_#000000]">
+                  <div className="w-12 h-12 rounded-lg bg-black text-white flex items-center justify-center shrink-0">
                     <FileText className="w-6 h-6" />
                   </div>
                   <div className="text-left overflow-hidden">
-                    <p className="text-xs font-bold text-on-surface truncate">{selectedFile?.name}</p>
-                    <p className="text-[11px] text-on-surface-variant">Dokumen PDF Resmi • Siap Dijadikan Link</p>
+                    <p className="text-xs font-bold text-black truncate">{selectedFile?.name}</p>
+                    <p className="text-[11px] text-neutral-600">Dokumen PDF Siap Dijadikan Tautan</p>
                   </div>
                 </div>
               )}
 
               <div className="text-center">
-                <p className="text-xs font-semibold text-on-surface">{selectedFile?.name}</p>
-                <p className="text-[11px] text-on-surface-variant font-mono">
+                <p className="text-xs font-bold text-black">{selectedFile?.name}</p>
+                <p className="text-[11px] text-neutral-600 font-mono">
                   {(selectedFile?.size / (1024 * 1024)).toFixed(2)} MB • {fileType.toUpperCase()}
                 </p>
-                <span className="text-[11px] text-indigo-400 group-hover:underline mt-1 inline-block">
-                  Klik untuk mengganti file
+                <span className="text-[11px] text-black font-bold underline mt-1 inline-block">
+                  Klik untuk mengganti berkas
                 </span>
               </div>
             </div>
           ) : (
             <div className="flex flex-col items-center gap-3">
-              <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform">
-                <Upload className="w-7 h-7" />
+              <div className="w-14 h-14 rounded-lg border-2 border-black bg-neutral-100 flex items-center justify-center text-black shadow-[2px_2px_0px_#000000]">
+                <Upload className="w-6 h-6 stroke-[2]" />
               </div>
               <div>
-                <p className="text-sm font-bold text-on-surface">
-                  Pilih atau Tarik File ke Sini
+                <p className="text-sm font-bold text-black font-sans">
+                  Pilih atau Tarik Berkas ke Sini
                 </p>
-                <p className="text-xs text-on-surface-variant mt-1">
-                  Mendukung Foto (JPG, PNG, WebP), Video (MP4, WebM), dan Dokumen PDF
+                <p className="text-xs text-neutral-600 mt-1">
+                  Mendukung Foto (JPG, PNG, WEBP), Video (MP4, WebM), dan Dokumen PDF
                 </p>
               </div>
-              <span className="text-[11px] px-3 py-1 rounded-full bg-surface-container font-mono text-on-surface-variant">
-                Maksimal 100 MB per file
+              <span className="text-[11px] px-3 py-1 rounded border border-black bg-white font-mono font-bold text-black">
+                Maksimal 100 MB per berkas
               </span>
             </div>
           )}
@@ -248,28 +246,29 @@ export default function ImageToLinkScreen({ onBack, onOpenQrStudio }) {
 
         {/* Pesan Error */}
         {errorMessage && (
-          <div className="mt-4 p-3 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center gap-2 text-red-400 text-xs">
+          <div className="mt-4 p-3 rounded-lg bg-neutral-100 border-2 border-black flex items-center gap-2 text-black text-xs font-bold">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{errorMessage}</span>
           </div>
         )}
 
         {/* Tombol Upload */}
-        <div className="mt-6 flex justify-end">
+        <div className="mt-5 flex justify-end">
           <button
+            type="button"
             onClick={handleUpload}
             disabled={!previewUrl || uploading}
-            className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20 transition-all cursor-pointer"
+            className="w-full sm:w-auto min-h-[44px] px-6 py-2.5 rounded-lg border-2 border-black bg-black hover:bg-neutral-800 disabled:opacity-50 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-[2px_2px_0px_#000000] cursor-pointer"
           >
             {uploading ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Mengunggah & Mengonversi ke Link...</span>
+                <span>Mengunggah Berkas...</span>
               </>
             ) : (
               <>
                 <Link2 className="w-4 h-4" />
-                <span>Buat Link Sekarang</span>
+                <span>Buat Tautan Sekarang</span>
               </>
             )}
           </button>
@@ -279,44 +278,45 @@ export default function ImageToLinkScreen({ onBack, onOpenQrStudio }) {
 
       {/* HASIL OUTPUT LINK BERHASIL */}
       {resultData && (
-        <div className="w-full glass-panel rounded-2xl p-6 sm:p-8 shadow-2xl border border-indigo-500/30 space-y-6 mb-8 animate-in fade-in duration-300">
-          <div className="flex items-center justify-between pb-4 border-b border-outline-variant/30">
-            <div className="flex items-center gap-2 text-emerald-400">
-              <Check className="w-5 h-5" />
-              <h3 className="text-sm sm:text-base font-bold text-on-surface">
-                File Berhasil Diubah Menjadi Tautan!
+        <div className="w-full rounded-xl p-5 sm:p-6 border-2 border-black bg-white shadow-[4px_4px_0px_#000000] space-y-5 mb-6 animate-fadeIn">
+          <div className="flex items-center justify-between pb-3 border-b-2 border-black">
+            <div className="flex items-center gap-2 text-black">
+              <Check className="w-5 h-5 stroke-[3]" />
+              <h3 className="text-sm sm:text-base font-extrabold font-sans">
+                Tautan Berhasil Dibuat
               </h3>
             </div>
-            <span className="text-[11px] font-mono text-indigo-400 bg-indigo-500/10 px-2.5 py-0.5 rounded-full border border-indigo-500/20">
+            <span className="text-[11px] font-mono font-bold text-black bg-neutral-100 border border-black px-2.5 py-0.5 rounded">
               {resultData.sizeFormatted}
             </span>
           </div>
 
           {/* 1. Direct URL */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-on-surface-variant flex items-center justify-between">
+            <label className="text-xs font-bold text-black flex items-center justify-between">
               <span>Tautan Langsung (Direct Link):</span>
-              <span className="text-[10px] text-indigo-400">Bisa dibuka di WhatsApp, Discord, Browser</span>
+              <span className="text-[10px] text-neutral-600 font-mono">Bisa dibagikan di WhatsApp, Discord, Browser</span>
             </label>
             <div className="flex items-center gap-2">
               <input
                 type="text"
                 readOnly
                 value={resultData.url}
-                className="flex-grow px-3.5 py-2.5 rounded-xl bg-surface-container/60 border border-outline-variant/40 text-xs text-on-surface font-mono"
+                className="flex-grow px-3.5 py-2.5 rounded-lg border-2 border-black bg-neutral-50 text-xs font-mono font-bold text-black outline-none"
               />
               <button
+                type="button"
                 onClick={() => handleCopy(resultData.url, 'url')}
-                className="px-3.5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer"
+                className="min-h-[44px] px-4 py-2.5 rounded-lg border-2 border-black bg-black hover:bg-neutral-800 text-white text-xs font-bold flex items-center gap-1.5 shrink-0 shadow-[2px_2px_0px_#000000] cursor-pointer"
               >
-                {copiedField === 'url' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>{copiedField === 'url' ? 'Tersalin!' : 'Salin'}</span>
+                {copiedField === 'url' ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{copiedField === 'url' ? 'Disalin' : 'Salin'}</span>
               </button>
               <a
                 href={resultData.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface border border-outline-variant/30 shrink-0 transition-colors"
+                className="min-h-[44px] px-3 py-2.5 rounded-lg border-2 border-black bg-white hover:bg-neutral-100 text-black shrink-0 flex items-center justify-center shadow-[2px_2px_0px_#000000] cursor-pointer"
                 title="Buka Tautan"
               >
                 <ExternalLink className="w-4 h-4" />
@@ -325,37 +325,37 @@ export default function ImageToLinkScreen({ onBack, onOpenQrStudio }) {
           </div>
 
           {/* 2. Tombol Cepat: Jadikan Kode QR */}
-          <div className="p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="p-4 rounded-lg border-2 border-black bg-neutral-50 flex flex-col sm:flex-row items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shrink-0 shadow-md">
+              <div className="w-10 h-10 rounded-lg border-2 border-black bg-black text-white flex items-center justify-center shrink-0 shadow-[1.5px_1.5px_0px_#000000]">
                 <QrCode className="w-5 h-5" />
               </div>
               <div className="text-left">
-                <h4 className="text-xs font-bold text-on-surface">Ingin Jadikan Tautan Ini Kode QR?</h4>
-                <p className="text-[11px] text-on-surface-variant">
-                  Kustomisasi bingkai, logo tengah, bentuk mata, dan warna gradasi di QR Studio.
+                <h4 className="text-xs font-extrabold text-black font-sans">Jadikan Tautan Ini Kode QR</h4>
+                <p className="text-[11px] text-neutral-600">
+                  Kustomisasi bingkai, logo tengah, dan tata letak di QR Studio.
                 </p>
               </div>
             </div>
 
             <button
+              type="button"
               onClick={() => {
                 if (onOpenQrStudio) onOpenQrStudio(resultData.url);
               }}
-              className="w-full sm:w-auto px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center justify-center gap-2 shrink-0 shadow-sm transition-all cursor-pointer"
+              className="w-full sm:w-auto min-h-[44px] px-4 py-2 rounded-lg border-2 border-black bg-black hover:bg-neutral-800 text-white font-bold text-xs flex items-center justify-center gap-2 shrink-0 shadow-[2px_2px_0px_#000000] cursor-pointer"
             >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Desain Kode QR Sekarang</span>
+              <span>Buka di QR Studio</span>
             </button>
           </div>
 
           {/* 3. Format Embed (HTML & Markdown) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
             
             {/* Markdown */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-on-surface-variant flex items-center gap-1.5">
-                <FileCode className="w-3.5 h-3.5 text-indigo-400" />
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-black flex items-center gap-1.5">
+                <FileCode className="w-3.5 h-3.5" />
                 <span>Format Markdown:</span>
               </label>
               <div className="flex items-center gap-2">
@@ -363,22 +363,23 @@ export default function ImageToLinkScreen({ onBack, onOpenQrStudio }) {
                   type="text"
                   readOnly
                   value={resultData.markdown}
-                  className="flex-grow px-3 py-2 rounded-xl bg-surface-container/60 border border-outline-variant/40 text-[11px] text-on-surface font-mono truncate"
+                  className="flex-grow px-3 py-2 rounded-lg border-2 border-black bg-neutral-50 text-[11px] font-mono font-bold text-black truncate outline-none"
                 />
                 <button
+                  type="button"
                   onClick={() => handleCopy(resultData.markdown, 'md')}
-                  className="p-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface border border-outline-variant/30 shrink-0 cursor-pointer"
+                  className="p-2 rounded-lg border-2 border-black bg-white hover:bg-neutral-100 text-black shrink-0 cursor-pointer shadow-[1.5px_1.5px_0px_#000000]"
                   title="Salin Markdown"
                 >
-                  {copiedField === 'md' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                  {copiedField === 'md' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                 </button>
               </div>
             </div>
 
             {/* HTML Tag */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-on-surface-variant flex items-center gap-1.5">
-                <Code className="w-3.5 h-3.5 text-indigo-400" />
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-black flex items-center gap-1.5">
+                <Code className="w-3.5 h-3.5" />
                 <span>Format HTML Embed:</span>
               </label>
               <div className="flex items-center gap-2">
@@ -386,14 +387,15 @@ export default function ImageToLinkScreen({ onBack, onOpenQrStudio }) {
                   type="text"
                   readOnly
                   value={resultData.html}
-                  className="flex-grow px-3 py-2 rounded-xl bg-surface-container/60 border border-outline-variant/40 text-[11px] text-on-surface font-mono truncate"
+                  className="flex-grow px-3 py-2 rounded-lg border-2 border-black bg-neutral-50 text-[11px] font-mono font-bold text-black truncate outline-none"
                 />
                 <button
+                  type="button"
                   onClick={() => handleCopy(resultData.html, 'html')}
-                  className="p-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface border border-outline-variant/30 shrink-0 cursor-pointer"
+                  className="p-2 rounded-lg border-2 border-black bg-white hover:bg-neutral-100 text-black shrink-0 cursor-pointer shadow-[1.5px_1.5px_0px_#000000]"
                   title="Salin HTML"
                 >
-                  {copiedField === 'html' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                  {copiedField === 'html' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                 </button>
               </div>
             </div>
@@ -405,15 +407,16 @@ export default function ImageToLinkScreen({ onBack, onOpenQrStudio }) {
 
       {/* RIWAYAT PENGUNGGAHAN TERAKHIR */}
       {uploadHistory.length > 0 && (
-        <div className="w-full glass-panel rounded-2xl p-6 shadow-xl space-y-4">
-          <div className="flex items-center justify-between border-b border-outline-variant/30 pb-3">
-            <div className="flex items-center gap-2 text-xs font-bold text-on-surface">
-              <History className="w-4 h-4 text-indigo-400" />
-              <span>Riwayat File yang Pernah Diunggah</span>
+        <div className="w-full rounded-xl p-5 sm:p-6 border-2 border-black bg-white shadow-[4px_4px_0px_#000000] space-y-4">
+          <div className="flex items-center justify-between border-b-2 border-black pb-3">
+            <div className="flex items-center gap-2 text-xs font-bold text-black">
+              <History className="w-4 h-4" />
+              <span>Riwayat Berkas Terunggah</span>
             </div>
             <button
+              type="button"
               onClick={clearHistory}
-              className="text-[11px] text-red-400 hover:text-red-300 flex items-center gap-1 transition-colors cursor-pointer"
+              className="text-[11px] font-bold text-black hover:underline flex items-center gap-1 cursor-pointer"
             >
               <Trash2 className="w-3 h-3" />
               <span>Hapus Semua</span>
@@ -424,32 +427,33 @@ export default function ImageToLinkScreen({ onBack, onOpenQrStudio }) {
             {uploadHistory.map((item, idx) => (
               <div 
                 key={idx} 
-                className="p-3 rounded-xl bg-surface-container/40 border border-outline-variant/30 flex items-center justify-between gap-3 hover:bg-surface-container/70 transition-colors"
+                className="p-3 rounded-lg border-2 border-black bg-neutral-50 flex items-center justify-between gap-3 shadow-[2px_2px_0px_#000000]"
               >
                 <div className="flex items-center gap-2.5 overflow-hidden">
-                  <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0">
+                  <div className="w-8 h-8 rounded border border-black bg-white flex items-center justify-center text-black shrink-0">
                     {item.category === 'video' ? <VideoIcon className="w-4 h-4" /> : item.category === 'pdf' ? <FileText className="w-4 h-4" /> : <ImageIcon className="w-4 h-4" />}
                   </div>
                   <div className="overflow-hidden">
-                    <p className="text-xs font-semibold text-on-surface truncate">{item.fileName}</p>
-                    <p className="text-[10px] text-on-surface-variant font-mono">{item.sizeFormatted || item.date}</p>
+                    <p className="text-xs font-bold text-black truncate">{item.fileName}</p>
+                    <p className="text-[10px] text-neutral-600 font-mono">{item.sizeFormatted || item.date}</p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-1 shrink-0">
                   <button
+                    type="button"
                     onClick={() => handleCopy(item.url, `hist_${idx}`)}
-                    className="p-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface transition-colors cursor-pointer"
-                    title="Salin Link"
+                    className="p-1.5 rounded border border-black bg-white hover:bg-neutral-100 text-black cursor-pointer"
+                    title="Salin Tautan"
                   >
-                    {copiedField === `hist_${idx}` ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    {copiedField === `hist_${idx}` ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                   </button>
                   <a
                     href={item.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="p-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface transition-colors"
-                    title="Buka Link"
+                    className="p-1.5 rounded border border-black bg-white hover:bg-neutral-100 text-black"
+                    title="Buka Tautan"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
                   </a>

@@ -134,13 +134,38 @@ function parseTikTokToJjTemplates(tiktokData, rawUrl) {
     });
   });
 
-  // C. Deteksi CapCut Template (dari anchors TikTok, tautan teks, atau tombol coba template)
+  // Helper resolusi tautan CapCut yang selalu valid dan tidak 404
+  const buildCapcutUrl = (anchorObj = null) => {
+    if (anchorObj) {
+      const candidate = anchorObj.url || anchorObj.schema_url || anchorObj.web_url;
+      if (candidate && /^https?:\/\/(?:www\.)?(?:capcut\.(?:com|net)|mobile\.capcutshare\.com)/i.test(candidate)) {
+        return {
+          link: candidate,
+          inAppUrl: videoId ? `https://www.tiktok.com/@${creatorUsername}/video/${videoId}` : rawUrl
+        };
+      }
+    }
+    const cleanKeywords = (title || audioTitle || creatorClean || 'jedag jedug')
+      .replace(/#\w+/g, '')
+      .replace(/[^\w\s-]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 45);
+
+    const q = cleanKeywords || `${creatorClean} jj`;
+    return {
+      link: `https://www.capcut.com/id-id/templates?q=${encodeURIComponent(q)}`,
+      inAppUrl: videoId ? `https://www.tiktok.com/@${creatorUsername}/video/${videoId}` : rawUrl
+    };
+  };
+
+  // C. Deteksi CapCut Template (dari anchors TikTok, tautan teks, atau tagar video)
   const anchorCapcut = Array.isArray(tiktokData.anchors) 
     ? tiktokData.anchors.find(a => /capcut/i.test(a.keyword || '') || /capcut/i.test(a.url || '') || /capcut/i.test(a.name || ''))
     : null;
 
   if (anchorCapcut) {
-    const rawCcUrl = anchorCapcut.url || anchorCapcut.schema_url || (videoId ? `https://www.capcut.com/template-detail/${videoId}` : null);
+    const ccTarget = buildCapcutUrl(anchorCapcut);
     templates.unshift({
       id: 'capcut-anchor-direct',
       title: `${creatorClean} | Template CapCut (${anchorCapcut.keyword || 'Coba Template Ini'})`,
@@ -151,11 +176,11 @@ function parseTikTokToJjTemplates(tiktokData, rawUrl) {
       platform: 'CapCut',
       isDirectLink: true,
       badgeColor: 'black',
-      size: 'Tombol Anchor TikTok',
+      size: 'Template Video Resmi',
       author: cleanAuthor,
-      link: rawCcUrl || `https://www.capcut.com/template-detail/${videoId}`,
-      downloadUrl: rawCcUrl || `https://www.capcut.com/template-detail/${videoId}`,
-      inAppUrl: `https://www.tiktok.com/@${creatorUsername}/video/${videoId}`,
+      link: ccTarget.link,
+      downloadUrl: ccTarget.link,
+      inAppUrl: ccTarget.inAppUrl,
       thumbnail: cleanThumbnail,
       description: 'Template video CapCut resmi yang disematkan langsung oleh kreator di video TikTok.'
     });
@@ -177,18 +202,13 @@ function parseTikTokToJjTemplates(tiktokData, rawUrl) {
         author: cleanAuthor,
         link: ccUrl,
         downloadUrl: ccUrl,
+        inAppUrl: videoId ? `https://www.tiktok.com/@${creatorUsername}/video/${videoId}` : rawUrl,
         thumbnail: cleanThumbnail,
         description: 'Template video CapCut resmi dari kreator, satu klik langsung membuka aplikasi CapCut.'
       });
     });
   } else if (mentionsCapcut && !anchorCapcut) {
-    const capcutWebUrl = videoId 
-      ? `https://www.capcut.com/template-detail/${videoId}` 
-      : `https://www.capcut.com/id-id/templates?q=${encodeURIComponent(title.replace(/#\w+/g, '').trim() || 'jedag jedug')}`;
-    const tiktokInAppUrl = videoId 
-      ? `https://www.tiktok.com/@${creatorUsername}/video/${videoId}`
-      : rawUrl;
-
+    const ccTarget = buildCapcutUrl(null);
     templates.push({
       id: 'capcut-template-main',
       title: `${creatorClean} | Template CapCut (Coba Template Ini)`,
@@ -201,9 +221,9 @@ function parseTikTokToJjTemplates(tiktokData, rawUrl) {
       badgeColor: 'black',
       size: 'Instan CapCut',
       author: cleanAuthor,
-      link: capcutWebUrl,
-      downloadUrl: capcutWebUrl,
-      inAppUrl: tiktokInAppUrl,
+      link: ccTarget.link,
+      downloadUrl: ccTarget.link,
+      inAppUrl: ccTarget.inAppUrl,
       thumbnail: cleanThumbnail,
       description: 'Template CapCut terdeteksi dari video. Klik untuk langsung membuka dan menerapkan template di CapCut.'
     });
@@ -297,9 +317,7 @@ function parseTikTokToJjTemplates(tiktokData, rawUrl) {
   // G. Pastikan CapCut Template selalu tersedia
   const hasCapcutTemplate = templates.some(t => t.category === 'capcut');
   if (!hasCapcutTemplate) {
-    const capcutSearchUrl = videoId 
-      ? `https://www.capcut.com/template-detail/${videoId}` 
-      : `https://www.capcut.com/id-id/templates?q=${encodeURIComponent(title.replace(/#\w+/g, '').trim() || 'jedag jedug')}`;
+    const ccTarget = buildCapcutUrl(null);
     templates.push({
       id: 'capcut-template-auto',
       title: `${creatorClean} | Template CapCut JJ`,
@@ -312,15 +330,15 @@ function parseTikTokToJjTemplates(tiktokData, rawUrl) {
       badgeColor: 'black',
       size: 'Instan CapCut',
       author: cleanAuthor,
-      link: capcutSearchUrl,
-      downloadUrl: capcutSearchUrl,
-      inAppUrl: `https://www.tiktok.com/@${creatorUsername}/video/${videoId}`,
+      link: ccTarget.link,
+      downloadUrl: ccTarget.link,
+      inAppUrl: ccTarget.inAppUrl,
       thumbnail: cleanThumbnail,
       description: 'Template video CapCut siap pakai yang cocok dengan ritme dan beat video ini.'
     });
   }
 
-  // Status deteksi real-time
+  // Status deteksi
   const hasGdrive = templates.some(t => t.category === 'gdrive');
   const hasXml = templates.some(t => t.type === 'XML');
   const has5mb = templates.some(t => t.category === '5mb');
@@ -328,7 +346,7 @@ function parseTikTokToJjTemplates(tiktokData, rawUrl) {
 
   return {
     success: true,
-    source: 'TikTok Video Parser Real-Time',
+    source: 'TikTok Video Parser',
     query: rawUrl,
     detectionSummary: {
       hasCapcut,
@@ -346,8 +364,10 @@ function parseTikTokToJjTemplates(tiktokData, rawUrl) {
       authorName: tiktokData.author || 'TikTok Editor',
       thumbnail: cleanThumbnail,
       videoUrl: videoUrl,
+      proxyVideoUrl: videoUrl ? `/api/proxy-download?url=${encodeURIComponent(videoUrl)}&filename=${encodeURIComponent(`jj_video_${videoId || 'video'}.mp4`)}` : null,
       videoSize: videoSize,
       audioUrl: audioUrl,
+      proxyAudioUrl: audioUrl ? `/api/proxy-download?url=${encodeURIComponent(audioUrl)}&filename=${encodeURIComponent(`jj_audio_${videoId || 'sound'}.mp3`)}` : null,
       audioTitle: audioTitle,
       audioAuthor: audioAuthor,
       aspectRatio: '9:16',
@@ -396,6 +416,7 @@ function generateCuratedJjTemplates(query) {
       author: handle,
       link: 'https://www.capcut.com/id-id/templates?q=jj+kata+1+foto',
       downloadUrl: 'https://www.capcut.com/id-id/templates?q=jj+kata+1+foto',
+      inAppUrl: 'https://www.tiktok.com/tag/templatecapcut',
       thumbnail: defaultThumbnail,
       description: 'Template CapCut siap pakai satu klik langsung terbuka di aplikasi CapCut.'
     });

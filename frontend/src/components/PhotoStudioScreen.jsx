@@ -223,30 +223,36 @@ export default function PhotoStudioScreen({ onBack }) {
   };
 
   return (
-    <main className="flex-grow relative z-10 flex flex-col items-center justify-start px-4 sm:px-6 md:px-margin-desktop py-6 sm:py-10 w-full max-w-6xl mx-auto">
+    <main className="flex-grow w-full max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8 text-black">
       
       {/* Tombol Navigasi Kembali */}
-      <div className="w-full flex items-center justify-between mb-6">
-        <CosmicBackButton onClick={onBack} label="Kembali ke Beranda Tools" />
+      <div className="mb-5">
+        <CosmicBackButton onClick={onBack} label="Kembali ke Beranda" />
       </div>
 
       {/* Header Judul Fitur */}
-      <div className="text-center mb-8 max-w-2xl">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-pink-500/10 border border-pink-500/30 text-pink-400 text-xs font-bold uppercase tracking-wider mb-3">
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>Real-time Image Enhancer & FX</span>
+      <div className="rounded-xl p-5 sm:p-6 border-2 border-black bg-white shadow-[4px_4px_0px_#000000] mb-6">
+        <div className="flex items-center gap-3 pb-3 border-b-2 border-black">
+          <div className="w-10 h-10 rounded-md border-2 border-black bg-black text-white flex items-center justify-center shrink-0">
+            <Sliders className="w-5 h-5 stroke-[2.2]" />
+          </div>
+          <div>
+            <h1 className="text-base sm:text-xl font-black tracking-tight font-display text-black">
+              Photo Studio & Filter HD
+            </h1>
+            <p className="text-xs text-neutral-600">
+              Sesuaikan ketajaman foto, efek kontras, saturasi warna, dan tingkatkan resolusi gambar dengan kontrol presisi.
+            </p>
+          </div>
         </div>
-        <h1 className="text-2xl sm:text-4xl font-extrabold text-on-surface mb-2">
-          Photo Studio HD & Filter FX
-        </h1>
-        <p className="text-xs sm:text-sm text-on-surface-variant">
-          Tingkatkan ketajaman foto jadi HD, atur efek blur, kontras, saturasi, filter warna sinematik, serta upscale resolusi secara real-time.
-        </p>
       </div>
 
-      {/* Upload Banner jika belum ada gambar */}
+      {/* Upload Box jika belum ada gambar */}
       {!imageSrc ? (
-        <div className="w-full max-w-2xl glass-panel rounded-2xl p-10 flex flex-col items-center justify-center text-center border-2 border-dashed border-outline-variant/40 hover:border-pink-400 transition-all cursor-pointer shadow-xl">
+        <div 
+          onClick={() => document.getElementById('photo-upload-input').click()}
+          className="w-full p-8 sm:p-12 rounded-xl border-2 border-dashed border-black bg-white flex flex-col items-center justify-center text-center cursor-pointer hover:bg-neutral-50 shadow-[3px_3px_0px_#000000] transition-all"
+        >
           <input
             type="file"
             accept="image/*"
@@ -254,115 +260,102 @@ export default function PhotoStudioScreen({ onBack }) {
             id="photo-upload-input"
             className="hidden"
           />
-          <label htmlFor="photo-upload-input" className="cursor-pointer flex flex-col items-center">
-            <div className="w-20 h-20 rounded-full bg-pink-500/10 border border-pink-500/30 flex items-center justify-center text-pink-400 mb-4 shadow-lg">
-              <Upload className="w-10 h-10" />
-            </div>
-            <h3 className="text-lg font-bold text-on-surface mb-2">
-              Pilih Foto Untuk Diedit & Ditingkatkan ke HD
-            </h3>
-            <p className="text-xs text-on-surface-variant max-w-md mb-6">
-              Mendukung semua format foto (PNG, JPG, WebP, dll) dengan proses rendering instan di perangkatmu.
-            </p>
-            <span className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-pink-500 to-rose-600 text-white font-bold text-xs shadow-lg shadow-pink-500/20 hover:scale-103 transition-all">
-              Pilih Foto Dari Perangkat
-            </span>
-          </label>
+          <div className="w-12 h-12 rounded-lg border-2 border-black bg-neutral-100 flex items-center justify-center text-black mb-3 shadow-[2px_2px_0px_#000000]">
+            <Upload className="w-6 h-6 stroke-[2]" />
+          </div>
+          <h3 className="font-extrabold text-sm sm:text-base text-black font-sans mb-1">
+            Pilih Foto Untuk Diedit & Ditingkatkan ke HD
+          </h3>
+          <p className="text-xs text-neutral-600 max-w-sm mb-4">
+            Mendukung semua format foto (PNG, JPG, WEBP). Diproses langsung secara aman di peramban Anda.
+          </p>
+          <button
+            type="button"
+            className="min-h-[44px] px-5 py-2.5 rounded-lg border-2 border-black bg-black text-white font-bold text-xs shadow-[2px_2px_0px_#000000] hover:bg-neutral-800 cursor-pointer"
+          >
+            Pilih Foto dari Perangkat
+          </button>
         </div>
       ) : (
         /* Workspace Studio Foto */
         <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           
-          {/* Kolom Kiri: Canvas Viewport & Controls */}
-          <div className="lg:col-span-8 flex flex-col items-center gap-4">
+          {/* Kolom Kiri: Canvas Viewport & Presets */}
+          <div className="lg:col-span-8 flex flex-col gap-4">
             
-            <div className="w-full glass-panel rounded-2xl p-4 flex flex-col items-center justify-center relative overflow-hidden min-h-[380px] sm:min-h-[480px]">
+            <div className="w-full rounded-xl border-2 border-black bg-white p-4 shadow-[4px_4px_0px_#000000] flex flex-col items-center justify-center relative overflow-hidden min-h-[340px] sm:min-h-[440px]">
               
-              {/* Tombol Compare (Tahan untuk melihat foto asli) */}
-              <div className="absolute top-4 left-4 z-20 flex items-center gap-2">
+              {/* Tombol Bandingkan Asli */}
+              <div className="absolute top-3 left-3 z-20 flex items-center gap-2">
                 <button
+                  type="button"
                   onMouseDown={() => setIsComparing(true)}
                   onMouseUp={() => setIsComparing(false)}
                   onTouchStart={() => setIsComparing(true)}
                   onTouchEnd={() => setIsComparing(false)}
-                  className="px-3 py-1.5 rounded-lg bg-surface-container-highest/80 border border-white/20 text-xs font-bold text-white flex items-center gap-1.5 backdrop-blur-md shadow-md cursor-pointer select-none"
+                  className="px-3 py-1.5 rounded-lg border-2 border-black bg-white text-xs font-bold text-black flex items-center gap-1.5 shadow-[1.5px_1.5px_0px_#000000] cursor-pointer select-none"
                 >
-                  <Eye className="w-3.5 h-3.5 text-cyan-400" />
+                  <Eye className="w-3.5 h-3.5" />
                   <span>{isComparing ? 'Melihat Asli' : 'Tahan: Lihat Asli'}</span>
                 </button>
               </div>
 
               {/* Status info resolusi */}
-              <div className="absolute top-4 right-4 z-20 px-3 py-1.5 rounded-lg bg-surface-container-highest/80 border border-white/20 text-[11px] font-mono text-cyan-300 backdrop-blur-md">
+              <div className="absolute top-3 right-3 z-20 px-2.5 py-1 rounded border-2 border-black bg-neutral-100 text-[11px] font-mono font-bold text-black shadow-[1.5px_1.5px_0px_#000000]">
                 {originalImageRef.current?.naturalWidth} × {originalImageRef.current?.naturalHeight} px
               </div>
 
               {/* Canvas Render Element */}
               <canvas
                 ref={canvasRef}
-                className="max-w-full max-h-[500px] object-contain rounded-xl shadow-2xl transition-all"
+                className="max-w-full max-h-[480px] object-contain rounded-lg border border-black shadow-[2px_2px_0px_#000000] transition-all"
               />
 
             </div>
 
             {/* Presets Bar */}
-            <div className="w-full glass-panel rounded-xl p-3 flex flex-wrap items-center justify-between gap-2">
-              <span className="text-xs font-bold text-on-surface-variant px-2 flex items-center gap-1.5">
-                <Layers className="w-3.5 h-3.5 text-pink-400" />
-                <span>Preset FX:</span>
+            <div className="w-full rounded-xl border-2 border-black bg-white p-3.5 shadow-[3px_3px_0px_#000000] flex flex-wrap items-center justify-between gap-2">
+              <span className="text-xs font-bold text-black px-1 flex items-center gap-1.5">
+                <Layers className="w-3.5 h-3.5" />
+                <span>Preset Filter:</span>
               </span>
               <div className="flex flex-wrap items-center gap-2">
-                <button
-                  onClick={() => applyPreset('hd_crisp')}
-                  className="px-3 py-1 rounded-lg bg-pink-500/20 border border-pink-500/40 text-pink-300 text-xs font-bold hover:bg-pink-500/30 cursor-pointer"
-                >
-                  HD Ultra Crisp
-                </button>
-                <button
-                  onClick={() => applyPreset('cinematic')}
-                  className="px-3 py-1 rounded-lg bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 text-xs font-bold hover:bg-cyan-500/30 cursor-pointer"
-                >
-                  Cinematic Vibe
-                </button>
-                <button
-                  onClick={() => applyPreset('dreamy_blur')}
-                  className="px-3 py-1 rounded-lg bg-purple-500/20 border border-purple-500/40 text-purple-300 text-xs font-bold hover:bg-purple-500/30 cursor-pointer"
-                >
-                  Dreamy Blur
-                </button>
-                <button
-                  onClick={() => applyPreset('monochrome')}
-                  className="px-3 py-1 rounded-lg bg-slate-500/20 border border-slate-500/40 text-slate-300 text-xs font-bold hover:bg-slate-500/30 cursor-pointer"
-                >
-                  Noir Hitam-Putih
-                </button>
-                <button
-                  onClick={() => applyPreset('vintage')}
-                  className="px-3 py-1 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold hover:bg-amber-500/30 cursor-pointer"
-                >
-                  Vintage Retro
-                </button>
-                <button
-                  onClick={() => applyPreset('reset')}
-                  className="px-3 py-1 rounded-lg bg-surface-container text-on-surface-variant hover:text-on-surface text-xs font-bold flex items-center gap-1 cursor-pointer"
-                >
-                  <RotateCcw className="w-3 h-3" />
-                  <span>Reset</span>
-                </button>
+                {[
+                  { id: 'hd_crisp', label: 'HD Tajam' },
+                  { id: 'cinematic', label: 'Sinematik' },
+                  { id: 'dreamy_blur', label: 'Lembut' },
+                  { id: 'monochrome', label: 'Hitam-Putih' },
+                  { id: 'vintage', label: 'Klasik' },
+                  { id: 'reset', label: 'Reset', isReset: true }
+                ].map((preset) => (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    onClick={() => applyPreset(preset.id)}
+                    className={`px-3 py-1.5 rounded-lg border border-black text-xs font-bold cursor-pointer transition-all ${
+                      preset.isReset 
+                        ? 'bg-neutral-100 hover:bg-neutral-200 text-black flex items-center gap-1' 
+                        : 'bg-white hover:bg-black hover:text-white text-black'
+                    }`}
+                  >
+                    {preset.isReset && <RotateCcw className="w-3 h-3" />}
+                    <span>{preset.label}</span>
+                  </button>
+                ))}
               </div>
             </div>
 
           </div>
 
           {/* Kolom Kanan: Panel Kontrol Slider Efek */}
-          <div className="lg:col-span-4 glass-panel rounded-2xl p-6 shadow-xl space-y-5">
+          <div className="lg:col-span-4 rounded-xl border-2 border-black bg-white p-5 shadow-[4px_4px_0px_#000000] space-y-4">
             
-            <div className="flex items-center justify-between pb-3 border-b border-outline-variant/30">
-              <h3 className="text-sm font-bold text-on-surface flex items-center gap-2">
-                <Sliders className="w-4 h-4 text-pink-400" />
-                <span>Pengaturan Efek Visual</span>
+            <div className="flex items-center justify-between pb-3 border-b-2 border-black">
+              <h3 className="text-sm font-extrabold text-black flex items-center gap-2 font-sans">
+                <Sliders className="w-4 h-4" />
+                <span>Pengaturan Efek</span>
               </h3>
-              <label htmlFor="change-photo-input" className="text-xs text-pink-400 hover:underline cursor-pointer">
+              <label htmlFor="change-photo-input" className="text-xs font-bold text-black underline cursor-pointer">
                 Ganti Foto
               </label>
               <input
@@ -376,11 +369,11 @@ export default function PhotoStudioScreen({ onBack }) {
 
             {/* 1. Ketajaman HD (Sharpen) */}
             <div className="space-y-1">
-              <div className="flex justify-between text-xs">
-                <span className="font-semibold text-cyan-300 flex items-center gap-1.5">
-                  <Zap className="w-3.5 h-3.5" /> Ketajaman HD (Sharpening)
+              <div className="flex justify-between text-xs font-bold text-black">
+                <span className="flex items-center gap-1.5">
+                  <Zap className="w-3.5 h-3.5" /> Ketajaman HD
                 </span>
-                <span className="font-mono text-on-surface-variant">{sharpen}%</span>
+                <span className="font-mono">{sharpen}%</span>
               </div>
               <input
                 type="range"
@@ -388,17 +381,17 @@ export default function PhotoStudioScreen({ onBack }) {
                 max="100"
                 value={sharpen}
                 onChange={(e) => setSharpen(Number(e.target.value))}
-                className="w-full accent-cyan-400 cursor-pointer"
+                className="w-full accent-black cursor-pointer"
               />
             </div>
 
             {/* 2. Efek Blur */}
             <div className="space-y-1">
-              <div className="flex justify-between text-xs">
-                <span className="font-semibold text-on-surface flex items-center gap-1.5">
-                  <Droplet className="w-3.5 h-3.5 text-blue-400" /> Efek Blur (Latar/Lembut)
+              <div className="flex justify-between text-xs font-bold text-black">
+                <span className="flex items-center gap-1.5">
+                  <Droplet className="w-3.5 h-3.5" /> Efek Blur
                 </span>
-                <span className="font-mono text-on-surface-variant">{blur}px</span>
+                <span className="font-mono">{blur}px</span>
               </div>
               <input
                 type="range"
@@ -407,17 +400,17 @@ export default function PhotoStudioScreen({ onBack }) {
                 step="0.5"
                 value={blur}
                 onChange={(e) => setBlur(Number(e.target.value))}
-                className="w-full accent-blue-400 cursor-pointer"
+                className="w-full accent-black cursor-pointer"
               />
             </div>
 
             {/* 3. Kecerahan (Brightness) */}
             <div className="space-y-1">
-              <div className="flex justify-between text-xs">
-                <span className="font-semibold text-on-surface flex items-center gap-1.5">
-                  <Sun className="w-3.5 h-3.5 text-amber-400" /> Kecerahan (Brightness)
+              <div className="flex justify-between text-xs font-bold text-black">
+                <span className="flex items-center gap-1.5">
+                  <Sun className="w-3.5 h-3.5" /> Kecerahan
                 </span>
-                <span className="font-mono text-on-surface-variant">{brightness}%</span>
+                <span className="font-mono">{brightness}%</span>
               </div>
               <input
                 type="range"
@@ -425,17 +418,17 @@ export default function PhotoStudioScreen({ onBack }) {
                 max="200"
                 value={brightness}
                 onChange={(e) => setBrightness(Number(e.target.value))}
-                className="w-full accent-amber-400 cursor-pointer"
+                className="w-full accent-black cursor-pointer"
               />
             </div>
 
             {/* 4. Kontras (Contrast) */}
             <div className="space-y-1">
-              <div className="flex justify-between text-xs">
-                <span className="font-semibold text-on-surface flex items-center gap-1.5">
-                  <Contrast className="w-3.5 h-3.5 text-purple-400" /> Kontras (Contrast)
+              <div className="flex justify-between text-xs font-bold text-black">
+                <span className="flex items-center gap-1.5">
+                  <Contrast className="w-3.5 h-3.5" /> Kontras
                 </span>
-                <span className="font-mono text-on-surface-variant">{contrast}%</span>
+                <span className="font-mono">{contrast}%</span>
               </div>
               <input
                 type="range"
@@ -443,15 +436,15 @@ export default function PhotoStudioScreen({ onBack }) {
                 max="250"
                 value={contrast}
                 onChange={(e) => setContrast(Number(e.target.value))}
-                className="w-full accent-purple-400 cursor-pointer"
+                className="w-full accent-black cursor-pointer"
               />
             </div>
 
             {/* 5. Saturasi Warna */}
             <div className="space-y-1">
-              <div className="flex justify-between text-xs">
-                <span className="font-semibold text-on-surface">Saturasi Warna</span>
-                <span className="font-mono text-on-surface-variant">{saturation}%</span>
+              <div className="flex justify-between text-xs font-bold text-black">
+                <span>Saturasi Warna</span>
+                <span className="font-mono">{saturation}%</span>
               </div>
               <input
                 type="range"
@@ -459,15 +452,15 @@ export default function PhotoStudioScreen({ onBack }) {
                 max="250"
                 value={saturation}
                 onChange={(e) => setSaturation(Number(e.target.value))}
-                className="w-full accent-pink-400 cursor-pointer"
+                className="w-full accent-black cursor-pointer"
               />
             </div>
 
-            {/* 6. Vignette (Bayangan Tepi Sinematik) */}
+            {/* 6. Vignette Sinematik */}
             <div className="space-y-1">
-              <div className="flex justify-between text-xs">
-                <span className="font-semibold text-on-surface">Vignette Sinematik</span>
-                <span className="font-mono text-on-surface-variant">{vignette}%</span>
+              <div className="flex justify-between text-xs font-bold text-black">
+                <span>Vignette Tepi</span>
+                <span className="font-mono">{vignette}%</span>
               </div>
               <input
                 type="range"
@@ -475,15 +468,15 @@ export default function PhotoStudioScreen({ onBack }) {
                 max="100"
                 value={vignette}
                 onChange={(e) => setVignette(Number(e.target.value))}
-                className="w-full accent-indigo-400 cursor-pointer"
+                className="w-full accent-black cursor-pointer"
               />
             </div>
 
             {/* 7. Suhu Warna (Warmth) */}
             <div className="space-y-1">
-              <div className="flex justify-between text-xs">
-                <span className="font-semibold text-on-surface">Suhu Warna (Cool / Warm)</span>
-                <span className="font-mono text-on-surface-variant">{warmth > 0 ? `+${warmth}` : warmth}</span>
+              <div className="flex justify-between text-xs font-bold text-black">
+                <span>Suhu Warna</span>
+                <span className="font-mono">{warmth > 0 ? `+${warmth}` : warmth}</span>
               </div>
               <input
                 type="range"
@@ -491,29 +484,30 @@ export default function PhotoStudioScreen({ onBack }) {
                 max="50"
                 value={warmth}
                 onChange={(e) => setWarmth(Number(e.target.value))}
-                className="w-full accent-orange-400 cursor-pointer"
+                className="w-full accent-black cursor-pointer"
               />
             </div>
 
-            {/* Pilihan Resolusi Ekspor (Upscale Factor) */}
-            <div className="pt-3 border-t border-outline-variant/30 space-y-2">
-              <span className="text-xs font-bold text-on-surface flex items-center gap-1.5">
-                <Maximize2 className="w-3.5 h-3.5 text-cyan-400" />
+            {/* Pilihan Resolusi Ekspor */}
+            <div className="pt-3 border-t-2 border-black space-y-2">
+              <span className="text-xs font-bold text-black flex items-center gap-1.5">
+                <Maximize2 className="w-3.5 h-3.5" />
                 <span>Resolusi Unduh:</span>
               </span>
               <div className="grid grid-cols-3 gap-2">
                 {[
-                  { factor: 1, label: 'Asli HD' },
-                  { factor: 2, label: '2x Ultra HD' },
-                  { factor: 4, label: '4x Super Res' }
+                  { factor: 1, label: 'Asli 1x' },
+                  { factor: 2, label: 'HD 2x' },
+                  { factor: 4, label: 'Super 4x' }
                 ].map((item) => (
                   <button
                     key={item.factor}
+                    type="button"
                     onClick={() => setUpscaleFactor(item.factor)}
-                    className={`py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    className={`py-1.5 rounded-lg text-xs font-bold border-2 border-black transition-all cursor-pointer ${
                       upscaleFactor === item.factor
-                        ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md'
-                        : 'bg-surface-container hover:bg-surface-container-high text-on-surface-variant'
+                        ? 'bg-black text-white shadow-[1.5px_1.5px_0px_#000000]'
+                        : 'bg-white text-black hover:bg-neutral-100'
                     }`}
                   >
                     {item.label}
@@ -524,18 +518,19 @@ export default function PhotoStudioScreen({ onBack }) {
 
             {/* Tombol Download Foto HD */}
             <button
+              type="button"
               onClick={handleDownload}
-              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-pink-500 via-rose-500 to-amber-500 text-white font-extrabold text-sm shadow-xl shadow-pink-500/20 hover:scale-102 active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full min-h-[44px] py-3 rounded-lg border-2 border-black bg-black text-white font-extrabold text-xs sm:text-sm shadow-[3px_3px_0px_#000000] hover:bg-neutral-800 active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all flex items-center justify-center gap-2 cursor-pointer mt-2"
             >
               {downloadSuccess ? (
                 <>
-                  <Check className="w-5 h-5 text-white animate-bounce" />
+                  <Check className="w-4 h-4 text-white stroke-[3]" />
                   <span>Foto Berhasil Diunduh!</span>
                 </>
               ) : (
                 <>
-                  <Download className="w-5 h-5" />
-                  <span>Download Foto HD ({upscaleFactor}x)</span>
+                  <Download className="w-4 h-4 stroke-[2.5]" />
+                  <span>Unduh Foto HD ({upscaleFactor}x)</span>
                 </>
               )}
             </button>
