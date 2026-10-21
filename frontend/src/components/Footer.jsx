@@ -6,14 +6,14 @@ export default function Footer() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
         <div className="flex items-center gap-2">
           <span className="font-black text-base tracking-tight font-display text-black">
-            KAZE STUDIO
+            KURO STUDIO
           </span>
           <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border border-black bg-neutral-100 text-black">
             UTILITY SUITE
           </span>
         </div>
         <p className="text-xs text-neutral-600 font-sans">
-          © {new Date().getFullYear()} Kaze Studio. Platform utilitas all-in-one untuk media, dokumen, audio, dan alat kreatif digital.
+          © {new Date().getFullYear()} Kuro Studio. Platform utilitas all-in-one untuk media, dokumen, audio, dan alat kreatif digital.
         </p>
       </div>
     </footer>

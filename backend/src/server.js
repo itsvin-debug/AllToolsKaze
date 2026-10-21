@@ -41,7 +41,7 @@ app.post('/api/verify-admin', (req, res) => {
   if (password && password.trim() === correctPassword) {
     return res.json({
       success: true,
-      message: 'Autentikasi admin berhasil! Selamat datang Admin Kaze.',
+      message: 'Autentikasi admin berhasil! Selamat datang Admin Kuro.',
       role: 'Admin'
     });
   }
@@ -56,7 +56,7 @@ app.post('/api/verify-admin', (req, res) => {
 app.get('/', (req, res) => {
   res.json({
     status: 'online',
-    message: 'Backend Kaze Media Downloader siap meluncur! 🚀',
+    message: 'Backend Kuro Studio siap meluncur! 🚀',
     endpoints: {
       download: 'POST /api/download',
       proxyStream: 'GET /api/proxy-download'
@@ -69,14 +69,15 @@ app.use((err, req, res, next) => {
   console.error('Ada unhandled error nih:', err.stack);
   res.status(500).json({
     success: false,
-    message: 'Ups! Terjadi kesalahan internal pada server kami.'
+    message: err.message || 'Ups! Terjadi kesalahan internal pada server kami.',
+    error: err.toString()
   });
 });
 
 // nyalain server express
 app.listen(PORT, () => {
   console.log(`=============================================`);
-  console.log(`🚀 AllToolsKaze Fullstack Suite Aktif!`);
+  console.log(`🚀 Kuro Studio Fullstack Suite Aktif!`);
   console.log(`🌐 Frontend (Web UI)  : http://localhost:5173`);
   console.log(`⚙️  Backend (API Server): http://localhost:${PORT}`);
   console.log(`=============================================`);

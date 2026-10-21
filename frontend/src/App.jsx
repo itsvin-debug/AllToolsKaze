@@ -9,6 +9,7 @@ import VideoStudioScreen from './components/VideoStudioScreen';
 import VideoTrimmerScreen from './components/VideoTrimmerScreen';
 import BgRemoverScreen from './components/BgRemoverScreen';
 import JjFinderScreen from './components/JjFinderScreen';
+import PngToPdfScreen from './components/PngToPdfScreen';
 import MediaCompressorScreen from './components/MediaCompressorScreen';
 import QrStudioScreen from './components/QrStudioScreen';
 import AudioMergerScreen from './components/AudioMergerScreen';
@@ -24,7 +25,7 @@ export default function App() {
     const root = document.documentElement;
     root.classList.remove('dark');
     root.classList.add('light');
-    localStorage.setItem('kaze_theme', 'light');
+    localStorage.setItem('kuro_theme', 'light');
   }, []);
 
   if (currentScreen === 'splash') {
@@ -58,6 +59,12 @@ export default function App() {
         <ConverterScreen
           activePlatform={activePlatform}
           onSelectPlatform={(p) => setActivePlatform(p)}
+          onBack={() => setCurrentScreen('welcome')}
+        />
+      )}
+
+      {currentScreen === 'pngToPdf' && (
+        <PngToPdfScreen
           onBack={() => setCurrentScreen('welcome')}
         />
       )}

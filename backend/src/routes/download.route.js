@@ -1,19 +1,22 @@
 import express from 'express';
 import axios from 'axios';
-import { detectPlatform } from '../services/detector.service.js';
+import { detectPlatform, PLATFORM_NAMES } from '../services/detector.service.js';
 import { downloadTikTok } from '../services/tiktok.service.js';
 import { downloadInstagram } from '../services/instagram.service.js';
 import { downloadTwitter } from '../services/twitter.service.js';
 import { downloadYouTube } from '../services/youtube.service.js';
+import {
+  downloadWithYtDlp,
+  downloadSpotify,
+  downloadAppleMusic,
+  downloadThreads,
+  downloadReddit,
+  downloadPixiv,
+  downloadRednote,
+  downloadTerabox
+} from '../services/allmedia.service.js';
 
 const router = express.Router();
-
-const PLATFORM_NAMES = {
-  tiktok: 'TikTok',
-  instagram: 'Instagram',
-  twitter: 'X (Twitter)',
-  youtube: 'YouTube'
-};
 
 // Endpoint Utama: POST /api/download
 router.post('/download', async (req, res) => {
@@ -34,7 +37,7 @@ router.post('/download', async (req, res) => {
     if (!detection.valid || detection.platform === 'unknown') {
       return res.status(400).json({
         success: false,
-        message: 'URL tidak dikenali. Layanan ini hanya mendukung link dari TikTok, Instagram, X (Twitter), dan YouTube.'
+        message: 'URL tidak dikenali. Layanan ini mendukung 16 platform: TikTok, Instagram, YouTube, X (Twitter), Spotify, Bilibili, Douyin, Rednote, Threads, Pinterest, Apple Music, Facebook, Bandcamp, Pixiv, Reddit, dan Terabox.'
       });
     }
 
@@ -68,11 +71,57 @@ router.post('/download', async (req, res) => {
         mediaData = await downloadYouTube(detection.cleanedUrl);
         break;
 
+      case 'facebook':
+        mediaData = await downloadWithYtDlp(detection.cleanedUrl, 'Facebook');
+        break;
+
+      case 'reddit':
+        mediaData = await downloadReddit(detection.cleanedUrl);
+        break;
+
+      case 'pinterest':
+        mediaData = await downloadWithYtDlp(detection.cleanedUrl, 'Pinterest');
+        break;
+
+      case 'bilibili':
+        mediaData = await downloadWithYtDlp(detection.cleanedUrl, 'Bilibili');
+        break;
+
+      case 'douyin':
+        mediaData = await downloadWithYtDlp(detection.cleanedUrl, 'Douyin');
+        break;
+
+      case 'bandcamp':
+        mediaData = await downloadWithYtDlp(detection.cleanedUrl, 'Bandcamp');
+        break;
+
+      case 'threads':
+        mediaData = await downloadThreads(detection.cleanedUrl);
+        break;
+
+      case 'spotify':
+        mediaData = await downloadSpotify(detection.cleanedUrl);
+        break;
+
+      case 'appleMusic':
+        mediaData = await downloadAppleMusic(detection.cleanedUrl);
+        break;
+
+      case 'pixiv':
+        mediaData = await downloadPixiv(detection.cleanedUrl);
+        break;
+
+      case 'rednote':
+        mediaData = await downloadRednote(detection.cleanedUrl);
+        break;
+
+      case 'terabox':
+        mediaData = await downloadTerabox(detection.cleanedUrl);
+        break;
+
       default:
-        return res.status(400).json({
-          success: false,
-          message: 'Platform belum didukung.'
-        });
+        mediaData = await downloadWithYtDlp(detection.cleanedUrl, 'Media');
+        break;
     }
 
     // tambahkan proxyUrl & streamUrl ke setiap link agar download otomatis aman dari blokir CORS
@@ -108,6 +157,17 @@ router.post('/download', async (req, res) => {
       }));
     }
 
+    // tambahkan proxyUrl & streamUrl ke setiap live wallpaper di mediaData.liveWallpapers
+    if (mediaData && mediaData.liveWallpapers && Array.isArray(mediaData.liveWallpapers)) {
+      mediaData.liveWallpapers = mediaData.liveWallpapers.map((item, idx) => ({
+        ...item,
+        proxyUrl: `/api/proxy-download?url=${encodeURIComponent(item.url)}&filename=${encodeURIComponent(item.filename || `kaze_live_wallpaper_${idx + 1}.${item.extension || 'mp4'}`)}`,
+        streamUrl: (item.url?.endsWith('.mp4') || item.extension === 'mp4')
+          ? `/api/proxy-stream?url=${encodeURIComponent(item.url)}&type=video`
+          : undefined
+      }));
+    }
+
     return res.status(200).json({
       success: true,
       message: 'Berhasil mengekstrak media.',
@@ -123,6 +183,29 @@ router.post('/download', async (req, res) => {
   }
 });
 
+function getRefererForUrl(rawUrl) {
+  if (!rawUrl) return undefined;
+  const url = rawUrl.toLowerCase();
+  if (url.includes('tikwm.com')) return 'https://www.tikwm.com/';
+  if (url.includes('tiktok') || url.includes('tikcdn') || url.includes('bytegecko') || url.includes('ibytedtos')) return 'https://www.tiktok.com/';
+  if (url.includes('instagram') || url.includes('cdninstagram') || url.includes('fbcdn')) return 'https://www.instagram.com/';
+  if (url.includes('twimg') || url.includes('twitter') || url.includes('x.com')) return 'https://twitter.com/';
+  if (url.includes('googlevideo') || url.includes('youtube') || url.includes('ytimg')) return 'https://www.youtube.com/';
+  if (url.includes('bilibili') || url.includes('bilivideo') || url.includes('hdslb')) return 'https://www.bilibili.com/';
+  if (url.includes('douyin') || url.includes('iesdouyin') || url.includes('zijieapi')) return 'https://www.douyin.com/';
+  if (url.includes('pixiv') || url.includes('phixiv') || url.includes('pximg')) return 'https://www.pixiv.net/';
+  if (url.includes('reddit') || url.includes('redd.it')) return 'https://www.reddit.com/';
+  if (url.includes('facebook') || url.includes('fb.watch')) return 'https://www.facebook.com/';
+  if (url.includes('spotify') || url.includes('scdn.co')) return 'https://open.spotify.com/';
+  if (url.includes('apple.com') || url.includes('mzstatic') || url.includes('itunes')) return 'https://music.apple.com/';
+  if (url.includes('pinterest') || url.includes('pinimg')) return 'https://www.pinterest.com/';
+  if (url.includes('bandcamp') || url.includes('bcbits')) return 'https://bandcamp.com/';
+  if (url.includes('xiaohongshu') || url.includes('xhscdn') || url.includes('rednote')) return 'https://www.xiaohongshu.com/';
+  if (url.includes('threads.net')) return 'https://www.threads.net/';
+  if (url.includes('terabox')) return 'https://www.terabox.com/';
+  return undefined;
+}
+
 // Endpoint Streaming Video & Audio: GET /api/proxy-stream
 // Mengalirkan video & audio secara inline dengan dukungan Range Header (206 Partial Content) untuk pemutaran lancar tanpa buffer
 router.get('/proxy-stream', async (req, res) => {
@@ -132,19 +215,7 @@ router.get('/proxy-stream', async (req, res) => {
 
     const targetUrl = decodeURIComponent(url);
     const range = req.headers.range;
-
-    let referer = undefined;
-    if (targetUrl.includes('tikwm.com')) {
-      referer = 'https://www.tikwm.com/';
-    } else if (targetUrl.includes('tiktok') || targetUrl.includes('tikcdn') || targetUrl.includes('bytegecko') || targetUrl.includes('ibytedtos')) {
-      referer = 'https://www.tiktok.com/';
-    } else if (targetUrl.includes('instagram') || targetUrl.includes('cdninstagram') || targetUrl.includes('fbcdn')) {
-      referer = 'https://www.instagram.com/';
-    } else if (targetUrl.includes('twimg') || targetUrl.includes('twitter') || targetUrl.includes('x.com')) {
-      referer = 'https://twitter.com/';
-    } else if (targetUrl.includes('googlevideo') || targetUrl.includes('youtube') || targetUrl.includes('ytimg')) {
-      referer = 'https://www.youtube.com/';
-    }
+    const referer = getRefererForUrl(targetUrl);
 
     const headers = {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
@@ -202,18 +273,7 @@ router.get('/proxy-download', async (req, res) => {
 
     const safeFilename = (filename || 'download_media.mp4').replace(/[^a-zA-Z0-9_.-]/g, '_');
     let targetUrl = decodeURIComponent(url);
-
-    // Tentukan referer yang cocok sesuai domain target agar tidak kena 403 Forbidden
-    let referer = undefined;
-    if (targetUrl.includes('tiktok') || targetUrl.includes('tikcdn')) {
-      referer = 'https://www.tiktok.com/';
-    } else if (targetUrl.includes('instagram') || targetUrl.includes('cdninstagram') || targetUrl.includes('fbcdn')) {
-      referer = 'https://www.instagram.com/';
-    } else if (targetUrl.includes('twimg') || targetUrl.includes('twitter') || targetUrl.includes('x.com')) {
-      referer = 'https://twitter.com/';
-    } else if (targetUrl.includes('googlevideo') || targetUrl.includes('youtube') || targetUrl.includes('ytimg')) {
-      referer = 'https://www.youtube.com/';
-    }
+    const referer = getRefererForUrl(targetUrl);
 
     const headers = {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'

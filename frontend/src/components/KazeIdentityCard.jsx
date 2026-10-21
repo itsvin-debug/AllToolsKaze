@@ -4,6 +4,10 @@ import {
   Crown, 
   ShieldCheck, 
   Smartphone, 
+  Monitor,
+  Laptop,
+  Tablet,
+  Zap,
   Battery, 
   BatteryCharging, 
   CheckCircle2, 
@@ -91,46 +95,152 @@ export default function KazeIdentityCard({
     };
   }, []);
 
-  const [batteryLevel, setBatteryLevel] = useState(85);
-  const [isCharging, setIsCharging] = useState(false);
-  const [deviceType, setDeviceType] = useState('Android');
-  const [detectedDevice, setDetectedDevice] = useState('Android');
+function detectUserDevice() {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+    return { os: 'Windows', browser: 'Browser', type: 'desktop', badge: 'Windows • Browser' };
+  }
+
+  const ua = navigator.userAgent || '';
+  const platform = navigator.platform || '';
+  const maxTouchPoints = navigator.maxTouchPoints || 0;
+
+  // 1. Deteksi Browser Lintas Platform (Chrome, Firefox, Safari, Edge, Opera, Brave, Samsung Internet, Vivaldi)
+  let browser = 'Browser';
+  const isBrave = typeof navigator.brave !== 'undefined' || (navigator.brave && typeof navigator.brave.isBrave === 'function');
+
+  if (isBrave) browser = 'Brave';
+  else if (/Edg\//i.test(ua)) browser = 'Edge';
+  else if (/OPR\/|Opera/i.test(ua)) browser = 'Opera';
+  else if (/Vivaldi/i.test(ua)) browser = 'Vivaldi';
+  else if (/SamsungBrowser/i.test(ua)) browser = 'Samsung Internet';
+  else if (/Firefox|FxiOS/i.test(ua)) browser = 'Firefox';
+  else if (/Chrome|CriOS/i.test(ua) && !/Edg/i.test(ua)) browser = 'Chrome';
+  else if (/Safari/i.test(ua) && !/Chrome/i.test(ua)) browser = 'Safari';
+
+  // 2. Deteksi Sistem Operasi
+  let os = 'Windows';
+  let type = 'desktop';
+
+  const clientPlatform = navigator.userAgentData?.platform;
+  if (clientPlatform) {
+    const cp = clientPlatform.toLowerCase();
+    if (cp.includes('win')) { os = 'Windows'; type = 'desktop'; }
+    else if (cp.includes('mac')) { os = 'macOS'; type = 'desktop'; }
+    else if (cp.includes('android')) { os = 'Android'; type = 'mobile'; }
+    else if (cp.includes('linux')) { os = 'Linux'; type = 'desktop'; }
+    else if (cp.includes('ios')) { os = 'iOS'; type = 'mobile'; }
+  } else {
+    // Universal Fallback untuk Firefox, Safari, dan browser non-Chromium
+    if (/iPhone/i.test(ua)) {
+      os = 'iOS';
+      type = 'mobile';
+    } else if (/iPad|iPod/i.test(ua) || (platform === 'MacIntel' && maxTouchPoints > 1)) {
+      os = 'iOS';
+      type = 'tablet';
+    } else if (/Android/i.test(ua)) {
+      os = 'Android';
+      type = (/Tablet/i.test(ua) || (maxTouchPoints > 0 && !/Mobile/i.test(ua))) ? 'tablet' : 'mobile';
+    } else if (/Windows NT|Win32|Win64|WOW64|Windows/i.test(ua) || /Win/i.test(platform)) {
+      os = 'Windows';
+      type = 'desktop';
+    } else if (/Macintosh|Mac OS X|MacPPC|MacIntel/i.test(ua) || /Mac/i.test(platform)) {
+      os = 'macOS';
+      type = 'desktop';
+    } else if (/Linux|X11/i.test(ua) || /Linux/i.test(platform)) {
+      os = 'Linux';
+      type = 'desktop';
+    }
+  }
+
+  const badge = `${os} • ${browser}`;
+  return { os, browser, type, badge };
+}
+
+  const [deviceInfo, setDeviceInfo] = useState(() => detectUserDevice());
+  const [showBrowserInBadge, setShowBrowserInBadge] = useState(true);
+  const [batteryLevel, setBatteryLevel] = useState(() => {
+    const saved = localStorage.getItem('kaze_battery_level');
+    return saved ? parseInt(saved, 10) : 96;
+  });
+  const [isCharging, setIsCharging] = useState(true);
+  const [hasBatteryApi, setHasBatteryApi] = useState(true);
 
   useEffect(() => {
     localStorage.setItem('kaze_user_role', role);
   }, [role]);
 
   useEffect(() => {
-    let batteryRef = null;
+    setDeviceInfo(detectUserDevice());
 
-    const handleBatteryUpdate = (battery) => {
-      setBatteryLevel(Math.round(battery.level * 100));
-      setIsCharging(battery.charging);
+    let batteryManager = null;
+    let isSubscribed = true;
+
+    // Ambil status telemetri baterai real-time dari backend sistem agar seragam di semua browser
+    const fetchSystemBattery = async () => {
+      try {
+        const res = await fetch('http://localhost:5001/api/system-battery');
+        if (res.ok) {
+          const data = await res.json();
+          if (data && isSubscribed) {
+            const level = typeof data.level === 'number' ? data.level : 100;
+            setBatteryLevel(level);
+            setIsCharging(Boolean(data.isCharging));
+            setHasBatteryApi(true);
+            try {
+              localStorage.setItem('kaze_battery_level', level.toString());
+            } catch {}
+          }
+        }
+      } catch {
+        // Fallback aman
+      }
     };
 
+    fetchSystemBattery();
+    const batteryPollInterval = setInterval(fetchSystemBattery, 25000);
+
+    const syncBatteryState = (battery) => {
+      if (!isSubscribed || !battery) return;
+      const level = Math.round((battery.level || 0) * 100);
+      const safeLevel = isNaN(level) ? 100 : Math.max(0, Math.min(100, level));
+      setBatteryLevel(safeLevel);
+      setIsCharging(Boolean(battery.charging));
+      setHasBatteryApi(true);
+      try {
+        localStorage.setItem('kaze_battery_level', safeLevel.toString());
+      } catch {}
+    };
+
+    const handleBatteryLevelChange = () => {
+      if (batteryManager) syncBatteryState(batteryManager);
+    };
+
+    const handleChargingChange = () => {
+      if (batteryManager) syncBatteryState(batteryManager);
+    };
+
+    // Jika browser mendukung native W3C Battery Status API (Chrome, Edge, Opera, Samsung Internet)
     if (typeof navigator !== 'undefined' && typeof navigator.getBattery === 'function') {
-      navigator.getBattery().then((battery) => {
-        batteryRef = battery;
-        handleBatteryUpdate(battery);
+      navigator.getBattery()
+        .then((battery) => {
+          if (!isSubscribed) return;
+          batteryManager = battery;
+          syncBatteryState(battery);
 
-        const onLevelChange = () => handleBatteryUpdate(battery);
-        const onChargeChange = () => handleBatteryUpdate(battery);
-
-        battery.addEventListener('levelchange', onLevelChange);
-        battery.addEventListener('chargingchange', onChargeChange);
-      }).catch(() => {});
+          battery.addEventListener('levelchange', handleBatteryLevelChange);
+          battery.addEventListener('chargingchange', handleChargingChange);
+        })
+        .catch(() => {});
     }
 
-    if (typeof navigator !== 'undefined') {
-      const ua = navigator.userAgent || '';
-      let detected = 'Android';
-      if (/Android/i.test(ua)) detected = 'Android';
-      else if (/iPhone|iPad|iPod/i.test(ua)) detected = 'iOS (iPhone)';
-      else if (/Windows/i.test(ua)) detected = 'Windows PC';
-      else if (/Mac/i.test(ua)) detected = 'macOS';
-      else if (/Linux/i.test(ua)) detected = 'Linux';
-      setDetectedDevice(detected);
-    }
+    return () => {
+      isSubscribed = false;
+      clearInterval(batteryPollInterval);
+      if (batteryManager) {
+        batteryManager.removeEventListener('levelchange', handleBatteryLevelChange);
+        batteryManager.removeEventListener('chargingchange', handleChargingChange);
+      }
+    };
   }, []);
 
   const handleAdminLogin = async (e) => {
@@ -268,16 +378,22 @@ export default function KazeIdentityCard({
               {/* Perangkat */}
               <div className="flex items-center justify-between">
                 <span className="text-neutral-600 font-medium flex items-center gap-1.5">
-                  <Smartphone className="w-3.5 h-3.5 text-black stroke-[2.5]" />
+                  {deviceInfo.type === 'desktop' ? (
+                    <Monitor className="w-3.5 h-3.5 text-black stroke-[2.5]" />
+                  ) : deviceInfo.type === 'tablet' ? (
+                    <Tablet className="w-3.5 h-3.5 text-black stroke-[2.5]" />
+                  ) : (
+                    <Smartphone className="w-3.5 h-3.5 text-black stroke-[2.5]" />
+                  )}
                   <span>Perangkat</span>
                 </span>
                 <button
                   type="button"
-                  onClick={() => setDeviceType(prev => prev === 'Android' ? detectedDevice : 'Android')}
+                  onClick={() => setShowBrowserInBadge(prev => !prev)}
                   className="font-mono font-bold text-black px-2 py-0.5 rounded border border-black bg-neutral-100 hover:bg-neutral-200 transition-colors cursor-pointer text-[11px]"
-                  title="Klik untuk beralih deteksi"
+                  title={`Sistem Operasi: ${deviceInfo.os} | Browser: ${deviceInfo.browser} (Klik untuk beralih format)`}
                 >
-                  {deviceType}
+                  {showBrowserInBadge ? `${deviceInfo.os} • ${deviceInfo.browser}` : deviceInfo.os}
                 </button>
               </div>
 
@@ -292,14 +408,22 @@ export default function KazeIdentityCard({
                   <span>Baterai</span>
                 </span>
                 <div className="flex items-center gap-1.5 font-mono font-bold text-black">
-                  <div className="w-10 h-2.5 rounded-sm border border-black p-[1px] flex items-center">
+                  <div className="w-10 h-2.5 rounded-sm border border-black p-[1px] flex items-center bg-white">
                     <div 
                       className="h-full bg-black transition-all duration-300" 
                       style={{ width: `${Math.min(100, Math.max(5, batteryLevel))}%` }}
                     />
                   </div>
                   <span>{batteryLevel}%</span>
-                  {isCharging && <span className="text-[10px]">(CAS)</span>}
+                  {isCharging && (
+                    <span 
+                      className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded border border-black bg-black text-white text-[10px] font-mono font-bold" 
+                      title={isCharging ? `Perangkat sedang dicas (${batteryLevel}%)` : `Daya AC Aktif (${batteryLevel}%)`}
+                    >
+                      <Zap className="w-2.5 h-2.5 fill-current text-white" />
+                      <span className="text-[9px]">CAS</span>
+                    </span>
+                  )}
                 </div>
               </div>
 

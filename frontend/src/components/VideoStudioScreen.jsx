@@ -494,7 +494,7 @@ export default function VideoStudioScreen({ onBack, onOpenTrimmer }) {
               {exportedUrl && (
                 <a
                   href={exportedUrl}
-                  download={`kaze_enhanced_${fileName.replace(/\.[^/.]+$/, '')}.mp4`}
+                  download={`kuro_enhanced_${fileName.replace(/\.[^/.]+$/, '')}.mp4`}
                   className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 cursor-pointer transition-all animate-fadeIn"
                 >
                   <Download className="w-4 h-4" />

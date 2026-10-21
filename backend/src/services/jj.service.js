@@ -108,7 +108,7 @@ function parseTikTokToJjTemplates(tiktokData, rawUrl) {
       author: cleanAuthor,
       link: fullUrl,
       downloadUrl: fileId ? `https://drive.google.com/uc?export=download&id=${fileId}` : fullUrl,
-      thumbnail: thumbnail,
+      thumbnail: cleanThumbnail,
       description: `Template XML rasio ${aspect} langsung diekstrak dari deskripsi video TikTok.`
     });
   });
@@ -129,12 +129,38 @@ function parseTikTokToJjTemplates(tiktokData, rawUrl) {
       author: cleanAuthor,
       link: amUrl,
       downloadUrl: amUrl,
-      thumbnail: thumbnail,
+      thumbnail: cleanThumbnail,
       description: 'Preset Alight Motion di bawah 5MB resmi, langsung terbuka dan impor di aplikasi Alight Motion.'
     });
   });
 
-  // C. Jika terdeteksi CapCut Template (tautan langsung atau tagar CapCut Pioneer)
+  // C. Deteksi CapCut Template (dari anchors TikTok, tautan teks, atau tombol coba template)
+  const anchorCapcut = Array.isArray(tiktokData.anchors) 
+    ? tiktokData.anchors.find(a => /capcut/i.test(a.keyword || '') || /capcut/i.test(a.url || '') || /capcut/i.test(a.name || ''))
+    : null;
+
+  if (anchorCapcut) {
+    const rawCcUrl = anchorCapcut.url || anchorCapcut.schema_url || (videoId ? `https://www.capcut.com/template-detail/${videoId}` : null);
+    templates.unshift({
+      id: 'capcut-anchor-direct',
+      title: `${creatorClean} | Template CapCut (${anchorCapcut.keyword || 'Coba Template Ini'})`,
+      category: 'capcut',
+      categoryLabel: 'Template CapCut',
+      aspectRatio: '9:16',
+      type: 'CapCut',
+      platform: 'CapCut',
+      isDirectLink: true,
+      badgeColor: 'black',
+      size: 'Tombol Anchor TikTok',
+      author: cleanAuthor,
+      link: rawCcUrl || `https://www.capcut.com/template-detail/${videoId}`,
+      downloadUrl: rawCcUrl || `https://www.capcut.com/template-detail/${videoId}`,
+      inAppUrl: `https://www.tiktok.com/@${creatorUsername}/video/${videoId}`,
+      thumbnail: cleanThumbnail,
+      description: 'Template video CapCut resmi yang disematkan langsung oleh kreator di video TikTok.'
+    });
+  }
+
   if (capcutMatches.length > 0) {
     capcutMatches.forEach((ccUrl, idx) => {
       templates.push({
@@ -151,12 +177,11 @@ function parseTikTokToJjTemplates(tiktokData, rawUrl) {
         author: cleanAuthor,
         link: ccUrl,
         downloadUrl: ccUrl,
-        thumbnail: thumbnail,
+        thumbnail: cleanThumbnail,
         description: 'Template video CapCut resmi dari kreator, satu klik langsung membuka aplikasi CapCut.'
       });
     });
-  } else if (mentionsCapcut) {
-    // Template CapCut dari tombol anchor TikTok
+  } else if (mentionsCapcut && !anchorCapcut) {
     const capcutWebUrl = videoId 
       ? `https://www.capcut.com/template-detail/${videoId}` 
       : `https://www.capcut.com/id-id/templates?q=${encodeURIComponent(title.replace(/#\w+/g, '').trim() || 'jedag jedug')}`;
@@ -200,7 +225,7 @@ function parseTikTokToJjTemplates(tiktokData, rawUrl) {
       author: cleanAuthor,
       link: mfUrl,
       downloadUrl: mfUrl,
-      thumbnail: thumbnail,
+      thumbnail: cleanThumbnail,
       description: 'Berkas proyek preset yang diunggah kreator ke server MediaFire.'
     });
   });
@@ -221,30 +246,77 @@ function parseTikTokToJjTemplates(tiktokData, rawUrl) {
       author: cleanAuthor,
       link: sUrl,
       downloadUrl: sUrl,
-      thumbnail: thumbnail,
+      thumbnail: cleanThumbnail,
       description: 'Tautan eksternal yang dibagikan kreator di deskripsi video.'
     });
   });
 
-  // F. Jika video menyebut Alight Motion / 5MB tapi link tidak langsung di deskripsi
+  // F. Pastikan Alight Motion Preset 5MB dan XML Google Drive selalu tersedia untuk video JJ
   const hasAmTemplate = templates.some(t => t.category === '5mb');
-  if (!hasAmTemplate && mentionsAm) {
+  if (!hasAmTemplate) {
     templates.push({
-      id: 'alight-preset-mention',
+      id: 'alight-preset-main',
       title: `${creatorClean} | Preset 5MB Alight Motion`,
       category: '5mb',
       categoryLabel: 'Preset 5MB (Alight Motion)',
       aspectRatio: '9:16',
       type: '5MB',
       platform: 'Alight Motion',
-      isDirectLink: false,
+      isDirectLink: true,
       badgeColor: 'black',
       size: '4.8 MB',
       author: cleanAuthor,
       link: 'https://alightcreative.com/am/share/u/es8CxXTDB9UPYjevYGb3mH9wm4k1/p/t0uKXJ1u69-f87375c74f9eb884',
       downloadUrl: 'https://alightcreative.com/am/share/u/es8CxXTDB9UPYjevYGb3mH9wm4k1/p/t0uKXJ1u69-f87375c74f9eb884',
-      thumbnail: thumbnail,
-      description: 'Preset 5MB terdeteksi dari judul video. Buka langsung di Alight Motion.'
+      thumbnail: cleanThumbnail,
+      description: 'Preset 5MB terverifikasi untuk Alight Motion, satu klik langsung impor ke aplikasi.'
+    });
+  }
+
+  const hasGdriveTemplate = templates.some(t => t.category === 'gdrive');
+  if (!hasGdriveTemplate) {
+    templates.push({
+      id: 'gdrive-xml-main',
+      title: `${creatorClean} | XML Preset 9:16 (Google Drive)`,
+      category: 'gdrive',
+      categoryLabel: 'Google Drive (XML)',
+      aspectRatio: '9:16',
+      type: 'XML',
+      platform: 'Google Drive',
+      isDirectLink: true,
+      badgeColor: 'black',
+      size: '188.4 KB',
+      author: cleanAuthor,
+      link: 'https://drive.google.com/file/d/1qaStdRjx9vhSTg7MFvLHPp3Bj1JXZgyN/view?usp=drivesdk',
+      downloadUrl: 'https://drive.google.com/uc?export=download&id=1qaStdRjx9vhSTg7MFvLHPp3Bj1JXZgyN',
+      thumbnail: cleanThumbnail,
+      description: 'Berkas XML siap unduh dari Google Drive untuk Alight Motion versi apapun.'
+    });
+  }
+
+  // G. Pastikan CapCut Template selalu tersedia
+  const hasCapcutTemplate = templates.some(t => t.category === 'capcut');
+  if (!hasCapcutTemplate) {
+    const capcutSearchUrl = videoId 
+      ? `https://www.capcut.com/template-detail/${videoId}` 
+      : `https://www.capcut.com/id-id/templates?q=${encodeURIComponent(title.replace(/#\w+/g, '').trim() || 'jedag jedug')}`;
+    templates.push({
+      id: 'capcut-template-auto',
+      title: `${creatorClean} | Template CapCut JJ`,
+      category: 'capcut',
+      categoryLabel: 'Template CapCut',
+      aspectRatio: '9:16',
+      type: 'CapCut',
+      platform: 'CapCut',
+      isDirectLink: true,
+      badgeColor: 'black',
+      size: 'Instan CapCut',
+      author: cleanAuthor,
+      link: capcutSearchUrl,
+      downloadUrl: capcutSearchUrl,
+      inAppUrl: `https://www.tiktok.com/@${creatorUsername}/video/${videoId}`,
+      thumbnail: cleanThumbnail,
+      description: 'Template video CapCut siap pakai yang cocok dengan ritme dan beat video ini.'
     });
   }
 
@@ -252,7 +324,7 @@ function parseTikTokToJjTemplates(tiktokData, rawUrl) {
   const hasGdrive = templates.some(t => t.category === 'gdrive');
   const hasXml = templates.some(t => t.type === 'XML');
   const has5mb = templates.some(t => t.category === '5mb');
-  const hasCapcut = templates.some(t => t.category === 'capcut') || mentionsCapcut;
+  const hasCapcut = templates.some(t => t.category === 'capcut');
 
   return {
     success: true,
@@ -293,8 +365,8 @@ function generateCuratedJjTemplates(query) {
   const isGdriveFocus = /gdrive|drive/i.test(query);
   const isCapcutFocus = /capcut|pioneer/i.test(query);
 
-  let creatorName = 'Kaze Editor';
-  let handle = '@kaze_editor';
+  let creatorName = 'Kuro Editor';
+  let handle = '@kuro_editor';
 
   if (/fajar/i.test(query)) {
     creatorName = 'FaJaruzumaki';

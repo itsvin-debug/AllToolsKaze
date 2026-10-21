@@ -35,7 +35,7 @@ export default function ImageToLinkScreen({ onBack, onOpenQrStudio }) {
   // Load history dari localStorage saat mount
   useEffect(() => {
     try {
-      const saved = localStorage.getItem('kaze_file_links_history');
+      const saved = localStorage.getItem('kuro_file_links_history') || localStorage.getItem('kaze_file_links_history');
       if (saved) setUploadHistory(JSON.parse(saved));
     } catch {
       // ignore
@@ -46,7 +46,7 @@ export default function ImageToLinkScreen({ onBack, onOpenQrStudio }) {
     const updated = [item, ...uploadHistory.filter(h => h.url !== item.url)].slice(0, 10);
     setUploadHistory(updated);
     try {
-      localStorage.setItem('kaze_file_links_history', JSON.stringify(updated));
+      localStorage.setItem('kuro_file_links_history', JSON.stringify(updated));
     } catch {
       // ignore
     }

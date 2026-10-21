@@ -320,7 +320,7 @@ export default function VideoTrimmerScreen({ onBack }) {
             const isMp4 = mimeType.includes('mp4');
             const ext = isMp4 ? 'mp4' : 'webm';
             const base = fileName.replace(/\.[^/.]+$/, '');
-            const finalName = `kaze_trimmed_${base}.${ext}`;
+            const finalName = `kuro_trimmed_${base}.${ext}`;
             const dur = (end - start).toFixed(2);
             cleanup();
             resolve({

@@ -12,18 +12,19 @@ import {
   Scissors, 
   ArrowRight, 
   X,
-  Filter
+  Filter,
+  Images
 } from 'lucide-react';
-import KazeIdentityCard from './KazeIdentityCard';
+import KuroIdentityCard from './KuroIdentityCard';
 
 export default function WelcomeScreen({ onSelectPlatform, onOpenTool }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
 
   const categories = [
-    { id: 'all', label: 'Semua Alat', count: 11 },
+    { id: 'all', label: 'Semua Alat', count: 12 },
     { id: 'downloader', label: 'Downloader', count: 2 },
-    { id: 'file', label: 'Konversi & File', count: 3 },
+    { id: 'file', label: 'Konversi & File', count: 4 },
     { id: 'creative', label: 'Studio & Kreatif', count: 5 },
     { id: 'utility', label: 'Utilitas & WA', count: 1 }
   ];
@@ -46,6 +47,15 @@ export default function WelcomeScreen({ onSelectPlatform, onOpenTool }) {
       tag: 'SOSMED',
       icon: Flame,
       onClick: () => onOpenTool('jjFinder')
+    },
+    {
+      id: 'pngToPdf',
+      category: 'file',
+      name: 'PNG to PDF',
+      desc: 'Satukan multi-foto menjadi dokumen PDF dengan kustomisasi teks dan layout tipografi.',
+      tag: 'MULTI-IMG',
+      icon: Images,
+      onClick: () => onOpenTool('pngToPdf')
     },
     {
       id: 'linkToDoc',
@@ -147,7 +157,7 @@ export default function WelcomeScreen({ onSelectPlatform, onOpenTool }) {
     <main className="flex-grow flex flex-col items-center justify-start px-4 sm:px-6 py-6 sm:py-8 w-full max-w-4xl mx-auto">
       
       {/* ─── 1. IDENTITAS & MEDIA PROFIL ─── */}
-      <KazeIdentityCard 
+      <KuroIdentityCard 
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         onSearchSubmit={(q) => setSearchQuery(q)}

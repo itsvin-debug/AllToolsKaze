@@ -2,6 +2,7 @@ import express from 'express';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { exec } from 'child_process';
 import axios from 'axios';
 import { extractScribdDocument, extractWebDocument } from '../services/scribd.service.js';
 import { findJjTemplates } from '../services/jj.service.js';
@@ -278,6 +279,80 @@ router.post(['/jj-finder', '/jj/find'], async (req, res) => {
     return res.status(500).json({
       success: false,
       message: err.message || 'Gagal mencari template JJ.'
+    });
+  }
+});
+
+/**
+ * 5. GET /api/system-battery
+ * Deteksi telemetri baterai perangkat keras secara real-time lintas browser (Firefox, Safari, Edge, Chrome)
+ */
+let batteryCache = null;
+let lastBatteryFetch = 0;
+
+export function getSystemBatteryInfo() {
+  const now = Date.now();
+  if (batteryCache && (now - lastBatteryFetch < 4000)) {
+    return Promise.resolve(batteryCache);
+  }
+
+  return new Promise((resolve) => {
+    // Jalankan query CIM Win32_Battery untuk Windows
+    const cmd = `powershell -NoProfile -Command "Get-CimInstance Win32_Battery | Select-Object -Property EstimatedChargeRemaining, BatteryStatus | ConvertTo-Json"`;
+    exec(cmd, { timeout: 3000 }, (error, stdout) => {
+      if (error || !stdout || !stdout.trim()) {
+        batteryCache = {
+          success: true,
+          level: 100,
+          isCharging: true,
+          hasBattery: false,
+          source: 'system'
+        };
+        lastBatteryFetch = now;
+        return resolve(batteryCache);
+      }
+
+      try {
+        const parsed = JSON.parse(stdout.trim());
+        const data = Array.isArray(parsed) ? parsed[0] : parsed;
+        const level = typeof data.EstimatedChargeRemaining === 'number' ? data.EstimatedChargeRemaining : 100;
+        const status = data.BatteryStatus || 2;
+        const isCharging = [2, 3, 6, 7, 8, 9].includes(status);
+
+        batteryCache = {
+          success: true,
+          level: Math.max(0, Math.min(100, level)),
+          isCharging,
+          hasBattery: true,
+          source: 'hardware'
+        };
+        lastBatteryFetch = now;
+        return resolve(batteryCache);
+      } catch {
+        batteryCache = {
+          success: true,
+          level: 100,
+          isCharging: true,
+          hasBattery: false,
+          source: 'system'
+        };
+        lastBatteryFetch = now;
+        return resolve(batteryCache);
+      }
+    });
+  });
+}
+
+router.get('/system-battery', async (req, res) => {
+  try {
+    const battery = await getSystemBatteryInfo();
+    return res.json(battery);
+  } catch {
+    return res.json({
+      success: true,
+      level: 100,
+      isCharging: true,
+      hasBattery: false
     });
   }
 });

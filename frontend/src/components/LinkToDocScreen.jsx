@@ -275,7 +275,7 @@ export default function LinkToDocScreen({ onBack }) {
 
           doc.setFontSize(8.5);
           doc.setTextColor(theme.textMuted[0], theme.textMuted[1], theme.textMuted[2]);
-          doc.text('Dikonversi oleh AllToolsKaze Document Intelligence Suite', MARGIN_X, 268);
+          doc.text('Dikonversi oleh Kuro Studio Document Intelligence Suite', MARGIN_X, 268);
           doc.text('Tata letak dokumen disesuaikan presisi tinggi untuk penyimpanan & pencetakan resmi.', MARGIN_X, 274);
 
           firstPageRendered = true;
@@ -378,7 +378,7 @@ export default function LinkToDocScreen({ onBack }) {
         // Footer Sampul
         doc.setFontSize(8.5);
         doc.setTextColor(theme.textMuted[0], theme.textMuted[1], theme.textMuted[2]);
-        doc.text('Dikonversi oleh AllToolsKaze Document Intelligence Suite', MARGIN_X, 265);
+        doc.text('Dikonversi oleh Kuro Studio Document Intelligence Suite', MARGIN_X, 265);
         doc.text('Tata letak dokumen disesuaikan presisi tinggi untuk penyimpanan & pencetakan resmi.', MARGIN_X, 271);
 
         // Pindah ke halaman konten
@@ -595,7 +595,7 @@ export default function LinkToDocScreen({ onBack }) {
         doc.setFontSize(8);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(theme.textMuted[0], theme.textMuted[1], theme.textMuted[2]);
-        doc.text(`Dikonversi oleh AllToolsKaze • ${sourceName}`, MARGIN_X, 288);
+        doc.text(`Dikonversi oleh Kuro Studio • ${sourceName}`, MARGIN_X, 288);
 
         const pageLabel = includeCover 
           ? `Halaman ${p - 1} dari ${totalPages - 1}`
@@ -699,7 +699,7 @@ export default function LinkToDocScreen({ onBack }) {
       });
 
       // Subtitle / Info
-      slideTitle.addText(`Sumber: ${sourceName}  |  Total ${pages.length} Lembar Slide\nDikonversi melalui AllToolsKaze Document Intelligence Suite`, {
+      slideTitle.addText(`Sumber: ${sourceName}  |  Total ${pages.length} Lembar Slide\nDikonversi melalui Kuro Studio Document Intelligence Suite`, {
         x: 1.0,
         y: 3.8,
         w: 8.0,
@@ -770,7 +770,7 @@ export default function LinkToDocScreen({ onBack }) {
         });
 
         // Footer Slide
-        slide.addText(`Slide ${idx + 1} dari ${pages.length}  •  AllToolsKaze`, {
+        slide.addText(`Slide ${idx + 1} dari ${pages.length}  •  Kuro Studio`, {
           x: 0.8,
           y: 5.15,
           w: 8.4,
@@ -1196,7 +1196,7 @@ export default function LinkToDocScreen({ onBack }) {
                         color: `rgb(${activeThemeObj.textMuted.join(',')})`
                       }}
                     >
-                      <span>AllToolsKaze Document Suite</span>
+                      <span>Kuro Studio Document Suite</span>
                       <span>Halaman {activePageIndex + 1} dari {docData.pages.length}</span>
                     </div>
                   </div>

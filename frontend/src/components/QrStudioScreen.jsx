@@ -39,7 +39,7 @@ export default function QrStudioScreen({ onBack, initialUrl = '' }) {
   // Status Verifikasi Scan Real-Time (Live jsQR Scanner Engine)
   const [scanResult, setScanResult] = useState({
     scannable: true,
-    content: initialUrl || 'https://kaze-tools.com',
+    content: initialUrl || 'https://kuro-tools.com',
     time: Date.now()
   });
 
@@ -277,7 +277,7 @@ export default function QrStudioScreen({ onBack, initialUrl = '' }) {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const link = document.createElement('a');
-    link.download = `kaze_custom_qr_${Date.now()}.png`;
+    link.download = `kuro_custom_qr_${Date.now()}.png`;
     link.href = canvas.toDataURL('image/png', 1.0);
     document.body.appendChild(link);
     link.click();
@@ -293,7 +293,7 @@ export default function QrStudioScreen({ onBack, initialUrl = '' }) {
     if (!canvas) return;
 
     // Jika input teks masih kosong, tampilkan demo QR artistik agar canvas tidak kosong
-    const targetRenderText = text.trim() || 'https://kaze-tools.com';
+    const targetRenderText = text.trim() || 'https://kuro-tools.com';
 
     try {
       const qr = QRCode.create(targetRenderText, { errorCorrectionLevel: effectiveEccLevel });

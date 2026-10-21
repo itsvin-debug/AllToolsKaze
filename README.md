@@ -1,4 +1,4 @@
-# 🌟 Kaze Media Downloader (TikTok, Instagram & X)
+# 🌟 Kuro Studio - Multi-Tool Platform
 
 Aplikasi Web Downloader Video & Audio Modern tanpa watermark untuk **TikTok**, **Instagram**, dan **X (Twitter)** dengan arsitektur **Node.js (Express)** di Backend dan **React (Vite)** di Frontend. Mengadopsi visual dan tema interaktif 5 screen dari Stitch UI Design & WebGL Shader.
 

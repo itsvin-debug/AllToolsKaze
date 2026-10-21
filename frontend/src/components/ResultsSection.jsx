@@ -18,7 +18,11 @@ import {
   FileArchive,
   RotateCcw,
   RotateCw,
-  Disc3
+  Disc3,
+  Film,
+  Sparkles,
+  Layers,
+  Zap
 } from 'lucide-react';
 
 export default function ResultsSection({ result, preferredFormat = '1080p', onReset, onBack }) {
@@ -26,14 +30,67 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
     return null;
   }
 
-  const allPhotos = (result.photos && result.photos.length > 0)
-    ? result.photos
-    : (result.downloadLinks?.filter((l) => l.type === 'image') || []);
+  // 1. Ekstraksi Photo Slides
+  const photoSlides = useMemo(() => {
+    const rawPhotos = (result.photos && result.photos.length > 0)
+      ? result.photos
+      : (result.downloadLinks?.filter((l) => l.type === 'image') || []);
 
-  const hasPhotos = allPhotos.length > 0;
-  const isSlidePost = result.mediaType === 'slide' || result.isSlide || hasPhotos;
+    return rawPhotos.map((p, idx) => ({
+      ...p,
+      id: p.id || `photo_${idx + 1}`,
+      type: 'photo',
+      label: p.label || `Foto Slide #${idx + 1}`,
+      quality: p.quality || 'HD 1080p Image',
+      filename: p.filename || `slide_${idx + 1}_hd.jpg`
+    }));
+  }, [result]);
 
-  const regularVideoLinks = !isSlidePost
+  // 2. Ekstraksi Video Slides
+  const videoSlidesList = useMemo(() => {
+    const rawVideos = (result.videoSlides && result.videoSlides.length > 0)
+      ? result.videoSlides
+      : (result.downloadLinks?.filter((l) => 
+          l.type === 'video' && (l.id?.includes('slide') || l.label?.toLowerCase().includes('slide') || (result.isSlide && l.id !== 'audio'))
+        ) || []);
+
+    return rawVideos.map((v, idx) => ({
+      ...v,
+      id: v.id || `videoslide_${idx + 1}`,
+      type: 'video',
+      label: v.label || `Video Slide #${idx + 1}`,
+      quality: v.quality || 'HD 1080p Video',
+      filename: v.filename || `video_slide_${idx + 1}.mp4`
+    }));
+  }, [result]);
+
+  // 3. Ekstraksi Live Wallpapers
+  const liveWallpaperList = useMemo(() => {
+    const rawWallpapers = (result.liveWallpapers && result.liveWallpapers.length > 0)
+      ? result.liveWallpapers
+      : (result.downloadLinks?.filter((l) => 
+          l.type === 'live_wallpaper' || 
+          l.id?.includes('wallpaper') || 
+          l.label?.toLowerCase().includes('wallpaper') ||
+          l.id?.includes('dynamic')
+        ) || []);
+
+    return rawWallpapers.map((w, idx) => ({
+      ...w,
+      id: w.id || `wallpaper_${idx + 1}`,
+      type: 'live_wallpaper',
+      label: w.label || `Live Wallpaper #${idx + 1}`,
+      quality: w.quality || 'Dynamic Motion Loop',
+      filename: w.filename || `live_wallpaper_${idx + 1}.${w.extension || 'mp4'}`
+    }));
+  }, [result]);
+
+  const hasPhotos = photoSlides.length > 0;
+  const hasVideoSlides = videoSlidesList.length > 0;
+  const hasLiveWallpapers = liveWallpaperList.length > 0;
+  const isMultiContentPost = hasPhotos || hasVideoSlides || hasLiveWallpapers || result.isSlide || result.mediaType === 'slide';
+
+  const regularVideoLinks = !isMultiContentPost
     ? (result.downloadLinks?.filter((l) => l.type === 'video') || [])
     : [];
   const hasVideo = regularVideoLinks.length > 0;
@@ -42,7 +99,28 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
   const activeAudio = audioLinks[0] || null;
 
   const [selectedQualityIndex, setSelectedQualityIndex] = useState(0);
-  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+
+  // Kategori filter aktif: 'photo' | 'video' | 'live_wallpaper' | 'all'
+  const [contentTypeFilter, setContentTypeFilter] = useState(() => {
+    if (hasPhotos) return 'photo';
+    if (hasVideoSlides) return 'video';
+    if (hasLiveWallpapers) return 'live_wallpaper';
+    return 'all';
+  });
+
+  const allCombinedSlides = useMemo(() => {
+    return [...photoSlides, ...videoSlidesList, ...liveWallpaperList];
+  }, [photoSlides, videoSlidesList, liveWallpaperList]);
+
+  const activeSlideList = useMemo(() => {
+    if (contentTypeFilter === 'photo' && hasPhotos) return photoSlides;
+    if (contentTypeFilter === 'video' && hasVideoSlides) return videoSlidesList;
+    if (contentTypeFilter === 'live_wallpaper' && hasLiveWallpapers) return liveWallpaperList;
+    if (contentTypeFilter === 'all') return allCombinedSlides;
+    return photoSlides.length > 0 ? photoSlides : allCombinedSlides;
+  }, [contentTypeFilter, photoSlides, videoSlidesList, liveWallpaperList, allCombinedSlides, hasPhotos, hasVideoSlides, hasLiveWallpapers]);
+
+  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [downloading, setDownloading] = useState(false);
   const [downloadingAllPhotos, setDownloadingAllPhotos] = useState(false);
   const [downloadAllProgressText, setDownloadAllProgressText] = useState('');
@@ -59,6 +137,8 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
 
   const audioRef = useRef(null);
   const videoRef = useRef(null);
+  const slideVideoRef = useRef(null);
+  const liveWallpaperRef = useRef(null);
 
   const audioSources = useMemo(() => {
     if (!activeAudio) return [];
@@ -74,8 +154,14 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
 
   const activeAudioSrc = audioSources[currentAudioSrcIndex] || audioSources[0] || '';
 
+  // Sinkronisasi reset saat media baru dimuat
   useEffect(() => {
-    setCurrentPhotoIndex(0);
+    setCurrentSlideIndex(0);
+    if (hasPhotos) setContentTypeFilter('photo');
+    else if (hasVideoSlides) setContentTypeFilter('video');
+    else if (hasLiveWallpapers) setContentTypeFilter('live_wallpaper');
+    else setContentTypeFilter('all');
+
     setIsPlayingAudio(false);
     setIsAudioLoading(false);
     setAudioCurrentTime(0);
@@ -83,7 +169,35 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
     if (audioRef.current) {
       audioRef.current.currentTime = 0;
     }
-  }, [result]);
+  }, [result, hasPhotos, hasVideoSlides, hasLiveWallpapers]);
+
+  // Hentikan video & animasi saat berganti slide untuk mencegah kebocoran memori/suara
+  useEffect(() => {
+    if (slideVideoRef.current) {
+      try {
+        slideVideoRef.current.pause();
+      } catch {}
+    }
+    if (liveWallpaperRef.current) {
+      try {
+        liveWallpaperRef.current.pause();
+      } catch {}
+    }
+  }, [currentSlideIndex, contentTypeFilter]);
+
+  // Preload gambar slide terdekat secara instan tanpa lag
+  useEffect(() => {
+    if (!activeSlideList || activeSlideList.length <= 1) return;
+    const nextIdx = (currentSlideIndex + 1) % activeSlideList.length;
+    const prevIdx = (currentSlideIndex - 1 + activeSlideList.length) % activeSlideList.length;
+    [nextIdx, prevIdx].forEach(idx => {
+      const item = activeSlideList[idx];
+      if (item && (item.type === 'photo' || item.type === 'image') && item.url) {
+        const img = new Image();
+        img.src = item.url;
+      }
+    });
+  }, [currentSlideIndex, activeSlideList]);
 
   useEffect(() => {
     if (preferredFormat === '720p' && regularVideoLinks.length > 1) {
@@ -94,7 +208,7 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
   }, [preferredFormat, regularVideoLinks]);
 
   const activeRegularVideo = regularVideoLinks[selectedQualityIndex] || regularVideoLinks[0];
-  const activePhoto = allPhotos[currentPhotoIndex] || allPhotos[0];
+  const activeSlide = activeSlideList[currentSlideIndex] || activeSlideList[0];
 
   const downloadToDevice = async (mediaItem, customFilename = null, triggerCelebration = true) => {
     setDownloading(true);
@@ -103,11 +217,13 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
     }
 
     const filename = customFilename || mediaItem.filename || (
-      mediaItem.type === 'image' 
-        ? `kaze_photo_${Date.now()}.jpg` 
+      mediaItem.type === 'image' || mediaItem.type === 'photo'
+        ? `kuro_photo_${Date.now()}.jpg` 
         : mediaItem.type === 'audio' 
-        ? `kaze_audio_${Date.now()}.mp3` 
-        : `kaze_video_${Date.now()}.mp4`
+        ? `kuro_audio_${Date.now()}.mp3` 
+        : mediaItem.type === 'live_wallpaper'
+        ? `kuro_live_wallpaper_${Date.now()}.${mediaItem.extension || 'mp4'}`
+        : `kuro_video_${Date.now()}.mp4`
     );
 
     const proxyUrl = mediaItem.proxyUrl 
@@ -134,17 +250,17 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
   };
 
   const handleDownloadAllPhotosZip = async () => {
-    if (!allPhotos || allPhotos.length === 0) return;
+    if (!photoSlides || photoSlides.length === 0) return;
     setDownloadingAllPhotos(true);
     setDownloadAllProgressText('Menyiapkan ZIP...');
 
     const zip = new JSZip();
-    const folder = zip.folder('kaze_slides');
+    const folder = zip.folder('kuro_slides');
 
     try {
-      for (let i = 0; i < allPhotos.length; i++) {
-        setDownloadAllProgressText(`Mengunduh foto ${i + 1} dari ${allPhotos.length}...`);
-        const photo = allPhotos[i];
+      for (let i = 0; i < photoSlides.length; i++) {
+        setDownloadAllProgressText(`Mengunduh foto ${i + 1} dari ${photoSlides.length}...`);
+        const photo = photoSlides[i];
         const proxyUrl = photo.proxyUrl || `/api/proxy-download?url=${encodeURIComponent(photo.url)}`;
 
         try {
@@ -161,7 +277,7 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
       const zipUrl = window.URL.createObjectURL(zipBlob);
       const a = document.createElement('a');
       a.href = zipUrl;
-      a.download = `kaze_slides_${Date.now()}.zip`;
+      a.download = `kuro_slides_${Date.now()}.zip`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -232,14 +348,14 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
     return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
   };
 
-  const handleNextPhoto = () => {
-    if (allPhotos.length <= 1) return;
-    setCurrentPhotoIndex((prev) => (prev + 1) % allPhotos.length);
+  const handleNextSlide = () => {
+    if (!activeSlideList || activeSlideList.length <= 1) return;
+    setCurrentSlideIndex((prev) => (prev + 1) % activeSlideList.length);
   };
 
-  const handlePrevPhoto = () => {
-    if (allPhotos.length <= 1) return;
-    setCurrentPhotoIndex((prev) => (prev - 1 + allPhotos.length) % allPhotos.length);
+  const handlePrevSlide = () => {
+    if (!activeSlideList || activeSlideList.length <= 1) return;
+    setCurrentSlideIndex((prev) => (prev - 1 + activeSlideList.length) % activeSlideList.length);
   };
 
   const handleTouchStart = (e) => {
@@ -252,9 +368,9 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
     const diffX = touchStartX - touchEndX;
 
     if (diffX > 45) {
-      handleNextPhoto();
+      handleNextSlide();
     } else if (diffX < -45) {
-      handlePrevPhoto();
+      handlePrevSlide();
     }
     setTouchStartX(null);
   };
@@ -277,61 +393,191 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
   return (
     <div className="w-full flex flex-col gap-5 mt-2">
 
-      {/* ─── 1. FOTO SLIDE CAROUSEL ─── */}
-      {isSlidePost && hasPhotos && (
+      {/* ─── 1. MULTI-CONTENT SLIDE CAROUSEL (FOTO, VIDEO SLIDE, & LIVE WALLPAPER) ─── */}
+      {isMultiContentPost && activeSlideList.length > 0 && (
         <div className="w-full bg-white border-2 border-black rounded-xl p-5 sm:p-6 shadow-[4px_4px_0px_#000000] flex flex-col gap-4 text-black">
           
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b-2 border-black">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-md border-2 border-black bg-black text-white flex items-center justify-center">
-                <Images className="w-4 h-4" />
+          {/* Header & Smart Switcher Tabs */}
+          <div className="flex flex-col gap-3 pb-3 border-b-2 border-black">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-md border-2 border-black bg-black text-white flex items-center justify-center shrink-0">
+                  {contentTypeFilter === 'video' ? (
+                    <Film className="w-4 h-4 stroke-[2.5]" />
+                  ) : contentTypeFilter === 'live_wallpaper' ? (
+                    <Sparkles className="w-4 h-4 stroke-[2.5]" />
+                  ) : (
+                    <Images className="w-4 h-4 stroke-[2.5]" />
+                  )}
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-black flex items-center gap-2">
+                    <span>
+                      {contentTypeFilter === 'photo' 
+                        ? `Album Foto HD (${photoSlides.length} Slide)` 
+                        : contentTypeFilter === 'video' 
+                        ? `Video Slide (${videoSlidesList.length} Item)` 
+                        : contentTypeFilter === 'live_wallpaper' 
+                        ? `Live Wallpaper (${liveWallpaperList.length} Animasi Loop)` 
+                        : `Pratinjau Multi-Konten (${activeSlideList.length} Item)`}
+                    </span>
+                  </h3>
+                  <p className="text-xs text-neutral-600">
+                    Pilih kategori media atau geser layar untuk pratinjau instan tanpa lag
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-base font-extrabold text-black flex items-center gap-2">
-                  <span>Album Slide ({allPhotos.length} Foto HD)</span>
-                </h3>
-                <p className="text-xs text-neutral-600">
-                  Gunakan tombol panah atau geser layar untuk melihat seluruh foto
-                </p>
-              </div>
+
+              <span className="px-3 py-1 rounded border-2 border-black text-xs font-mono font-bold bg-neutral-100 text-black self-start sm:self-auto shrink-0">
+                Slide {currentSlideIndex + 1} dari {activeSlideList.length}
+              </span>
             </div>
 
-            <span className="px-3 py-1 rounded border-2 border-black text-xs font-mono font-bold bg-neutral-100 text-black">
-              Foto {currentPhotoIndex + 1} dari {allPhotos.length}
-            </span>
+            {/* Smart Switcher Tabs (Aktif jika terdapat lebih dari satu jenis format media) */}
+            {((hasPhotos && hasVideoSlides) || (hasPhotos && hasLiveWallpapers) || (hasVideoSlides && hasLiveWallpapers)) && (
+              <div className="flex items-center gap-2 overflow-x-auto pt-1 pb-0.5 custom-scrollbar">
+                {hasPhotos && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setContentTypeFilter('photo');
+                      setCurrentSlideIndex(0);
+                    }}
+                    className={`px-3 py-1.5 rounded-lg border-2 border-black text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+                      contentTypeFilter === 'photo'
+                        ? 'bg-black text-white shadow-[2px_2px_0px_#000000]'
+                        : 'bg-white text-black hover:bg-neutral-100'
+                    }`}
+                  >
+                    <Images className="w-3.5 h-3.5 stroke-[2.5]" />
+                    <span>Foto HD ({photoSlides.length})</span>
+                  </button>
+                )}
+
+                {hasVideoSlides && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setContentTypeFilter('video');
+                      setCurrentSlideIndex(0);
+                    }}
+                    className={`px-3 py-1.5 rounded-lg border-2 border-black text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+                      contentTypeFilter === 'video'
+                        ? 'bg-black text-white shadow-[2px_2px_0px_#000000]'
+                        : 'bg-white text-black hover:bg-neutral-100'
+                    }`}
+                  >
+                    <Film className="w-3.5 h-3.5 stroke-[2.5]" />
+                    <span>Video Slide ({videoSlidesList.length})</span>
+                  </button>
+                )}
+
+                {hasLiveWallpapers && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setContentTypeFilter('live_wallpaper');
+                      setCurrentSlideIndex(0);
+                    }}
+                    className={`px-3 py-1.5 rounded-lg border-2 border-black text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+                      contentTypeFilter === 'live_wallpaper'
+                        ? 'bg-black text-white shadow-[2px_2px_0px_#000000]'
+                        : 'bg-white text-black hover:bg-neutral-100'
+                    }`}
+                  >
+                    <Sparkles className="w-3.5 h-3.5 stroke-[2.5]" />
+                    <span>Live Wallpaper ({liveWallpaperList.length})</span>
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setContentTypeFilter('all');
+                    setCurrentSlideIndex(0);
+                  }}
+                  className={`px-3 py-1.5 rounded-lg border-2 border-black text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+                    contentTypeFilter === 'all'
+                      ? 'bg-black text-white shadow-[2px_2px_0px_#000000]'
+                      : 'bg-white text-black hover:bg-neutral-100'
+                  }`}
+                >
+                  <Layers className="w-3.5 h-3.5 stroke-[2.5]" />
+                  <span>Semua ({allCombinedSlides.length})</span>
+                </button>
+              </div>
+            )}
           </div>
 
+          {/* Slide Frame / Viewport */}
           <div 
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
-            className="relative w-full max-w-xl mx-auto min-h-[360px] sm:min-h-[460px] max-h-[500px] rounded-lg overflow-hidden bg-neutral-100 border-2 border-black flex items-center justify-center select-none"
+            className="relative w-full max-w-xl mx-auto min-h-[360px] sm:min-h-[460px] max-h-[520px] rounded-lg overflow-hidden bg-neutral-950 border-2 border-black flex items-center justify-center select-none shadow-[2px_2px_0px_#000000]"
           >
-            {activePhoto ? (
-              <img
-                key={activePhoto.url}
-                src={activePhoto.url}
-                alt={activePhoto.label || `Foto Slide ${currentPhotoIndex + 1}`}
-                className="w-full h-full object-contain pointer-events-none"
-                referrerPolicy="no-referrer"
-              />
+            {activeSlide ? (
+              activeSlide.type === 'video' ? (
+                <video
+                  ref={slideVideoRef}
+                  key={`video-${activeSlide.streamUrl || activeSlide.url}`}
+                  src={activeSlide.streamUrl || activeSlide.url}
+                  poster={result.thumbnail || undefined}
+                  controls
+                  playsInline
+                  preload="metadata"
+                  className="w-full h-full object-contain"
+                />
+              ) : activeSlide.type === 'live_wallpaper' ? (
+                activeSlide.extension === 'webp' || activeSlide.url?.endsWith('.webp') ? (
+                  <img
+                    key={`wallpaper-img-${activeSlide.url}`}
+                    src={activeSlide.url}
+                    alt={activeSlide.label || 'Live Wallpaper'}
+                    className="w-full h-full object-contain pointer-events-none"
+                    referrerPolicy="no-referrer"
+                  />
+                ) : (
+                  <video
+                    ref={liveWallpaperRef}
+                    key={`wallpaper-vid-${activeSlide.streamUrl || activeSlide.url}`}
+                    src={activeSlide.streamUrl || activeSlide.url}
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    preload="auto"
+                    className="w-full h-full object-contain"
+                  />
+                )
+              ) : (
+                <img
+                  key={`photo-${activeSlide.url}`}
+                  src={activeSlide.url}
+                  alt={activeSlide.label || `Foto Slide ${currentSlideIndex + 1}`}
+                  className="w-full h-full object-contain pointer-events-none transition-opacity duration-150"
+                  referrerPolicy="no-referrer"
+                  loading="eager"
+                />
+              )
             ) : (
-              <div className="text-xs font-bold text-neutral-500">Foto Siap Diunduh</div>
+              <div className="text-xs font-bold text-neutral-400">Media Siap Diunduh</div>
             )}
 
-            {allPhotos.length > 1 && (
+            {/* Navigation Chevrons */}
+            {activeSlideList.length > 1 && (
               <>
                 <button
                   type="button"
-                  onClick={handlePrevPhoto}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-lg bg-white text-black border-2 border-black flex items-center justify-center cursor-pointer shadow-[2px_2px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all"
+                  onClick={handlePrevSlide}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-lg bg-white text-black border-2 border-black flex items-center justify-center cursor-pointer shadow-[2px_2px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all z-10"
                   aria-label="Slide Sebelumnya"
                 >
                   <ChevronLeft className="w-6 h-6 stroke-[2.5]" />
                 </button>
                 <button
                   type="button"
-                  onClick={handleNextPhoto}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-lg bg-white text-black border-2 border-black flex items-center justify-center cursor-pointer shadow-[2px_2px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all"
+                  onClick={handleNextSlide}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-lg bg-white text-black border-2 border-black flex items-center justify-center cursor-pointer shadow-[2px_2px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all z-10"
                   aria-label="Slide Selanjutnya"
                 >
                   <ChevronRight className="w-6 h-6 stroke-[2.5]" />
@@ -339,45 +585,75 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
               </>
             )}
 
-            <div className="absolute bottom-3 right-3 px-2.5 py-0.5 rounded border border-black bg-black text-white text-[10px] font-mono font-bold">
-              {currentPhotoIndex + 1} / {allPhotos.length}
+            {/* Counter Badge */}
+            <div className="absolute bottom-3 right-3 px-2.5 py-0.5 rounded border border-black bg-black text-white text-[10px] font-mono font-bold z-10">
+              {currentSlideIndex + 1} / {activeSlideList.length}
             </div>
 
-            <div className="absolute top-3 left-3 px-2.5 py-0.5 rounded border border-black bg-white text-black text-[10px] font-mono font-bold">
-              HD Image
+            {/* Content Type Badge */}
+            <div className="absolute top-3 left-3 px-2.5 py-0.5 rounded border border-black bg-white text-black text-[10px] font-mono font-bold flex items-center gap-1.5 shadow-sm z-10">
+              {activeSlide?.type === 'video' ? (
+                <>
+                  <Film className="w-3 h-3 stroke-[2.5]" />
+                  <span>VIDEO SLIDE</span>
+                </>
+              ) : activeSlide?.type === 'live_wallpaper' ? (
+                <>
+                  <span className="w-2 h-2 rounded-full bg-black inline-block animate-ping" />
+                  <Sparkles className="w-3 h-3 stroke-[2.5]" />
+                  <span>LIVE WALLPAPER (LOOP)</span>
+                </>
+              ) : (
+                <>
+                  <Images className="w-3 h-3 stroke-[2.5]" />
+                  <span>FOTO HD</span>
+                </>
+              )}
             </div>
           </div>
 
-          {allPhotos.length > 1 && (
+          {/* Thumbnails Row */}
+          {activeSlideList.length > 1 && (
             <div className="w-full flex items-center justify-start sm:justify-center gap-2 overflow-x-auto py-1 px-0.5 custom-scrollbar">
-              {allPhotos.map((photo, idx) => {
-                const isCurrent = idx === currentPhotoIndex;
+              {activeSlideList.map((item, idx) => {
+                const isCurrent = idx === currentSlideIndex;
                 return (
                   <button
-                    key={idx}
-                    onClick={() => setCurrentPhotoIndex(idx)}
-                    className={`relative w-12 h-12 rounded-md overflow-hidden shrink-0 border-2 transition-all cursor-pointer ${
+                    key={`${item.id || idx}`}
+                    onClick={() => setCurrentSlideIndex(idx)}
+                    className={`relative w-12 h-12 rounded-md overflow-hidden shrink-0 border-2 transition-all cursor-pointer bg-neutral-200 ${
                       isCurrent 
                         ? 'border-black shadow-[2px_2px_0px_#000000] -translate-y-0.5' 
                         : 'border-neutral-300 opacity-60 hover:opacity-100 hover:border-black'
                     }`}
                   >
-                    <img 
-                      src={photo.url} 
-                      alt={`Thumb ${idx + 1}`} 
-                      className="w-full h-full object-cover pointer-events-none"
-                      referrerPolicy="no-referrer"
-                    />
+                    {item.type === 'video' ? (
+                      <div className="w-full h-full bg-black text-white flex items-center justify-center">
+                        <Play className="w-4 h-4 fill-white" />
+                      </div>
+                    ) : item.type === 'live_wallpaper' ? (
+                      <div className="w-full h-full bg-black text-white flex items-center justify-center">
+                        <Sparkles className="w-4 h-4" />
+                      </div>
+                    ) : (
+                      <img 
+                        src={item.url} 
+                        alt={`Thumb ${idx + 1}`} 
+                        className="w-full h-full object-cover pointer-events-none"
+                        referrerPolicy="no-referrer"
+                      />
+                    )}
                   </button>
                 );
               })}
             </div>
           )}
 
+          {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row items-center gap-2.5 pt-2 w-full">
-            {activePhoto && (
+            {activeSlide && (
               <button
-                onClick={() => downloadToDevice(activePhoto, `slide_${currentPhotoIndex + 1}_hd.jpg`)}
+                onClick={() => downloadToDevice(activeSlide, activeSlide.filename)}
                 disabled={downloading}
                 className="w-full sm:flex-1 bg-black hover:bg-neutral-800 text-white font-extrabold text-xs sm:text-sm rounded-lg py-3 flex items-center justify-center gap-2 border-2 border-black shadow-[2px_2px_0px_#000000] cursor-pointer disabled:opacity-50"
               >
@@ -386,11 +662,17 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
                 ) : (
                   <Download className="w-4 h-4 stroke-[2.5]" />
                 )}
-                <span>Unduh Slide Ini (Foto #{currentPhotoIndex + 1})</span>
+                <span>
+                  {activeSlide.type === 'video'
+                    ? `Unduh Video Slide MP4 (#${currentSlideIndex + 1})`
+                    : activeSlide.type === 'live_wallpaper'
+                    ? `Unduh Live Wallpaper HD (#${currentSlideIndex + 1})`
+                    : `Unduh Slide Ini (Foto #${currentSlideIndex + 1})`}
+                </span>
               </button>
             )}
 
-            {allPhotos.length > 1 && (
+            {photoSlides.length > 1 && (
               <button
                 onClick={handleDownloadAllPhotosZip}
                 disabled={downloadingAllPhotos}
@@ -404,7 +686,7 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
                 ) : (
                   <>
                     <FileArchive className="w-4 h-4 stroke-[2.5]" />
-                    <span>Unduh Semua Slide ({allPhotos.length} Foto ZIP)</span>
+                    <span>Unduh Semua Slide ({photoSlides.length} Foto ZIP)</span>
                   </>
                 )}
               </button>
@@ -415,7 +697,7 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
       )}
 
       {/* ─── 2. VIDEO REGULER ─── */}
-      {!isSlidePost && hasVideo && (
+      {!isMultiContentPost && hasVideo && (
         <div className="w-full bg-white border-2 border-black rounded-xl p-5 sm:p-6 shadow-[4px_4px_0px_#000000] flex flex-col md:flex-row gap-5 items-start text-black">
           
           <div className="w-full md:w-72 aspect-[9/16] sm:aspect-[3/4] max-h-[380px] rounded-lg bg-black border-2 border-black overflow-hidden relative shrink-0 flex items-center justify-center mx-auto md:mx-0 shadow-[2px_2px_0px_#000000]">
@@ -501,6 +783,18 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
                     </button>
                   );
                 })}
+
+                {liveWallpaperList.map((liveWp, wpIdx) => (
+                  <button
+                    key={`wp-${wpIdx}`}
+                    onClick={() => downloadToDevice(liveWp, liveWp.filename)}
+                    className="px-3 py-2 rounded-lg text-xs font-bold font-mono transition-all duration-150 cursor-pointer border-2 border-black flex items-center justify-center gap-1.5 bg-neutral-100 hover:bg-neutral-200 text-black shadow-xs"
+                    title="Unduh versi Live Wallpaper animasi loop"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 stroke-[2.5]" />
+                    <span>Live Wallpaper</span>
+                  </button>
+                ))}
               </div>
 
               {activeRegularVideo && (

@@ -142,7 +142,7 @@ export default function MediaCompressorScreen({ onBack }) {
     if (!imgCompressedDataUrl) return;
     const link = document.createElement('a');
     const ext = imgTargetFormat === 'image/webp' ? 'webp' : 'jpg';
-    link.download = `kaze_compressed_${Date.now()}.${ext}`;
+    link.download = `kuro_compressed_${Date.now()}.${ext}`;
     link.href = imgCompressedDataUrl;
     link.click();
   };

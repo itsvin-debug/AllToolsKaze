@@ -87,7 +87,7 @@ export default function ConverterScreen({ activePlatform: initialPlatform = 'tik
       placeholder: 'Tempel link lagu atau album Spotify (open.spotify.com/track/...)',
       hint: 'Ekstrak metadata lagu, cover album resolusi penuh, dan trek audio.',
       icon: Music,
-      domains: ['spotify.com']
+      domains: ['spotify.com', 'spotify.link', 'spoti.fi']
     },
     {
       id: 'bilibili',
@@ -105,7 +105,7 @@ export default function ConverterScreen({ activePlatform: initialPlatform = 'tik
       placeholder: 'Tempel link video Douyin (douyin.com/video/... atau iesdouyin.com/...)',
       hint: 'Unduh video original Douyin tanpa watermark langsung dalam format MP4.',
       icon: Music2,
-      domains: ['douyin.com', 'iesdouyin.com']
+      domains: ['douyin.com', 'iesdouyin.com', 'v.douyin.com']
     },
     {
       id: 'rednote',
@@ -141,7 +141,7 @@ export default function ConverterScreen({ activePlatform: initialPlatform = 'tik
       placeholder: 'Tempel link lagu Apple Music (music.apple.com/.../album/...)',
       hint: 'Ekstrak artwork cover beresolusi tinggi dan metadata resmi Apple Music.',
       icon: Music,
-      domains: ['music.apple.com']
+      domains: ['music.apple.com', 'itunes.apple.com', 'apple.co']
     },
     {
       id: 'facebook',
@@ -150,7 +150,7 @@ export default function ConverterScreen({ activePlatform: initialPlatform = 'tik
       placeholder: 'Tempel link video atau Reels Facebook (facebook.com/watch/... atau fb.watch/...)',
       hint: 'Unduh video publik dan klip video Facebook dalam format MP4 HD.',
       icon: Play,
-      domains: ['facebook.com', 'fb.watch']
+      domains: ['facebook.com', 'fb.watch', 'fb.com']
     },
     {
       id: 'bandcamp',
@@ -168,7 +168,7 @@ export default function ConverterScreen({ activePlatform: initialPlatform = 'tik
       placeholder: 'Tempel link karya ilustrasi Pixiv (pixiv.net/artworks/...)',
       hint: 'Unduh karya seni ilustrasi master langsung dalam resolusi asli gambar.',
       icon: ImageIcon,
-      domains: ['pixiv.net']
+      domains: ['pixiv.net', 'phixiv.net', 'pximg.net']
     },
     {
       id: 'reddit',
@@ -177,7 +177,7 @@ export default function ConverterScreen({ activePlatform: initialPlatform = 'tik
       placeholder: 'Tempel link postingan video Reddit (reddit.com/r/.../comments/...)',
       hint: 'Ekstrak video dengan sinkronisasi trek audio dari server media Reddit.',
       icon: Flame,
-      domains: ['reddit.com', 'v.redd.it']
+      domains: ['reddit.com', 'v.redd.it', 'redd.it']
     },
     {
       id: 'terabox',
@@ -289,10 +289,6 @@ export default function ConverterScreen({ activePlatform: initialPlatform = 'tik
       return;
     }
 
-    // Untuk 4 platform inti dengan backend scraping engine aktif
-    const corePlatforms = ['tiktok', 'instagram', 'youtube', 'twitter'];
-    const isCore = corePlatforms.includes(activePlatform);
-
     try {
       setLoading(true);
       setDownloadProgress(2);
@@ -305,56 +301,25 @@ export default function ConverterScreen({ activePlatform: initialPlatform = 'tik
         });
       }, 140);
 
-      if (isCore) {
-        const response = await axios.post('/api/download', {
-          url: trimmedUrl,
-          expectedPlatform: activePlatform
-        }, {
-          headers: { 'Content-Type': 'application/json' },
-          timeout: 35000
-        });
+      const response = await axios.post('/api/download', {
+        url: trimmedUrl,
+        expectedPlatform: activePlatform
+      }, {
+        headers: { 'Content-Type': 'application/json' },
+        timeout: 45000
+      });
 
-        clearInterval(progressTimer);
+      clearInterval(progressTimer);
 
-        if (response.data && response.data.success && response.data.data) {
-          setDownloadProgress(100);
-          setTimeout(() => {
-            setResultData(response.data.data);
-            setLoading(false);
-            setDownloadProgress(0);
-          }, 400);
-        } else {
-          throw new Error(response.data?.message || 'Gagal memproses tautan media.');
-        }
-      } else {
-        // Platform tambahan: proses simulasi ekstraksi aman
+      if (response.data && response.data.success && response.data.data) {
+        setDownloadProgress(100);
         setTimeout(() => {
-          clearInterval(progressTimer);
-          setDownloadProgress(100);
-          setTimeout(() => {
-            setResultData({
-              title: `${currentMeta.name} Media Extraction`,
-              author: 'Media User',
-              mediaType: 'video',
-              downloadLinks: [
-                {
-                  label: `Unduh HD (${selectedFormat})`,
-                  url: trimmedUrl,
-                  type: 'video',
-                  quality: selectedFormat
-                },
-                {
-                  label: 'Unduh Audio MP3',
-                  url: trimmedUrl,
-                  type: 'audio',
-                  quality: '320kbps'
-                }
-              ]
-            });
-            setLoading(false);
-            setDownloadProgress(0);
-          }, 400);
-        }, 1200);
+          setResultData(response.data.data);
+          setLoading(false);
+          setDownloadProgress(0);
+        }, 400);
+      } else {
+        throw new Error(response.data?.message || 'Gagal memproses tautan media.');
       }
     } catch (err) {
       const serverMsg = err.response?.data?.message || err.message || 'Terjadi kesalahan saat memproses media.';

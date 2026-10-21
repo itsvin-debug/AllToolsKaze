@@ -1,6 +1,6 @@
 import concurrently from 'concurrently';
 
-console.log('🚀 Memulai Fullstack AllToolsKaze (Backend :5001 & Frontend :5173)...');
+console.log('🚀 Memulai Fullstack Kuro Studio (Backend :5001 & Frontend :5173)...');
 
 const { result } = concurrently(
   [

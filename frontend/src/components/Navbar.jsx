@@ -13,7 +13,8 @@ import {
   Music,
   Sparkles,
   Film,
-  Scissors
+  Scissors,
+  Images
 } from 'lucide-react';
 
 export default function Navbar({ currentScreen, onSelectTool, onGoHome }) {
@@ -23,6 +24,7 @@ export default function Navbar({ currentScreen, onSelectTool, onGoHome }) {
   const tools = [
     { id: 'downloader', label: 'Media Downloader', icon: Download },
     { id: 'jjFinder', label: 'Cari Link JJ', icon: Flame },
+    { id: 'pngToPdf', label: 'PNG to PDF', icon: Images },
     { id: 'linkToDoc', label: 'Link to PDF/PPT', icon: FileText },
     { id: 'imageToLink', label: 'File ke Link', icon: Link2 },
     { id: 'compressor', label: 'Kompres Media HD', icon: Minimize2 },
@@ -58,18 +60,18 @@ export default function Navbar({ currentScreen, onSelectTool, onGoHome }) {
     <header className="sticky top-0 z-50 bg-white border-b-2 border-black w-full">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
         
-        {/* Brand Logo: KAZE STUDIO */}
+        {/* Brand Logo: KURO STUDIO */}
         <button
           onClick={onGoHome}
           className="flex items-center gap-2 group cursor-pointer text-left transition-transform active:scale-98"
-          title="Kaze Studio - Beranda"
+          title="Kuro Studio - Beranda"
         >
           <div className="w-8 h-8 rounded-md bg-black text-white flex items-center justify-center font-mono font-black text-sm border-2 border-black shadow-[1.5px_1.5px_0px_#000000]">
             K
           </div>
           <div className="flex items-baseline gap-1.5">
             <span className="font-black text-lg sm:text-xl tracking-tight text-black font-display">
-              KAZE
+              KURO
             </span>
             <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border border-black bg-white text-black tracking-wider uppercase">
               STUDIO
