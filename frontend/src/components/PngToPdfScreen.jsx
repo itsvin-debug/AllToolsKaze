@@ -20,7 +20,8 @@ import {
   Settings, 
   FileText,
   RotateCcw,
-  Maximize2
+  Maximize2,
+  X
 } from 'lucide-react';
 
 export default function PngToPdfScreen({ onBack }) {
@@ -146,8 +147,24 @@ export default function PngToPdfScreen({ onBack }) {
     }));
   };
 
-  // Ekspor Dokumen PDF dengan jsPDF
-  const exportPdf = async () => {
+  // Buka modal konfirmasi nama dokumen sebelum mengunduh
+  const [showNameModal, setShowNameModal] = useState(false);
+  const [pdfDownloadName, setPdfDownloadName] = useState('Kuro_Dokumen');
+  const [downloadSuccessToast, setDownloadSuccessToast] = useState('');
+
+  const initiateDownloadFlow = () => {
+    if (images.length === 0) {
+      setError('Unggah minimal 1 gambar untuk membuat dokumen PDF.');
+      return;
+    }
+    setError('');
+    const currentName = docTitle.trim() || 'Kuro_Dokumen';
+    setPdfDownloadName(currentName);
+    setShowNameModal(true);
+  };
+
+  // Ekspor Dokumen PDF dengan jsPDF dan Native Blob Download
+  const processAndDownloadPdf = async (customName) => {
     if (images.length === 0) {
       setError('Unggah minimal 1 gambar untuk membuat dokumen PDF.');
       return;
@@ -191,9 +208,8 @@ export default function PngToPdfScreen({ onBack }) {
 
           // Pisahkan teks menjadi beberapa baris sesuai lebar konten
           textLines = doc.splitTextToSize(item.text.trim(), contentWidth);
-          // 1 pt kira-kira 0.3527 mm. Line spacing sekitar 1.25
           const lineHeightMm = (item.fontSize * 0.3527) * 1.25;
-          textBlockHeight = (textLines.length * lineHeightMm) + 6; // Termasuk spasi pemisah
+          textBlockHeight = (textLines.length * lineHeightMm) + 6;
         }
 
         // Hitung area gambar yang tersedia
@@ -259,7 +275,6 @@ export default function PngToPdfScreen({ onBack }) {
             'FAST'
           );
         } catch {
-          // Fallback tanpa format spesifik jika JPEG gagal
           doc.addImage(
             item.previewUrl,
             imgX,
@@ -270,9 +285,42 @@ export default function PngToPdfScreen({ onBack }) {
         }
       }
 
-      setGenerationProgress('Menyimpan file PDF...');
-      const cleanTitle = (docTitle.trim() || 'Kuro_Dokumen').replace(/[^a-zA-Z0-9_-]/g, '_');
-      doc.save(`${cleanTitle}.pdf`);
+      setGenerationProgress('Menyimpan berkas PDF...');
+
+      // Format nama berkas aman dan selalu berakhiran .pdf
+      let targetName = (customName || docTitle || 'Kuro_Dokumen').trim();
+      targetName = targetName.replace(/[/\\?%*:|"<>]/g, '_').replace(/\s+/g, '_');
+      if (!targetName) targetName = 'Kuro_Dokumen';
+      if (!targetName.toLowerCase().endsWith('.pdf')) {
+        targetName += '.pdf';
+      }
+
+      // 1. Ekspor via Native Blob untuk memastikan peramban selalu mengunduh dengan ekstensi .pdf
+      const pdfBlob = doc.output('blob');
+      const typedBlob = new Blob([pdfBlob], { type: 'application/pdf' });
+      const blobUrl = window.URL.createObjectURL(typedBlob);
+
+      const downloadLink = document.createElement('a');
+      downloadLink.style.display = 'none';
+      downloadLink.href = blobUrl;
+      downloadLink.download = targetName;
+      downloadLink.setAttribute('download', targetName);
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+
+      setTimeout(() => {
+        try {
+          document.body.removeChild(downloadLink);
+          window.URL.revokeObjectURL(blobUrl);
+        } catch {}
+      }, 3000);
+
+      // Tutup modal nama dan tampilkan notifikasi sukses
+      setShowNameModal(false);
+      setDocTitle(targetName.replace(/\.pdf$/i, ''));
+      setDownloadSuccessToast(`Berkas ${targetName} berhasil diunduh!`);
+      setTimeout(() => setDownloadSuccessToast(''), 4000);
+
     } catch (err) {
       setError(`Gagal membuat PDF: ${err.message || 'Terjadi kesalahan sistem.'}`);
     } finally {
@@ -445,7 +493,7 @@ export default function PngToPdfScreen({ onBack }) {
 
               <button
                 type="button"
-                onClick={exportPdf}
+                onClick={initiateDownloadFlow}
                 disabled={isGenerating}
                 className="px-4 py-1.5 rounded border-2 border-black bg-black text-white hover:bg-neutral-800 disabled:opacity-50 font-bold text-xs flex items-center gap-1.5 shadow-[2px_2px_0px_#000000] cursor-pointer"
               >
@@ -687,7 +735,7 @@ export default function PngToPdfScreen({ onBack }) {
 
             <button
               type="button"
-              onClick={exportPdf}
+              onClick={initiateDownloadFlow}
               disabled={isGenerating}
               className="w-full sm:w-auto px-6 py-2.5 rounded-lg border-2 border-black bg-black text-white hover:bg-neutral-800 disabled:opacity-50 font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-[2px_2px_0px_#000000] cursor-pointer"
             >
@@ -705,6 +753,112 @@ export default function PngToPdfScreen({ onBack }) {
             </button>
           </div>
 
+        </div>
+      )}
+
+      {/* ─── MODAL KONFIRMASI NAMA BERKAS PDF (CLEAN NEOBRUTALISM) ─── */}
+      {showNameModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 animate-fadeIn">
+          <div className="w-full max-w-md rounded-xl p-6 bg-white border-2 border-black shadow-[6px_6px_0px_#000000] text-black">
+            
+            {/* Header Modal */}
+            <div className="flex items-center justify-between pb-3 mb-4 border-b-2 border-black">
+              <div className="flex items-center gap-2">
+                <FileDown className="w-5 h-5 stroke-[2.5]" />
+                <h3 className="font-extrabold text-sm sm:text-base">
+                  Simpan Dokumen PDF
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowNameModal(false)}
+                className="p-1 rounded border border-black hover:bg-neutral-100 cursor-pointer"
+              >
+                <X className="w-4 h-4 stroke-[2.5]" />
+              </button>
+            </div>
+
+            {/* Form Nama File */}
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              processAndDownloadPdf(pdfDownloadName);
+            }} className="space-y-4">
+              <div>
+                <label className="block text-xs font-mono font-bold uppercase text-neutral-600 mb-1.5">
+                  Beri Nama Dokumen PDF Anda
+                </label>
+                <div className="relative flex items-center">
+                  <input
+                    type="text"
+                    value={pdfDownloadName}
+                    onChange={(e) => setPdfDownloadName(e.target.value)}
+                    placeholder="Nama_Dokumen"
+                    autoFocus
+                    className="w-full pl-3.5 pr-16 py-2.5 rounded-lg border-2 border-black bg-white text-black text-xs sm:text-sm font-bold outline-none focus:ring-2 focus:ring-black shadow-[1.5px_1.5px_0px_#000000]"
+                  />
+                  <span className="absolute right-2 px-2 py-1 rounded bg-black text-white font-mono text-[10px] font-bold">
+                    .pdf
+                  </span>
+                </div>
+                <p className="text-[11px] text-neutral-500 mt-1">
+                  Nama ini akan langsung menjadi nama berkas PDF saat diunduh ke perangkat Anda.
+                </p>
+              </div>
+
+              {/* Ringkasan Konversi */}
+              <div className="p-3 rounded-lg border border-black bg-neutral-50 space-y-1.5 text-xs">
+                <div className="flex items-center justify-between font-mono">
+                  <span className="text-neutral-600">Total Halaman:</span>
+                  <span className="font-bold">{images.length} Lembar A4</span>
+                </div>
+                <div className="flex items-center justify-between font-mono">
+                  <span className="text-neutral-600">Orientasi:</span>
+                  <span className="font-bold">{pageOrientation === 'p' ? 'Potret (Tegak)' : 'Lanskap (Mendatar)'}</span>
+                </div>
+                <div className="flex items-center justify-between font-mono">
+                  <span className="text-neutral-600">Margin:</span>
+                  <span className="font-bold">{pageMargin} mm</span>
+                </div>
+              </div>
+
+              {/* Tombol Aksi */}
+              <div className="flex items-center gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowNameModal(false)}
+                  className="flex-1 py-2.5 rounded-lg border-2 border-black bg-white hover:bg-neutral-100 text-xs font-bold cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isGenerating}
+                  className="flex-1 py-2.5 rounded-lg border-2 border-black bg-black text-white hover:bg-neutral-800 disabled:opacity-50 font-bold text-xs shadow-[2px_2px_0px_#000000] flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>{generationProgress || 'Membuat PDF...'}</span>
+                    </>
+                  ) : (
+                    <>
+                      <FileDown className="w-3.5 h-3.5 stroke-[2.5]" />
+                      <span>Unduh .PDF Sekarang</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+
+          </div>
+        </div>
+      )}
+
+      {/* Floating Success Toast */}
+      {downloadSuccessToast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-lg bg-black text-white border-2 border-black text-xs font-bold font-mono shadow-[4px_4px_0px_#000000] flex items-center gap-2 animate-fadeIn">
+          <Check className="w-4 h-4 text-white stroke-[3]" />
+          <span>{downloadSuccessToast}</span>
         </div>
       )}
 

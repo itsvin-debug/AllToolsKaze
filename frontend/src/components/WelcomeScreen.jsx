@@ -224,44 +224,44 @@ export default function WelcomeScreen({ onSelectPlatform, onOpenTool }) {
             <p className="text-xs text-neutral-600 mt-1">Coba gunakan kata kunci pencarian yang lain.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4 w-full">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-4 w-full">
             {filteredTools.map((tool) => {
               const Icon = tool.icon;
               return (
                 <div
                   key={tool.id}
                   onClick={tool.onClick}
-                  className="rounded-xl border-2 border-black p-4 sm:p-5 flex flex-col justify-between text-left cursor-pointer transition-all duration-150 bg-white shadow-[3px_3px_0px_#000000] hover:shadow-[5px_5px_0px_#000000] hover:-translate-x-0.5 hover:-translate-y-0.5 select-none min-h-[175px]"
+                  className="rounded-xl border-2 border-black p-3 sm:p-5 flex flex-col justify-between text-left cursor-pointer transition-all duration-150 bg-white shadow-[2px_2px_0px_#000000] sm:shadow-[3px_3px_0px_#000000] hover:shadow-[4px_4px_0px_#000000] hover:-translate-x-0.5 hover:-translate-y-0.5 select-none min-h-[175px] sm:min-h-[185px]"
                 >
                   {/* Header Card: Icon & Tag Badge */}
-                  <div className="flex items-center justify-between w-full mb-2.5">
-                    <div className="w-9 h-9 rounded-md border-2 border-black bg-white flex items-center justify-center text-black shadow-[1.5px_1.5px_0px_#000000]">
-                      <Icon className="w-4.5 h-4.5 stroke-[2.2]" />
+                  <div className="flex items-center justify-between w-full mb-2 sm:mb-2.5 gap-1.5">
+                    <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-md border-2 border-black bg-white flex items-center justify-center text-black shadow-[1px_1px_0px_#000000] sm:shadow-[1.5px_1.5px_0px_#000000] shrink-0">
+                      <Icon className="w-4 h-4 sm:w-4.5 sm:h-4.5 stroke-[2.2]" />
                     </div>
 
-                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded border border-black bg-neutral-100 text-black">
+                    <span className="text-[9px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0.5 rounded border border-black bg-neutral-100 text-black truncate max-w-[80px] xs:max-w-[100px] sm:max-w-none text-right">
                       {tool.tag}
                     </span>
                   </div>
 
                   {/* Body Card: Judul & Deskripsi Fungsional */}
-                  <div className="my-1.5 flex flex-col">
-                    <h3 className="text-sm sm:text-base font-extrabold text-black tracking-tight font-sans">
+                  <div className="my-1 sm:my-1.5 flex flex-col flex-1">
+                    <h3 className="text-xs sm:text-base font-extrabold text-black tracking-tight font-sans line-clamp-2 leading-snug">
                       {tool.name}
                     </h3>
-                    <p className="text-xs text-neutral-600 mt-1 line-clamp-2 leading-relaxed">
+                    <p className="text-[10.5px] sm:text-xs text-neutral-600 mt-1 line-clamp-2 leading-tight sm:leading-relaxed">
                       {tool.desc}
                     </p>
                   </div>
 
                   {/* Footer Card: Tombol Buka Alat */}
-                  <div className="mt-3 pt-2.5 border-t border-black/15">
+                  <div className="mt-2.5 sm:mt-3 pt-2 sm:pt-2.5 border-t border-black/15">
                     <button
                       type="button"
-                      className="w-full py-2 px-3 rounded-lg border-2 border-black bg-black text-white font-bold text-xs flex items-center justify-center gap-1.5 hover:bg-neutral-800 transition-colors cursor-pointer"
+                      className="w-full py-1.5 sm:py-2 px-2 sm:px-3 rounded-lg border-2 border-black bg-black text-white font-bold text-[11px] sm:text-xs flex items-center justify-center gap-1 sm:gap-1.5 hover:bg-neutral-800 transition-colors cursor-pointer"
                     >
                       <span>Buka Alat</span>
-                      <ArrowRight className="w-3.5 h-3.5 stroke-[2.5]" />
+                      <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5 stroke-[2.5]" />
                     </button>
                   </div>
 
