@@ -305,13 +305,13 @@ function detectUserDevice() {
       <div className="rounded-xl border-2 border-black p-4 sm:p-5 bg-white shadow-[4px_4px_0px_#000000]">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-center">
           
-          {/* Left: 16:9 Black Hole Video Player with Crisp Black Frame */}
-          <div className="md:col-span-7 w-full">
+          {/* Left: 9:16 Anime Video Player with Crisp Black Frame */}
+          <div className="md:col-span-5 w-full flex flex-col items-center justify-center">
             <div 
               ref={bannerContainerRef}
               onClick={triggerWallpaperPlayback}
-              className="relative w-full aspect-video rounded-lg overflow-hidden bg-black border-2 border-black shadow-[2px_2px_0px_#000000] cursor-pointer"
-              title="Black Hole Visual Studio (Klik untuk memutar)"
+              className="relative w-full max-w-[280px] sm:max-w-[320px] aspect-[9/16] rounded-xl overflow-hidden bg-black border-2 border-black shadow-[3px_3px_0px_#000000] cursor-pointer"
+              title="Anime Wallpaper (Klik untuk memutar)"
             >
               <video 
                 ref={videoRef}
@@ -324,13 +324,13 @@ function detectUserDevice() {
                 onCanPlay={triggerWallpaperPlayback}
                 onLoadedData={triggerWallpaperPlayback}
                 onEnded={triggerWallpaperPlayback}
-                className="w-full h-full object-cover object-center pointer-events-none"
+                className="w-full h-full object-contain pointer-events-none"
               />
             </div>
           </div>
 
           {/* Right: User Information & Real-time Metrics */}
-          <div className="md:col-span-5 w-full flex flex-col justify-between space-y-3">
+          <div className="md:col-span-7 w-full flex flex-col justify-between space-y-3">
             
             {/* Header: Username & Circular Avatar */}
             <div className="flex items-center justify-between pb-3 border-b-2 border-black">

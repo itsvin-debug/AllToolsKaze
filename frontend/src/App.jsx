@@ -38,14 +38,16 @@ export default function App() {
       {/* Background Animasi Daun Gugur Terbawa Angin */}
       <FallingLeavesBackground />
 
-      {/* Top Header Navigation */}
-      <Navbar
-        currentScreen={currentScreen}
-        onSelectTool={(toolId) => {
-          setCurrentScreen(toolId);
-        }}
-        onGoHome={() => setCurrentScreen('welcome')}
-      />
+      {/* Konten Utama Aplikasi di Layer Depan (z-10) */}
+      <div className="relative z-10 flex flex-col flex-grow w-full">
+        {/* Top Header Navigation */}
+        <Navbar
+          currentScreen={currentScreen}
+          onSelectTool={(toolId) => {
+            setCurrentScreen(toolId);
+          }}
+          onGoHome={() => setCurrentScreen('welcome')}
+        />
 
       {/* Screen Routing */}
       {currentScreen === 'welcome' && (
@@ -140,8 +142,9 @@ export default function App() {
         />
       )}
 
-      {/* Footer */}
-      <Footer />
+        {/* Footer */}
+        <Footer />
+      </div>
     </div>
   );
 }

@@ -19,7 +19,10 @@ import {
   ShieldCheck,
   Activity,
   Pencil,
-  GitBranch
+  GitBranch,
+  Maximize2,
+  Minimize2,
+  Sparkles
 } from 'lucide-react';
 
 /**
@@ -147,6 +150,18 @@ export default function KuroIdentityCard({
 
   const videoRef = useRef(null);
   const bannerContainerRef = useRef(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Listener tombol Escape untuk keluar dari mode layar penuh
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isFullscreen) {
+        setIsFullscreen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isFullscreen]);
 
   // Nama Pengguna Terdeteksi pada Perangkat Ini (Tersimpan di LocalStorage)
   const [deviceUserName, setDeviceUserName] = useState(() => {
@@ -431,14 +446,26 @@ export default function KuroIdentityCard({
       <div className="rounded-xl border-2 border-black p-4 sm:p-5 bg-white shadow-[4px_4px_0px_#000000]">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-center">
           
-          {/* Sisi Kiri: Video Showcase 16:9 */}
-          <div className="md:col-span-7 w-full">
+          {/* Sisi Kiri: Video Live Anime Showcase 9:16 (Tidak Terpotong / Full Frame) */}
+          <div className="md:col-span-5 lg:col-span-5 w-full flex flex-col items-center justify-center">
             <div 
               ref={bannerContainerRef}
-              onClick={triggerWallpaperPlayback}
-              className="relative w-full aspect-video rounded-lg overflow-hidden bg-black border-2 border-black shadow-[2px_2px_0px_#000000] cursor-pointer"
-              title="Anime Wallpaper Visual Studio (Klik untuk memutar)"
+              className="relative w-full max-w-[280px] sm:max-w-[320px] md:max-w-[300px] aspect-[9/16] rounded-xl overflow-hidden bg-black border-2 border-black shadow-[3px_3px_0px_#000000] cursor-pointer group select-none"
+              title="Anime Live Wallpaper (Klik untuk membuka layar penuh)"
+              onClick={() => setIsFullscreen(true)}
             >
+              {/* Background Ambient Blur untuk Estetika Tambahan */}
+              <video 
+                src="/videos/wpanime.mp4"
+                preload="auto"
+                autoPlay 
+                loop 
+                muted
+                playsInline
+                className="absolute inset-0 w-full h-full object-cover blur-md opacity-30 pointer-events-none scale-110"
+              />
+
+              {/* Video Utama (Full Frame 1080x1920 - Utuh dan Tidak Terpotong) */}
               <video 
                 ref={videoRef}
                 src="/videos/wpanime.mp4"
@@ -450,13 +477,40 @@ export default function KuroIdentityCard({
                 onCanPlay={triggerWallpaperPlayback}
                 onLoadedData={triggerWallpaperPlayback}
                 onEnded={triggerWallpaperPlayback}
-                className="w-full h-full object-cover object-center pointer-events-none"
+                className="relative z-10 w-full h-full object-contain pointer-events-none"
               />
+
+              {/* Top Overlay: Badge Resolusi & Tombol Layar Penuh */}
+              <div className="absolute top-2.5 inset-x-2.5 z-20 flex items-center justify-between pointer-events-auto">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-black bg-black/80 backdrop-blur text-white text-[10px] font-mono font-bold">
+                  <Sparkles className="w-3 h-3 text-pink-300" />
+                  <span>LIVE 9:16</span>
+                </span>
+
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsFullscreen(true);
+                  }}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md border-2 border-black bg-white hover:bg-neutral-100 text-black text-[11px] font-mono font-bold shadow-[2px_2px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] transition-all cursor-pointer"
+                  title="Buka tampilan layar penuh (Full Screen)"
+                >
+                  <Maximize2 className="w-3.5 h-3.5 stroke-[2.5]" />
+                  <span>Layar Penuh</span>
+                </button>
+              </div>
+
+              {/* Bottom Overlay Info */}
+              <div className="absolute bottom-2 inset-x-2 z-20 px-2 py-1 rounded border border-black/60 bg-black/75 backdrop-blur text-white text-[10px] font-mono flex items-center justify-between pointer-events-none opacity-90 group-hover:opacity-100 transition-opacity">
+                <span className="truncate">wpanime • Sakura Drift</span>
+                <span className="text-pink-300 font-bold shrink-0">1080×1920</span>
+              </div>
             </div>
           </div>
 
           {/* Sisi Kanan: Identitas Kuro & Metrik Real-time */}
-          <div className="md:col-span-5 w-full flex flex-col justify-between space-y-3">
+          <div className="md:col-span-7 lg:col-span-7 w-full flex flex-col justify-between space-y-3">
             
             {/* Header Nama Kreator */}
             <div className="flex items-center justify-between pb-3 border-b-2 border-black">
@@ -850,6 +904,52 @@ export default function KuroIdentityCard({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ─── 4. FULLSCREEN LIVE ANIME WALLPAPER MODAL (100% UTUH / FOTO KEDUA) ─── */}
+      {isFullscreen && (
+        <div 
+          className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md flex flex-col items-center justify-center p-3 sm:p-6"
+          onClick={() => setIsFullscreen(false)}
+        >
+          {/* Header Controls Bar */}
+          <div 
+            className="absolute top-4 inset-x-4 max-w-4xl mx-auto flex items-center justify-between z-50 pointer-events-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border-2 border-black bg-white shadow-[2px_2px_0px_#000000]">
+              <Sparkles className="w-4 h-4 text-pink-500" />
+              <span className="text-xs font-mono font-bold text-black uppercase tracking-wider">
+                Kuro Live Wallpaper (1080×1920 Full Frame)
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsFullscreen(false)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border-2 border-black bg-white hover:bg-neutral-100 text-black text-xs font-mono font-bold shadow-[2px_2px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] cursor-pointer"
+            >
+              <X className="w-4 h-4 stroke-[2.5]" />
+              <span>Tutup Layar Penuh (ESC)</span>
+            </button>
+          </div>
+
+          {/* Video Container Fullscreen (100% Uncropped, Utuh seperti Foto Kedua) */}
+          <div 
+            className="relative h-[86vh] max-h-[960px] aspect-[9/16] rounded-2xl border-2 border-black bg-black shadow-[6px_6px_0px_#ffffff] overflow-hidden flex items-center justify-center my-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <video 
+              src="/videos/wpanime.mp4"
+              preload="auto"
+              autoPlay 
+              loop 
+              muted
+              playsInline
+              className="w-full h-full object-contain"
+            />
           </div>
         </div>
       )}

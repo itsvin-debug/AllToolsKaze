@@ -2,8 +2,9 @@ import React, { useEffect, useRef } from 'react';
 
 /**
  * FallingLeavesBackground
- * Animasi daun berguguran terbawa hembusan angin untuk latar belakang Kuro Studio.
- * Ringan, estetis (anime autumn / sakura aesthetic), 60 FPS, dan ramah baterai perangkat mobile.
+ * Animasi kelopak sakura (cherry blossom) berguguran terbawa angin.
+ * Disesuaikan dengan warna live wallpaper wpanime.mp4.
+ * Berjalan di latar belakang (z-0) di belakang kartu konten agar tidak menutupi teks/tombol.
  */
 export default function FallingLeavesBackground() {
   const canvasRef = useRef(null);
@@ -19,57 +20,69 @@ export default function FallingLeavesBackground() {
     let width = (canvas.width = window.innerWidth);
     let height = (canvas.height = window.innerHeight);
 
-    // Deteksi reduced motion untuk aksesibilitas (antislop-human)
+    // Hormati preferensi aksesibilitas pengguna
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (prefersReducedMotion) {
       return;
     }
 
     const isMobile = width < 768;
-    const leafCount = isMobile ? 18 : 32;
+    // Jumlah kelopak proporsional agar tidak spam
+    const petalCount = isMobile ? 14 : 24;
 
-    // Palet warna daun anime: perpaduan maple autumn, amber keemasan, dan sakura lembut
-    const leafPalettes = [
-      { fill: 'rgba(238, 108, 77, 0.65)', stroke: 'rgba(180, 50, 30, 0.45)' },   // Orange Maple
-      { fill: 'rgba(244, 162, 97, 0.65)', stroke: 'rgba(200, 110, 50, 0.45)' },  // Amber Autumn
-      { fill: 'rgba(231, 111, 81, 0.60)', stroke: 'rgba(160, 40, 20, 0.40)' },   // Coral Terracotta
-      { fill: 'rgba(242, 132, 130, 0.55)', stroke: 'rgba(200, 80, 80, 0.35)' },  // Soft Sakura Leaf
-      { fill: 'rgba(246, 189, 96, 0.60)', stroke: 'rgba(190, 130, 40, 0.40)' },  // Golden Ochre
-      { fill: 'rgba(132, 165, 157, 0.50)', stroke: 'rgba(70, 110, 100, 0.35)' }, // Gentle Sage Green
+    // Palet warna kelopak sakura harmonis sesuai wallpaper anime
+    const sakuraPalettes = [
+      { fill: 'rgba(255, 183, 197, 0.82)', stroke: 'rgba(244, 114, 182, 0.40)' }, // Soft Sakura Pink
+      { fill: 'rgba(254, 205, 211, 0.78)', stroke: 'rgba(251, 146, 170, 0.38)' }, // Delicate Blush
+      { fill: 'rgba(253, 226, 236, 0.85)', stroke: 'rgba(249, 168, 212, 0.35)' }, // Pastel Cherry
+      { fill: 'rgba(244, 114, 182, 0.65)', stroke: 'rgba(219, 39, 119, 0.45)' },  // Vibrant Rose Accent
+      { fill: 'rgba(255, 241, 242, 0.88)', stroke: 'rgba(244, 143, 177, 0.35)' }, // White Sakura
+      { fill: 'rgba(254, 215, 170, 0.70)', stroke: 'rgba(251, 146, 60, 0.30)' }   // Warm Peach Blossom
     ];
 
-    class Leaf {
+    class SakuraPetal {
       constructor(initialYRandom = true) {
         this.reset(initialYRandom);
       }
 
       reset(initialYRandom = false) {
-        this.x = Math.random() * (width + 200) - 100;
-        this.y = initialYRandom ? Math.random() * height : -40 - Math.random() * 40;
-        this.size = 11 + Math.random() * 12; // 11px - 23px
-        this.speedY = 0.8 + Math.random() * 1.3;
-        this.speedX = 0.6 + Math.random() * 1.2; // hembusan angin ke kanan
+        // Distribusi kelopak ke seluruh lebar layar secara merata
+        if (initialYRandom) {
+          this.x = Math.random() * width;
+          this.y = Math.random() * height;
+        } else {
+          // Masuk dari atas atau dari sisi kiri karena arah angin condong ke kanan bawah
+          if (Math.random() < 0.65) {
+            this.x = Math.random() * (width + 100) - 50;
+            this.y = -25 - Math.random() * 30;
+          } else {
+            this.x = -30 - Math.random() * 20;
+            this.y = Math.random() * (height * 0.75);
+          }
+        }
+
+        this.size = 10 + Math.random() * 11; // 10px - 21px
+        this.speedY = 0.7 + Math.random() * 1.1;
+        this.speedX = 0.6 + Math.random() * 1.0;
         this.rotation = Math.random() * Math.PI * 2;
-        this.rotationSpeed = (Math.random() - 0.5) * 0.035;
+        this.rotationSpeed = (Math.random() - 0.5) * 0.025;
         this.flip = Math.random() * Math.PI;
-        this.flipSpeed = 0.02 + Math.random() * 0.03;
-        this.oscillationSpeed = 0.015 + Math.random() * 0.025;
-        this.oscillationDistance = 25 + Math.random() * 35;
+        this.flipSpeed = 0.018 + Math.random() * 0.025;
+        this.oscillationSpeed = 0.012 + Math.random() * 0.02;
         this.oscillationOffset = Math.random() * Math.PI * 2;
-        this.palette = leafPalettes[Math.floor(Math.random() * leafPalettes.length)];
-        this.type = Math.random() > 0.4 ? 'maple' : 'oval';
+        this.palette = sakuraPalettes[Math.floor(Math.random() * sakuraPalettes.length)];
+        this.hasTipNotch = Math.random() > 0.35;
       }
 
       update(windForce, time) {
         this.y += this.speedY;
-        this.x += this.speedX + windForce + Math.sin(time * this.oscillationSpeed + this.oscillationOffset) * 0.6;
+        this.x += this.speedX + windForce + Math.sin(time * this.oscillationSpeed + this.oscillationOffset) * 0.7;
         this.rotation += this.rotationSpeed;
         this.flip += this.flipSpeed;
 
-        // Reset jika sudah melewati batas bawah atau kanan
-        if (this.y > height + 50 || this.x > width + 120) {
+        // Reset bila keluar dari batas bawah atau kanan layar
+        if (this.y > height + 40 || this.x > width + 60) {
           this.reset(false);
-          this.x = Math.random() * (width * 0.7) - 80;
         }
       }
 
@@ -77,56 +90,54 @@ export default function FallingLeavesBackground() {
         context.save();
         context.translate(this.x, this.y);
         context.rotate(this.rotation);
-        
-        // Efek daun berputar 3D membalik di udara
+
+        // Efek kelopak berputar dan membalik di udara (3D flip)
         const scaleX = Math.cos(this.flip);
         context.scale(scaleX, 1);
 
         context.fillStyle = this.palette.fill;
         context.strokeStyle = this.palette.stroke;
-        context.lineWidth = 1;
+        context.lineWidth = 0.8;
 
-        if (this.type === 'maple') {
-          // Bentuk daun maple Jepang / musim gugur berkontur halus
-          context.beginPath();
-          context.moveTo(0, -this.size);
-          context.bezierCurveTo(this.size * 0.45, -this.size * 0.6, this.size * 0.8, -this.size * 0.2, this.size * 0.6, 0);
-          context.bezierCurveTo(this.size * 0.9, this.size * 0.4, this.size * 0.5, this.size * 0.8, 0, this.size);
-          context.bezierCurveTo(-this.size * 0.5, this.size * 0.8, -this.size * 0.9, this.size * 0.4, -this.size * 0.6, 0);
-          context.bezierCurveTo(-this.size * 0.8, -this.size * 0.2, -this.size * 0.45, -this.size * 0.6, 0, -this.size);
-          context.closePath();
-          context.fill();
-          context.stroke();
+        const w = this.size * 0.55;
+        const h = this.size;
 
-          // Tulang tengah daun
-          context.beginPath();
-          context.moveTo(0, -this.size * 0.8);
-          context.lineTo(0, this.size * 0.9);
-          context.strokeStyle = this.palette.stroke;
-          context.lineWidth = 0.8;
-          context.stroke();
+        context.beginPath();
+        context.moveTo(0, h * 0.6);
+
+        if (this.hasTipNotch) {
+          // Bentuk kelopak sakura dengan lekukan khas di bagian pucuk
+          context.bezierCurveTo(-w * 0.9, h * 0.2, -w * 0.8, -h * 0.3, -w * 0.4, -h * 0.6);
+          context.bezierCurveTo(-w * 0.2, -h * 0.5, -w * 0.1, -h * 0.48, 0, -h * 0.42);
+          context.bezierCurveTo(w * 0.1, -h * 0.48, w * 0.2, -h * 0.5, w * 0.4, -h * 0.6);
+          context.bezierCurveTo(w * 0.8, -h * 0.3, w * 0.9, h * 0.2, 0, h * 0.6);
         } else {
-          // Bentuk daun oval lembut / sakura
-          context.beginPath();
-          context.ellipse(0, 0, this.size * 0.5, this.size * 0.9, 0, 0, Math.PI * 2);
-          context.fill();
-          context.stroke();
-
-          context.beginPath();
-          context.moveTo(0, -this.size * 0.7);
-          context.lineTo(0, this.size * 0.7);
-          context.stroke();
+          // Bentuk kelopak oval melengkung halus
+          context.bezierCurveTo(-w * 0.85, h * 0.2, -w * 0.75, -h * 0.5, 0, -h * 0.6);
+          context.bezierCurveTo(w * 0.75, -h * 0.5, w * 0.85, h * 0.2, 0, h * 0.6);
         }
+
+        context.closePath();
+        context.fill();
+        context.stroke();
+
+        // Guratan halus kelopak bunga
+        context.beginPath();
+        context.moveTo(0, h * 0.45);
+        context.quadraticCurveTo(0, 0, 0, -h * 0.3);
+        context.strokeStyle = this.palette.stroke;
+        context.lineWidth = 0.6;
+        context.stroke();
 
         context.restore();
       }
     }
 
-    const leaves = Array.from({ length: leafCount }, () => new Leaf(true));
+    const petals = Array.from({ length: petalCount }, () => new SakuraPetal(true));
 
     let time = 0;
-    let windForce = 0.8;
-    let targetWindForce = 0.8;
+    let windForce = 0.6;
+    let targetWindForce = 0.6;
     let lastWindChange = Date.now();
 
     const handleResize = () => {
@@ -148,20 +159,20 @@ export default function FallingLeavesBackground() {
         return;
       }
 
-      time += 0.05;
+      time += 0.04;
 
-      // Variasi hembusan angin berkala (dinamis seperti angin sepoi-sepoi)
-      if (Date.now() - lastWindChange > 3000) {
-        targetWindForce = 0.5 + Math.random() * 1.2;
+      // Hembusan angin lembut yang berubah berkala
+      if (Date.now() - lastWindChange > 3500) {
+        targetWindForce = 0.4 + Math.random() * 0.9;
         lastWindChange = Date.now();
       }
-      windForce += (targetWindForce - windForce) * 0.015;
+      windForce += (targetWindForce - windForce) * 0.02;
 
       ctx.clearRect(0, 0, width, height);
 
-      for (let i = 0; i < leaves.length; i++) {
-        leaves[i].update(windForce, time);
-        leaves[i].draw(ctx);
+      for (let i = 0; i < petals.length; i++) {
+        petals[i].update(windForce, time);
+        petals[i].draw(ctx);
       }
 
       animationFrameId = requestAnimationFrame(render);
@@ -180,7 +191,7 @@ export default function FallingLeavesBackground() {
     <canvas
       ref={canvasRef}
       aria-hidden="true"
-      className="fixed inset-0 pointer-events-none z-[1] opacity-80"
+      className="fixed inset-0 pointer-events-none z-0 opacity-75"
       style={{ willChange: 'transform' }}
     />
   );
