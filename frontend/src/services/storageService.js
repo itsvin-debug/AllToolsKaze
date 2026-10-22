@@ -18,12 +18,33 @@ export function getDeviceId() {
   return id;
 }
 
+function getDeviceSettingsKey() {
+  return 'kuro_settings_' + getDeviceId();
+}
+
 function getDeviceGalleryKey() {
   return 'kuro_gallery_' + getDeviceId();
 }
 
 function getDeviceHistoryKey() {
   return 'kuro_history_' + getDeviceId();
+}
+
+function getDeviceUserNameKey() {
+  return 'kuro_user_name_' + getDeviceId();
+}
+
+export function getDeviceUserName() {
+  if (typeof window === 'undefined') return '';
+  const key = getDeviceUserNameKey();
+  return localStorage.getItem(key) || localStorage.getItem('kuro_device_user_name') || '';
+}
+
+export function setDeviceUserName(name) {
+  if (typeof window === 'undefined') return;
+  const key = getDeviceUserNameKey();
+  localStorage.setItem(key, name);
+  localStorage.setItem('kuro_device_user_name', name);
 }
 
 // Pengaturan default aplikasi
@@ -162,10 +183,11 @@ const SEED_HISTORY_ITEMS = [
   }
 ];
 
-// --- PENGATURAN (SETTINGS) ---
+// --- PENGATURAN (DEVICE-ISOLATED SETTINGS) ---
 export function getSettings() {
   try {
-    const raw = localStorage.getItem(SETTINGS_KEY);
+    const key = getDeviceSettingsKey();
+    const raw = localStorage.getItem(key) || localStorage.getItem(SETTINGS_KEY);
     if (!raw) return { ...DEFAULT_SETTINGS };
     return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
   } catch {
@@ -175,11 +197,24 @@ export function getSettings() {
 
 export function saveSettings(newSettings) {
   try {
+    const key = getDeviceSettingsKey();
     const updated = { ...getSettings(), ...newSettings };
+    localStorage.setItem(key, JSON.stringify(updated));
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(updated));
     return updated;
   } catch {
     return newSettings;
+  }
+}
+
+export function resetDeviceSettings() {
+  try {
+    const key = getDeviceSettingsKey();
+    localStorage.removeItem(key);
+    localStorage.removeItem(SETTINGS_KEY);
+    return { ...DEFAULT_SETTINGS };
+  } catch {
+    return { ...DEFAULT_SETTINGS };
   }
 }
 
@@ -297,6 +332,19 @@ export function clearHistory() {
     localStorage.removeItem(key);
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('kuro_history_updated'));
+    }
+    return [];
+  } catch {
+    return [];
+  }
+}
+
+export function clearGallery() {
+  try {
+    const key = getDeviceGalleryKey();
+    localStorage.removeItem(key);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('kuro_gallery_updated'));
     }
     return [];
   } catch {

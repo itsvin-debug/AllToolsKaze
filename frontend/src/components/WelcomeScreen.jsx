@@ -16,125 +16,129 @@ import {
   Images
 } from 'lucide-react';
 import KuroIdentityCard from './KuroIdentityCard';
+import { translations } from '../utils/translations';
 
-export default function WelcomeScreen({ onSelectPlatform, onOpenTool }) {
+export default function WelcomeScreen({ onSelectPlatform, onOpenTool, lang = 'id' }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
 
+  const t = translations[lang] || translations.id;
+  const wt = t.welcome;
+
   const categories = [
-    { id: 'all', label: 'Semua Alat', count: 12 },
-    { id: 'downloader', label: 'Downloader', count: 2 },
-    { id: 'file', label: 'Konversi & File', count: 4 },
-    { id: 'creative', label: 'Studio & Kreatif', count: 5 },
-    { id: 'utility', label: 'Utilitas & WA', count: 1 }
+    { id: 'all', label: wt.catAll, count: 12 },
+    { id: 'downloader', label: wt.catDownloader, count: 2 },
+    { id: 'file', label: wt.catFile, count: 4 },
+    { id: 'creative', label: wt.catCreative, count: 5 },
+    { id: 'utility', label: wt.catUtility, count: 1 }
   ];
 
   const tools = [
     {
       id: 'downloader',
       category: 'downloader',
-      name: 'Media Downloader',
-      desc: 'Unduh video HD, foto slide, dan audio tanpa watermark dari 16 platform medsos.',
-      tag: '16 PLATFORM',
+      name: wt.tools.downloader.name,
+      desc: wt.tools.downloader.desc,
+      tag: wt.tools.downloader.tag,
       icon: Download,
       onClick: () => onOpenTool('downloader')
     },
     {
       id: 'jjFinder',
       category: 'downloader',
-      name: 'Cari Link JJ',
-      desc: 'Template XML dan preset 5MB TikTok jedag-jedug untuk Alight Motion.',
-      tag: 'SOSMED',
+      name: wt.tools.jjFinder.name,
+      desc: wt.tools.jjFinder.desc,
+      tag: wt.tools.jjFinder.tag,
       icon: Flame,
       onClick: () => onOpenTool('jjFinder')
     },
     {
       id: 'pngToPdf',
       category: 'file',
-      name: 'PNG to PDF',
-      desc: 'Satukan multi-foto menjadi dokumen PDF dengan kustomisasi teks dan layout tipografi.',
-      tag: 'MULTI-IMG',
+      name: wt.tools.pngToPdf.name,
+      desc: wt.tools.pngToPdf.desc,
+      tag: wt.tools.pngToPdf.tag,
       icon: Images,
       onClick: () => onOpenTool('pngToPdf')
     },
     {
       id: 'linkToDoc',
       category: 'file',
-      name: 'Link to PDF & PPT',
-      desc: 'Konversi tautan dokumen web menjadi dokumen PDF dan presentasi PPTX terstruktur.',
-      tag: 'DOC & PPTX',
+      name: wt.tools.linkToDoc.name,
+      desc: wt.tools.linkToDoc.desc,
+      tag: wt.tools.linkToDoc.tag,
       icon: FileText,
       onClick: () => onOpenTool('linkToDoc')
     },
     {
       id: 'imageToLink',
       category: 'file',
-      name: 'File ke Link',
-      desc: 'Unggah foto, video, dan PDF untuk dijadikan tautan URL publik yang dapat diakses langsung.',
-      tag: 'UNIVERSAL',
+      name: wt.tools.imageToLink.name,
+      desc: wt.tools.imageToLink.desc,
+      tag: wt.tools.imageToLink.tag,
       icon: Link2,
       onClick: () => onOpenTool('imageToLink')
     },
     {
       id: 'compressor',
       category: 'file',
-      name: 'Kompres Media HD',
-      desc: 'Optimasi ukuran file gambar dan video hingga kilobyte tanpa merusak ketajaman visual.',
-      tag: 'MB + KB',
+      name: wt.tools.compressor.name,
+      desc: wt.tools.compressor.desc,
+      tag: wt.tools.compressor.tag,
       icon: Minimize2,
       onClick: () => onOpenTool('compressor')
     },
     {
       id: 'qrStudio',
       category: 'creative',
-      name: 'QR Code Studio',
-      desc: 'Desain kode QR kustom dengan logo dan frame panggilan aksi untuk berbagai kebutuhan.',
-      tag: 'CUSTOM QR',
+      name: wt.tools.qrStudio.name,
+      desc: wt.tools.qrStudio.desc,
+      tag: wt.tools.qrStudio.tag,
       icon: QrCode,
       onClick: () => onOpenTool('qrStudio')
     },
     {
       id: 'audioMerger',
       category: 'creative',
-      name: 'Audio Merger',
-      desc: 'Satukan dan potong menit atau detik beberapa lagu audio dalam satu linimasa.',
-      tag: 'TIMELINE',
+      name: wt.tools.audioMerger.name,
+      desc: wt.tools.audioMerger.desc,
+      tag: wt.tools.audioMerger.tag,
       icon: Music,
       onClick: () => onOpenTool('audioMerger')
     },
     {
       id: 'photoStudio',
       category: 'creative',
-      name: 'Photo Studio',
-      desc: 'Pertajam foto, atur kontras hitam putih, dan sesuaikan resolusi gambar.',
-      tag: 'STUDIO HD',
+      name: wt.tools.photoStudio.name,
+      desc: wt.tools.photoStudio.desc,
+      tag: wt.tools.photoStudio.tag,
       icon: Sparkles,
       onClick: () => onOpenTool('photoStudio')
     },
     {
       id: 'videoStudio',
       category: 'creative',
-      name: 'Video Studio',
-      desc: 'Editor filter visual video untuk penyesuaian kecerahan, saturasi, dan efek gerak.',
-      tag: 'FX STUDIO',
+      name: wt.tools.videoStudio.name,
+      desc: wt.tools.videoStudio.desc,
+      tag: wt.tools.videoStudio.tag,
       icon: Film,
       onClick: () => onOpenTool('videoStudio')
     },
     {
       id: 'videoTrimmer',
       category: 'creative',
-      name: 'Video Trimmer',
-      desc: 'Potong durasi video dari titik awal ke akhir tanpa kompresi ulang kualitas.',
-      tag: 'LOSSLESS',
+      name: wt.tools.videoTrimmer.name,
+      desc: wt.tools.videoTrimmer.desc,
+      tag: wt.tools.videoTrimmer.tag,
       icon: Scissors,
       onClick: () => onOpenTool('videoTrimmer')
     },
     {
       id: 'bgRemover',
       category: 'utility',
-      name: 'Hapus Background',
-      desc: 'Ekstraksi subjek foto dan logo untuk menghasilkan gambar transparan format PNG.',
-      tag: 'PNG HD',
+      name: wt.tools.bgRemover.name,
+      desc: wt.tools.bgRemover.desc,
+      tag: wt.tools.bgRemover.tag,
       icon: Scissors,
       onClick: () => onOpenTool('bgRemover')
     }
@@ -161,6 +165,7 @@ export default function WelcomeScreen({ onSelectPlatform, onOpenTool }) {
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         onSearchSubmit={(q) => setSearchQuery(q)}
+        lang={lang}
       />
 
       {/* ─── 2. SECTION ALAT UTAMA ─── */}
@@ -170,13 +175,13 @@ export default function WelcomeScreen({ onSelectPlatform, onOpenTool }) {
         <div className="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b-2 border-black">
           <div>
             <h2 className="text-base sm:text-lg font-black tracking-tight font-display text-black flex items-center gap-2">
-              <span>DAFTAR ALAT UTAMA</span>
+              <span>{wt.mainTools}</span>
               <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded border border-black bg-black text-white">
-                {filteredTools.length} ALAT
+                {filteredTools.length} {wt.toolsCount}
               </span>
             </h2>
             <p className="text-xs text-neutral-600 mt-0.5">
-              Pilih alat utilitas yang ingin digunakan. Setiap alat membuka halaman kerja khusus.
+              {wt.subtitle}
             </p>
           </div>
 
@@ -186,7 +191,7 @@ export default function WelcomeScreen({ onSelectPlatform, onOpenTool }) {
               className="text-xs text-black font-mono font-bold flex items-center gap-1 self-start sm:self-auto cursor-pointer hover:underline"
             >
               <X className="w-3.5 h-3.5" />
-              <span>Reset Pencarian</span>
+              <span>{wt.resetSearch}</span>
             </button>
           )}
         </div>

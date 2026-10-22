@@ -25,7 +25,8 @@ import {
 } from 'lucide-react';
 import ResultsSection from './ResultsSection';
 
-export default function ConverterScreen({ activePlatform: initialPlatform = 'tiktok', onSelectPlatform, onBack }) {
+export default function ConverterScreen({ activePlatform: initialPlatform = 'tiktok', onSelectPlatform, onBack, lang = 'id' }) {
+  const isEn = lang === 'en';
   const [activePlatform, setActivePlatform] = useState(initialPlatform);
   const [urlInput, setUrlInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -371,15 +372,17 @@ export default function ConverterScreen({ activePlatform: initialPlatform = 'tik
             Media Downloader
           </h1>
           <p className="text-xs sm:text-sm text-neutral-600 mt-1.5 leading-relaxed max-w-2xl">
-            Unduh video definisi tinggi, kumpulan slide foto, dan trek audio tanpa watermark dari 16 platform media sosial dan konten streaming. Pilih platform di bawah, tempelkan tautan yang valid, lalu unduh secara langsung.
+            {isEn 
+              ? 'Download high-definition videos, photo slide collections, and audio tracks without watermarks from 16 social media and streaming platforms. Select a platform below, paste a valid link, and download directly.'
+              : 'Unduh video definisi tinggi, kumpulan slide foto, dan trek audio tanpa watermark dari 16 platform media sosial dan konten streaming. Pilih platform di bawah, tempelkan tautan yang valid, lalu unduh secara langsung.'}
           </p>
         </div>
 
         {/* ─── 16 PLATFORM SELECTOR GRID (NEOBRUTALISM STYLE) ─── */}
         <div className="w-full">
           <div className="text-[11px] font-mono font-bold uppercase tracking-wider text-black mb-2 flex items-center justify-between">
-            <span>Pilih Platform Media</span>
-            <span className="text-neutral-500">{currentMeta.name} Aktif</span>
+            <span>{isEn ? 'Choose Media Platform' : 'Pilih Platform Media'}</span>
+            <span className="text-neutral-500">{currentMeta.name} {isEn ? 'Active' : 'Aktif'}</span>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5">
@@ -423,7 +426,7 @@ export default function ConverterScreen({ activePlatform: initialPlatform = 'tik
             </div>
             <div>
               <h2 className="text-sm sm:text-base font-extrabold text-black uppercase tracking-tight">
-                Unduh Media {currentMeta.name}
+                {isEn ? 'Download' : 'Unduh'} Media {currentMeta.name}
               </h2>
               <p className="text-xs text-neutral-600 mt-0.5">
                 {currentMeta.hint}
@@ -453,7 +456,7 @@ export default function ConverterScreen({ activePlatform: initialPlatform = 'tik
                 className="absolute inset-y-0 right-2 px-3 my-2 text-xs font-mono font-bold rounded border border-black bg-neutral-100 hover:bg-neutral-200 text-black transition-all flex items-center gap-1 cursor-pointer"
               >
                 <Clipboard className="w-3.5 h-3.5 stroke-[2.5]" />
-                <span>Tempel</span>
+                <span>{isEn ? 'Paste' : 'Tempel'}</span>
               </button>
             </div>
 
@@ -471,7 +474,7 @@ export default function ConverterScreen({ activePlatform: initialPlatform = 'tik
                     onClick={() => handleSwitchPlatform(suggestedPlatform)}
                     className="shrink-0 px-3 py-1 rounded border-2 border-black bg-black text-white font-bold text-xs hover:bg-neutral-800 transition-all flex items-center gap-1 cursor-pointer"
                   >
-                    <span>Pindah ke {platforms.find(p => p.id === suggestedPlatform)?.name || suggestedPlatform}</span>
+                    <span>{isEn ? 'Switch to' : 'Pindah ke'} {platforms.find(p => p.id === suggestedPlatform)?.name || suggestedPlatform}</span>
                     <ArrowRight className="w-3 h-3 stroke-[2.5]" />
                   </button>
                 )}
@@ -486,9 +489,9 @@ export default function ConverterScreen({ activePlatform: initialPlatform = 'tik
                   onChange={(e) => setSelectedFormat(e.target.value)}
                   className="w-full appearance-none bg-white border-2 border-black text-black text-xs sm:text-sm rounded-lg py-3 px-3.5 pr-9 cursor-pointer font-bold focus:outline-none focus:ring-2 focus:ring-black"
                 >
-                  <option value="1080p">HD 1080p (Kualitas Maksimal)</option>
-                  <option value="720p">HD 720p (Standar Cepat)</option>
-                  <option value="mp3">Audio MP3 (Ekstrak Suara)</option>
+                  <option value="1080p">HD 1080p {isEn ? '(Max Quality)' : '(Kualitas Maksimal)'}</option>
+                  <option value="720p">HD 720p {isEn ? '(Fast Standard)' : '(Standar Cepat)'}</option>
+                  <option value="mp3">Audio MP3 {isEn ? '(Extract Sound)' : '(Ekstrak Suara)'}</option>
                 </select>
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-black">
                   <ChevronDown className="w-4 h-4 stroke-[2.5]" />
@@ -503,12 +506,12 @@ export default function ConverterScreen({ activePlatform: initialPlatform = 'tik
                 {loading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin text-white" />
-                    <span>Mengunduh... {downloadProgress}%</span>
+                    <span>{isEn ? 'Downloading...' : 'Mengunduh...'} {downloadProgress}%</span>
                   </>
                 ) : (
                   <>
                     <Download className="w-4 h-4 stroke-[2.5]" />
-                    <span>Download Media {currentMeta.name}</span>
+                    <span>{isEn ? `Download ${currentMeta.name} Media` : `Download Media ${currentMeta.name}`}</span>
                   </>
                 )}
               </button>

@@ -133,6 +133,7 @@ export default function App() {
           {currentScreen === 'welcome' && (
             <WelcomeScreen
               theme={settings.darkMode ? 'dark' : 'light'}
+              lang={settings.language || 'id'}
               onSelectPlatform={(platformId) => {
                 setActivePlatform(platformId);
                 handleNavigate('downloader');
@@ -177,18 +178,21 @@ export default function App() {
               activePlatform={activePlatform}
               onSelectPlatform={(p) => setActivePlatform(p)}
               onBack={() => handleNavigate('welcome')}
+              lang={settings.language || 'id'}
             />
           )}
 
           {currentScreen === 'pngToPdf' && (
             <PngToPdfScreen
               onBack={() => handleNavigate('welcome')}
+              lang={settings.language || 'id'}
             />
           )}
 
           {currentScreen === 'linkToDoc' && (
             <LinkToDocScreen
               onBack={() => handleNavigate('welcome')}
+              lang={settings.language || 'id'}
             />
           )}
 
@@ -199,12 +203,14 @@ export default function App() {
                 setQrInitialUrl(url);
                 handleNavigate('qrStudio');
               }}
+              lang={settings.language || 'id'}
             />
           )}
 
           {currentScreen === 'compressor' && (
             <MediaCompressorScreen
               onBack={() => handleNavigate('welcome')}
+              lang={settings.language || 'id'}
             />
           )}
 
@@ -212,18 +218,21 @@ export default function App() {
             <QrStudioScreen
               initialUrl={qrInitialUrl}
               onBack={() => handleNavigate('welcome')}
+              lang={settings.language || 'id'}
             />
           )}
 
           {currentScreen === 'audioMerger' && (
             <AudioMergerScreen
               onBack={() => handleNavigate('welcome')}
+              lang={settings.language || 'id'}
             />
           )}
 
           {currentScreen === 'photoStudio' && (
             <PhotoStudioScreen
               onBack={() => handleNavigate('welcome')}
+              lang={settings.language || 'id'}
             />
           )}
 
@@ -231,18 +240,21 @@ export default function App() {
             <VideoStudioScreen
               onBack={() => handleNavigate('welcome')}
               onOpenTrimmer={() => handleNavigate('videoTrimmer')}
+              lang={settings.language || 'id'}
             />
           )}
 
           {currentScreen === 'videoTrimmer' && (
             <VideoTrimmerScreen
               onBack={() => handleNavigate('welcome')}
+              lang={settings.language || 'id'}
             />
           )}
 
           {currentScreen === 'bgRemover' && (
             <BgRemoverScreen
               onBack={() => handleNavigate('welcome')}
+              lang={settings.language || 'id'}
             />
           )}
 
@@ -250,12 +262,13 @@ export default function App() {
             <JjFinderScreen
               theme={settings.darkMode ? 'dark' : 'light'}
               onBack={() => handleNavigate('welcome')}
+              lang={settings.language || 'id'}
             />
           )}
         </div>
 
         {/* Footer */}
-        <Footer />
+        <Footer lang={settings.language || 'id'} />
       </div>
 
       {/* Navigasi Bilah Bawah Khusus Tampilan Layar HP / Mobile */}
