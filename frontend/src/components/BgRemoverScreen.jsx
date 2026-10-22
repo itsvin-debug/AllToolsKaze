@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import CosmicBackButton from './CosmicBackButton';
+import { addGalleryItem } from '../services/storageService';
 import { 
   Scissors, 
   ArrowLeft, 
@@ -311,14 +312,29 @@ export default function BgRemoverScreen({ onBack }) {
     setIsPickingColor(false);
   };
 
-  // Unduh Hasil PNG HD
+  // Unduh Hasil PNG HD & Simpan ke Galeri
   const handleDownload = () => {
     if (!canvasRef.current) return;
-    const link = document.createElement('a');
+    const dataUrl = canvasRef.current.toDataURL('image/png', 1.0);
     const safeName = fileName.replace(/\.[^/.]+$/, '');
-    link.download = `${safeName}_clean_bg.png`;
-    link.href = canvasRef.current.toDataURL('image/png', 1.0);
+    const filename = `${safeName}_clean_bg.png`;
+
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = dataUrl;
     link.click();
+
+    // Otomatis simpan ke galeri perangkat
+    addGalleryItem({
+      title: `${safeName} (Clean BG)`,
+      type: 'image',
+      category: 'Hapus Background',
+      extension: 'PNG',
+      size: 'HD PNG',
+      previewUrl: dataUrl,
+      downloadData: dataUrl,
+      filename
+    });
 
     setDownloadSuccess(true);
     setTimeout(() => setDownloadSuccess(false), 2500);

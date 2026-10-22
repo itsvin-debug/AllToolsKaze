@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import QRCode from 'qrcode';
 import jsQR from 'jsqr';
 import CosmicBackButton from './CosmicBackButton';
+import { addGalleryItem } from '../services/storageService';
 import { 
   QrCode, 
   ArrowLeft, 
@@ -272,16 +273,31 @@ export default function QrStudioScreen({ onBack, initialUrl = '' }) {
     }
   };
 
-  // Unduh Canvas sebagai PNG Beresolusi Tinggi
+  // Unduh Canvas sebagai PNG Beresolusi Tinggi & Simpan ke Galeri Perangkat
   const handleDownload = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+    const dataUrl = canvas.toDataURL('image/png', 1.0);
+    const filename = `kuro_custom_qr_${Date.now()}.png`;
+
     const link = document.createElement('a');
-    link.download = `kuro_custom_qr_${Date.now()}.png`;
-    link.href = canvas.toDataURL('image/png', 1.0);
+    link.download = filename;
+    link.href = dataUrl;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+
+    // Otomatis simpan ke galeri perangkat
+    addGalleryItem({
+      title: `QR Code: ${text.trim().slice(0, 26) || 'Kuro Custom QR'}`,
+      type: 'image',
+      category: 'QR Studio',
+      extension: 'PNG',
+      size: '220 KB',
+      previewUrl: dataUrl,
+      downloadData: dataUrl,
+      filename
+    });
   };
 
   // =========================================================================

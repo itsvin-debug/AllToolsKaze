@@ -22,6 +22,7 @@ import {
   Layers,
   FileAudio
 } from 'lucide-react';
+import { addGalleryItem } from '../services/storageService';
 
 export default function AudioMergerScreen({ onBack }) {
   const [tracks, setTracks] = useState([]);
@@ -182,6 +183,18 @@ export default function AudioMergerScreen({ onBack }) {
 
       if (res.data && res.data.success) {
         setMergeResult(res.data.data);
+
+        // Simpan otomatis ke galeri perangkat
+        addGalleryItem({
+          title: `Audio Master (${res.data.data.totalTracksMerged || tracks.length} Tracks)`,
+          type: 'audio',
+          category: 'Audio Merger',
+          extension: 'MP3',
+          size: res.data.data.sizeFormatted || '1.8 MB',
+          previewUrl: res.data.data.url,
+          downloadData: res.data.data.url,
+          filename: res.data.data.fileName || 'merged_audio_master.mp3'
+        });
       } else {
         setErrorMessage(res.data?.message || 'Gagal menggabungkan audio.');
       }

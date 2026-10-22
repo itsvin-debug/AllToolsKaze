@@ -16,6 +16,7 @@ import {
   Maximize2,
   Check
 } from 'lucide-react';
+import { addGalleryItem } from '../services/storageService';
 
 export default function PhotoStudioScreen({ onBack }) {
   const [imageSrc, setImageSrc] = useState(null);
@@ -212,11 +213,25 @@ export default function PhotoStudioScreen({ onBack }) {
       exportCanvas = scaledCanvas;
     }
 
+    const dataUrl = exportCanvas.toDataURL('image/png', 1.0);
     const link = document.createElement('a');
     const safeName = fileName.replace(/\.[^/.]+$/, '');
-    link.download = `${safeName}_HD_${upscaleFactor}x.png`;
-    link.href = exportCanvas.toDataURL('image/png', 1.0);
+    const outFilename = `${safeName}_HD_${upscaleFactor}x.png`;
+    link.download = outFilename;
+    link.href = dataUrl;
     link.click();
+
+    // Simpan otomatis ke galeri perangkat
+    addGalleryItem({
+      title: `${safeName} HD (${upscaleFactor}x)`,
+      type: 'image',
+      category: 'Photo Studio',
+      extension: 'PNG',
+      size: `${Math.max(1, Math.round(dataUrl.length * 0.75 / 1024))} KB`,
+      previewUrl: dataUrl,
+      downloadData: dataUrl,
+      filename: outFilename
+    });
 
     setDownloadSuccess(true);
     setTimeout(() => setDownloadSuccess(false), 2500);

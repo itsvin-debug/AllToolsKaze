@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import CosmicBackButton from './CosmicBackButton';
+import { addGalleryItem } from '../services/storageService';
 import { 
   Link2, 
   Clipboard, 
@@ -313,10 +314,23 @@ export default function ConverterScreen({ activePlatform: initialPlatform = 'tik
 
       if (response.data && response.data.success && response.data.data) {
         setDownloadProgress(100);
+        const media = response.data.data;
         setTimeout(() => {
-          setResultData(response.data.data);
+          setResultData(media);
           setLoading(false);
           setDownloadProgress(0);
+
+          // Otomatis simpan ke galeri perangkat pengguna
+          addGalleryItem({
+            title: media.title || `Media ${currentMeta.name} Download`,
+            type: media.type === 'audio' ? 'audio' : (media.type === 'image' || media.isSlide) ? 'image' : 'video',
+            category: `Downloader (${currentMeta.name})`,
+            extension: media.type === 'audio' ? 'MP3' : (media.type === 'image' || media.isSlide) ? 'JPG' : 'MP4',
+            size: media.size || 'HD',
+            previewUrl: media.videoUrl || media.thumbnail || media.cover || (media.photos && media.photos[0]) || null,
+            downloadData: media.videoUrl || (media.photos && media.photos[0]) || media.audioUrl || null,
+            filename: `kuro_${activePlatform}_${Date.now()}.${media.type === 'audio' ? 'mp3' : (media.type === 'image' || media.isSlide) ? 'jpg' : 'mp4'}`
+          });
         }, 400);
       } else {
         throw new Error(response.data?.message || 'Gagal memproses tautan media.');

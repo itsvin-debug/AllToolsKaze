@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import CosmicBackButton from './CosmicBackButton';
+import { addGalleryItem } from '../services/storageService';
 import { 
   Flame, 
   Search, 
@@ -83,6 +84,19 @@ export default function JjFinderScreen({ onBack }) {
 
       if (res.ok && data?.success && data?.data) {
         setResultData(data.data);
+        const jj = data.data;
+
+        // Otomatis simpan ke galeri perangkat
+        addGalleryItem({
+          title: jj.title || 'Jedag Jedug TikTok Preset',
+          type: 'document',
+          category: 'Cari Link JJ',
+          extension: 'XML',
+          size: jj.xmlSize || '5MB',
+          previewUrl: jj.cover || jj.videoUrl || null,
+          downloadData: jj.xmlUrl || jj.alightMotionLink || jj.capcutLink || null,
+          filename: `jj_preset_${Date.now()}.xml`
+        });
       } else {
         throw new Error(data?.message || 'Gagal mengekstrak preset dari tautan TikTok ini. Pastikan video dapat diakses publik.');
       }

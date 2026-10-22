@@ -24,6 +24,7 @@ import {
   Zap,
   Repeat
 } from 'lucide-react';
+import { addGalleryItem } from '../services/storageService';
 
 // Format detik ke timestamp presisi (HH:MM:SS.ms)
 function formatTimePrecision(seconds) {
@@ -436,12 +437,25 @@ export default function VideoTrimmerScreen({ onBack }) {
   // Unduh Video Hasil Potongan
   const handleDownloadResult = () => {
     if (!trimmedResult) return;
+    const outFilename = trimmedResult.fileName || `trimmed_${fileName}`;
     const a = document.createElement('a');
     a.href = trimmedResult.url;
-    a.download = trimmedResult.fileName || `trimmed_${fileName}`;
+    a.download = outFilename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+
+    // Simpan otomatis ke galeri perangkat
+    addGalleryItem({
+      title: outFilename.replace(/\.[^/.]+$/, ''),
+      type: 'video',
+      category: 'Video Trimmer',
+      extension: 'MP4',
+      size: trimmedResult.sizeFormatted || '1.5 MB',
+      previewUrl: trimmedResult.url,
+      downloadData: trimmedResult.url,
+      filename: outFilename
+    });
   };
 
   const totalTrimmedDuration = Math.max(0, endTime - startTime);

@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import CosmicBackButton from './CosmicBackButton';
 import { jsPDF } from 'jspdf';
+import { addGalleryItem } from '../services/storageService';
 import { 
   Images, 
   Upload, 
@@ -403,6 +404,19 @@ export default function PngToPdfScreen({ onBack }) {
 
       setDocTitle(targetName.replace(/\.pdf$/i, ''));
       setDownloadSuccessToast(`Berkas ${targetName} berhasil diunduh!`);
+
+      // Otomatis simpan ke galeri perangkat
+      addGalleryItem({
+        title: targetName.replace(/\.pdf$/i, ''),
+        type: 'document',
+        category: 'PNG to PDF',
+        extension: 'PDF',
+        size: `${Math.max(1, Math.round(typedBlob.size / 1024))} KB`,
+        previewUrl: images[0]?.previewUrl || null,
+        downloadData: blobUrl,
+        filename: targetName
+      });
+
       setTimeout(() => setDownloadSuccessToast(''), 4500);
 
     } catch (err) {
