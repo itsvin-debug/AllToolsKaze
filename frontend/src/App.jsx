@@ -34,12 +34,12 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-white text-black font-sans selection:bg-black selection:text-white relative">
-      {/* Background Animasi Daun Gugur Terbawa Angin */}
+    <div className="min-h-screen flex flex-col bg-[#fafafa] text-black font-sans selection:bg-black selection:text-white relative overflow-x-hidden">
+      {/* Background Animasi Kelopak Sakura Gugur (Di Lapisan Belakang / z-0) */}
       <FallingLeavesBackground />
 
-      {/* Konten Utama Aplikasi di Layer Depan (z-10) */}
-      <div className="relative z-10 flex flex-col flex-grow w-full">
+      {/* Konten Halaman (Lapisan Depan / z-10) sehingga semua Card & Tombol menutup daun di belakangnya */}
+      <div className="relative z-10 flex flex-col flex-1">
         {/* Top Header Navigation */}
         <Navbar
           currentScreen={currentScreen}
@@ -49,98 +49,100 @@ export default function App() {
           onGoHome={() => setCurrentScreen('welcome')}
         />
 
-      {/* Screen Routing */}
-      {currentScreen === 'welcome' && (
-        <WelcomeScreen
-          theme="light"
-          onSelectPlatform={(platformId) => {
-            setActivePlatform(platformId);
-            setCurrentScreen('downloader');
-          }}
-          onOpenTool={(toolId) => setCurrentScreen(toolId)}
-        />
-      )}
+        {/* Screen Routing */}
+        <div className="flex-1 flex flex-col">
+          {currentScreen === 'welcome' && (
+            <WelcomeScreen
+              theme="light"
+              onSelectPlatform={(platformId) => {
+                setActivePlatform(platformId);
+                setCurrentScreen('downloader');
+              }}
+              onOpenTool={(toolId) => setCurrentScreen(toolId)}
+            />
+          )}
 
-      {currentScreen === 'downloader' && (
-        <ConverterScreen
-          activePlatform={activePlatform}
-          onSelectPlatform={(p) => setActivePlatform(p)}
-          onBack={() => setCurrentScreen('welcome')}
-        />
-      )}
+          {currentScreen === 'downloader' && (
+            <ConverterScreen
+              activePlatform={activePlatform}
+              onSelectPlatform={(p) => setActivePlatform(p)}
+              onBack={() => setCurrentScreen('welcome')}
+            />
+          )}
 
-      {currentScreen === 'pngToPdf' && (
-        <PngToPdfScreen
-          onBack={() => setCurrentScreen('welcome')}
-        />
-      )}
+          {currentScreen === 'pngToPdf' && (
+            <PngToPdfScreen
+              onBack={() => setCurrentScreen('welcome')}
+            />
+          )}
 
-      {currentScreen === 'linkToDoc' && (
-        <LinkToDocScreen
-          onBack={() => setCurrentScreen('welcome')}
-        />
-      )}
+          {currentScreen === 'linkToDoc' && (
+            <LinkToDocScreen
+              onBack={() => setCurrentScreen('welcome')}
+            />
+          )}
 
-      {currentScreen === 'imageToLink' && (
-        <ImageToLinkScreen
-          onBack={() => setCurrentScreen('welcome')}
-          onOpenQrStudio={(url) => {
-            setQrInitialUrl(url);
-            setCurrentScreen('qrStudio');
-          }}
-        />
-      )}
+          {currentScreen === 'imageToLink' && (
+            <ImageToLinkScreen
+              onBack={() => setCurrentScreen('welcome')}
+              onOpenQrStudio={(url) => {
+                setQrInitialUrl(url);
+                setCurrentScreen('qrStudio');
+              }}
+            />
+          )}
 
-      {currentScreen === 'compressor' && (
-        <MediaCompressorScreen
-          onBack={() => setCurrentScreen('welcome')}
-        />
-      )}
+          {currentScreen === 'compressor' && (
+            <MediaCompressorScreen
+              onBack={() => setCurrentScreen('welcome')}
+            />
+          )}
 
-      {currentScreen === 'qrStudio' && (
-        <QrStudioScreen
-          initialUrl={qrInitialUrl}
-          onBack={() => setCurrentScreen('welcome')}
-        />
-      )}
+          {currentScreen === 'qrStudio' && (
+            <QrStudioScreen
+              initialUrl={qrInitialUrl}
+              onBack={() => setCurrentScreen('welcome')}
+            />
+          )}
 
-      {currentScreen === 'audioMerger' && (
-        <AudioMergerScreen
-          onBack={() => setCurrentScreen('welcome')}
-        />
-      )}
+          {currentScreen === 'audioMerger' && (
+            <AudioMergerScreen
+              onBack={() => setCurrentScreen('welcome')}
+            />
+          )}
 
-      {currentScreen === 'photoStudio' && (
-        <PhotoStudioScreen
-          onBack={() => setCurrentScreen('welcome')}
-        />
-      )}
+          {currentScreen === 'photoStudio' && (
+            <PhotoStudioScreen
+              onBack={() => setCurrentScreen('welcome')}
+            />
+          )}
 
-      {currentScreen === 'videoStudio' && (
-        <VideoStudioScreen
-          onBack={() => setCurrentScreen('welcome')}
-          onOpenTrimmer={() => setCurrentScreen('videoTrimmer')}
-        />
-      )}
+          {currentScreen === 'videoStudio' && (
+            <VideoStudioScreen
+              onBack={() => setCurrentScreen('welcome')}
+              onOpenTrimmer={() => setCurrentScreen('videoTrimmer')}
+            />
+          )}
 
-      {currentScreen === 'videoTrimmer' && (
-        <VideoTrimmerScreen
-          onBack={() => setCurrentScreen('welcome')}
-        />
-      )}
+          {currentScreen === 'videoTrimmer' && (
+            <VideoTrimmerScreen
+              onBack={() => setCurrentScreen('welcome')}
+            />
+          )}
 
-      {currentScreen === 'bgRemover' && (
-        <BgRemoverScreen
-          onBack={() => setCurrentScreen('welcome')}
-        />
-      )}
+          {currentScreen === 'bgRemover' && (
+            <BgRemoverScreen
+              onBack={() => setCurrentScreen('welcome')}
+            />
+          )}
 
-      {currentScreen === 'jjFinder' && (
-        <JjFinderScreen
-          theme="light"
-          onBack={() => setCurrentScreen('welcome')}
-        />
-      )}
+          {currentScreen === 'jjFinder' && (
+            <JjFinderScreen
+              theme="light"
+              onBack={() => setCurrentScreen('welcome')}
+            />
+          )}
+        </div>
 
         {/* Footer */}
         <Footer />

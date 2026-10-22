@@ -2,9 +2,10 @@ import React, { useEffect, useRef } from 'react';
 
 /**
  * FallingLeavesBackground
- * Animasi kelopak sakura (cherry blossom) berguguran terbawa angin.
- * Disesuaikan dengan warna live wallpaper wpanime.mp4.
- * Berjalan di latar belakang (z-0) di belakang kartu konten agar tidak menutupi teks/tombol.
+ * Animasi kelopak bunga sakura anime berguguran lembut terbawa angin sepoi-sepoi.
+ * Selalu berada di lapisan latar belakang (z-0) di balik seluruh card dan konten (z-10),
+ * warna kelopak senada dengan live wallpaper wpanime.mp4, tersebar merata secara acak
+ * di seluruh layar, ringan, 60 FPS, dan ramah baterai mobile.
  */
 export default function FallingLeavesBackground() {
   const canvasRef = useRef(null);
@@ -20,68 +21,68 @@ export default function FallingLeavesBackground() {
     let width = (canvas.width = window.innerWidth);
     let height = (canvas.height = window.innerHeight);
 
-    // Hormati preferensi aksesibilitas pengguna
+    // Aksesibilitas: hormati pengguna dengan prefers-reduced-motion
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (prefersReducedMotion) {
       return;
     }
 
     const isMobile = width < 768;
-    // Jumlah kelopak proporsional agar tidak spam
-    const petalCount = isMobile ? 14 : 24;
+    // Kepadatan kelopak: sedikit ramai dan merata, tidak spamming
+    const petalCount = isMobile ? 24 : 42;
 
-    // Palet warna kelopak sakura harmonis sesuai wallpaper anime
+    // Palet warna kelopak bunga sakura senada dengan video wpanime.mp4
     const sakuraPalettes = [
-      { fill: 'rgba(255, 183, 197, 0.82)', stroke: 'rgba(244, 114, 182, 0.40)' }, // Soft Sakura Pink
-      { fill: 'rgba(254, 205, 211, 0.78)', stroke: 'rgba(251, 146, 170, 0.38)' }, // Delicate Blush
-      { fill: 'rgba(253, 226, 236, 0.85)', stroke: 'rgba(249, 168, 212, 0.35)' }, // Pastel Cherry
-      { fill: 'rgba(244, 114, 182, 0.65)', stroke: 'rgba(219, 39, 119, 0.45)' },  // Vibrant Rose Accent
-      { fill: 'rgba(255, 241, 242, 0.88)', stroke: 'rgba(244, 143, 177, 0.35)' }, // White Sakura
-      { fill: 'rgba(254, 215, 170, 0.70)', stroke: 'rgba(251, 146, 60, 0.30)' }   // Warm Peach Blossom
+      { fill: 'rgba(255, 183, 197, 0.78)', stroke: 'rgba(244, 114, 182, 0.45)' }, // Sakura pink klasik
+      { fill: 'rgba(254, 205, 211, 0.82)', stroke: 'rgba(251, 113, 133, 0.40)' }, // Blush petal lembut
+      { fill: 'rgba(251, 143, 175, 0.72)', stroke: 'rgba(244, 63, 94, 0.35)' },  // Rose petal segar
+      { fill: 'rgba(255, 241, 242, 0.88)', stroke: 'rgba(251, 182, 206, 0.55)' }, // Putih semburat pink
+      { fill: 'rgba(244, 114, 182, 0.68)', stroke: 'rgba(225, 29, 72, 0.35)' },  // Sakura aksen terang
+      { fill: 'rgba(245, 208, 254, 0.68)', stroke: 'rgba(216, 70, 239, 0.30)' }, // Lavender pink lembut
     ];
 
     class SakuraPetal {
-      constructor(initialYRandom = true) {
-        this.reset(initialYRandom);
+      constructor(isInitial = true) {
+        this.reset(isInitial);
       }
 
-      reset(initialYRandom = false) {
-        // Distribusi kelopak ke seluruh lebar layar secara merata
-        if (initialYRandom) {
+      reset(isInitial = false) {
+        // Tersebar merata di seluruh layar saat pertama kali dimuat
+        if (isInitial) {
           this.x = Math.random() * width;
           this.y = Math.random() * height;
         } else {
-          // Masuk dari atas atau dari sisi kiri karena arah angin condong ke kanan bawah
-          if (Math.random() < 0.65) {
-            this.x = Math.random() * (width + 100) - 50;
-            this.y = -25 - Math.random() * 30;
+          // Masuk secara acak dari tepi atas atau tepi kiri terbawa angin
+          if (Math.random() > 0.35) {
+            this.x = Math.random() * (width + 120) - 60;
+            this.y = -20 - Math.random() * 30;
           } else {
-            this.x = -30 - Math.random() * 20;
+            this.x = -20 - Math.random() * 20;
             this.y = Math.random() * (height * 0.75);
           }
         }
 
-        this.size = 10 + Math.random() * 11; // 10px - 21px
-        this.speedY = 0.7 + Math.random() * 1.1;
+        // Ukuran proporsional kelopak sakura
+        this.size = 9 + Math.random() * 11;
+        this.speedY = 0.8 + Math.random() * 1.1;
         this.speedX = 0.6 + Math.random() * 1.0;
         this.rotation = Math.random() * Math.PI * 2;
-        this.rotationSpeed = (Math.random() - 0.5) * 0.025;
+        this.rotationSpeed = (Math.random() - 0.5) * 0.03;
         this.flip = Math.random() * Math.PI;
         this.flipSpeed = 0.018 + Math.random() * 0.025;
         this.oscillationSpeed = 0.012 + Math.random() * 0.02;
         this.oscillationOffset = Math.random() * Math.PI * 2;
         this.palette = sakuraPalettes[Math.floor(Math.random() * sakuraPalettes.length)];
-        this.hasTipNotch = Math.random() > 0.35;
       }
 
       update(windForce, time) {
         this.y += this.speedY;
-        this.x += this.speedX + windForce + Math.sin(time * this.oscillationSpeed + this.oscillationOffset) * 0.7;
+        this.x += this.speedX + windForce + Math.sin(time * this.oscillationSpeed + this.oscillationOffset) * 0.65;
         this.rotation += this.rotationSpeed;
         this.flip += this.flipSpeed;
 
-        // Reset bila keluar dari batas bawah atau kanan layar
-        if (this.y > height + 40 || this.x > width + 60) {
+        // Reset saat kelopak keluar dari area bawah atau kanan layar
+        if (this.y > height + 35 || this.x > width + 50) {
           this.reset(false);
         }
       }
@@ -91,7 +92,7 @@ export default function FallingLeavesBackground() {
         context.translate(this.x, this.y);
         context.rotate(this.rotation);
 
-        // Efek kelopak berputar dan membalik di udara (3D flip)
+        // Efek kelopak berputar dan membalik secara 3D di udara
         const scaleX = Math.cos(this.flip);
         context.scale(scaleX, 1);
 
@@ -99,32 +100,21 @@ export default function FallingLeavesBackground() {
         context.strokeStyle = this.palette.stroke;
         context.lineWidth = 0.8;
 
-        const w = this.size * 0.55;
-        const h = this.size;
-
+        // Bentuk kelopak bunga sakura berlekuk anggun
         context.beginPath();
-        context.moveTo(0, h * 0.6);
-
-        if (this.hasTipNotch) {
-          // Bentuk kelopak sakura dengan lekukan khas di bagian pucuk
-          context.bezierCurveTo(-w * 0.9, h * 0.2, -w * 0.8, -h * 0.3, -w * 0.4, -h * 0.6);
-          context.bezierCurveTo(-w * 0.2, -h * 0.5, -w * 0.1, -h * 0.48, 0, -h * 0.42);
-          context.bezierCurveTo(w * 0.1, -h * 0.48, w * 0.2, -h * 0.5, w * 0.4, -h * 0.6);
-          context.bezierCurveTo(w * 0.8, -h * 0.3, w * 0.9, h * 0.2, 0, h * 0.6);
-        } else {
-          // Bentuk kelopak oval melengkung halus
-          context.bezierCurveTo(-w * 0.85, h * 0.2, -w * 0.75, -h * 0.5, 0, -h * 0.6);
-          context.bezierCurveTo(w * 0.75, -h * 0.5, w * 0.85, h * 0.2, 0, h * 0.6);
-        }
-
+        context.moveTo(0, -this.size);
+        context.bezierCurveTo(this.size * 0.52, -this.size * 0.65, this.size * 0.74, -this.size * 0.08, this.size * 0.38, this.size * 0.65);
+        context.bezierCurveTo(this.size * 0.18, this.size * 0.95, 0, this.size, 0, this.size);
+        context.bezierCurveTo(0, this.size, -this.size * 0.18, this.size * 0.95, -this.size * 0.38, this.size * 0.65);
+        context.bezierCurveTo(-this.size * 0.74, -this.size * 0.08, -this.size * 0.52, -this.size * 0.65, 0, -this.size);
         context.closePath();
         context.fill();
         context.stroke();
 
-        // Guratan halus kelopak bunga
+        // Garis lekuk lembut di bagian tengah kelopak
         context.beginPath();
-        context.moveTo(0, h * 0.45);
-        context.quadraticCurveTo(0, 0, 0, -h * 0.3);
+        context.moveTo(0, -this.size * 0.6);
+        context.lineTo(0, this.size * 0.5);
         context.strokeStyle = this.palette.stroke;
         context.lineWidth = 0.6;
         context.stroke();
@@ -136,8 +126,8 @@ export default function FallingLeavesBackground() {
     const petals = Array.from({ length: petalCount }, () => new SakuraPetal(true));
 
     let time = 0;
-    let windForce = 0.6;
-    let targetWindForce = 0.6;
+    let windForce = 0.75;
+    let targetWindForce = 0.75;
     let lastWindChange = Date.now();
 
     const handleResize = () => {
@@ -159,14 +149,14 @@ export default function FallingLeavesBackground() {
         return;
       }
 
-      time += 0.04;
+      time += 0.05;
 
       // Hembusan angin lembut yang berubah berkala
       if (Date.now() - lastWindChange > 3500) {
-        targetWindForce = 0.4 + Math.random() * 0.9;
+        targetWindForce = 0.45 + Math.random() * 1.0;
         lastWindChange = Date.now();
       }
-      windForce += (targetWindForce - windForce) * 0.02;
+      windForce += (targetWindForce - windForce) * 0.015;
 
       ctx.clearRect(0, 0, width, height);
 
@@ -191,7 +181,7 @@ export default function FallingLeavesBackground() {
     <canvas
       ref={canvasRef}
       aria-hidden="true"
-      className="fixed inset-0 pointer-events-none z-0 opacity-75"
+      className="fixed inset-0 pointer-events-none z-0 opacity-85"
       style={{ willChange: 'transform' }}
     />
   );
