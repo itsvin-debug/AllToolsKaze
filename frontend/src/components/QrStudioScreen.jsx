@@ -107,20 +107,20 @@ export default function QrStudioScreen({ onBack, initialUrl = '' }) {
   // Hitung perkiraan Scannability Score
   let scannabilityScore = 100;
   let scannabilityLabel = '100% Sangat Aman Di-scan';
-  let scannabilityBadgeClass = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+  let scannabilityBadgeClass = 'bg-neutral-100 text-black border-2 border-black shadow-[2px_2px_0px_#000000]';
 
   if (canvasMask !== 'none') {
     scannabilityScore = 96;
     scannabilityLabel = '96% Aman Di-scan (Auto-Protect Level H)';
-    scannabilityBadgeClass = 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20';
+    scannabilityBadgeClass = 'bg-neutral-100 text-black border-2 border-black shadow-[2px_2px_0px_#000000]';
   } else if (logoScale > 25) {
     scannabilityScore = 94;
     scannabilityLabel = '94% Aman (Logo Besar - Terlindungi Level H)';
-    scannabilityBadgeClass = 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20';
+    scannabilityBadgeClass = 'bg-neutral-100 text-black border-2 border-black shadow-[2px_2px_0px_#000000]';
   } else if (dataPattern === 'heart' || dataPattern === 'star') {
     scannabilityScore = 98;
     scannabilityLabel = '98% Aman Di-scan (Protected Level H)';
-    scannabilityBadgeClass = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+    scannabilityBadgeClass = 'bg-neutral-100 text-black border-2 border-black shadow-[2px_2px_0px_#000000]';
   }
 
   // Terapkan Preset Konsep
@@ -832,25 +832,25 @@ export default function QrStudioScreen({ onBack, initialUrl = '' }) {
     <main className="flex-grow flex flex-col items-center justify-start px-4 sm:px-6 md:px-margin-desktop py-6 sm:py-8 max-w-6xl mx-auto w-full relative z-10 animate-fadeIn">
       
       {/* ─── 1. HEADER NAVIGASI & SCANNABILITY INDICATOR ─── */}
-      <div className="w-full flex items-center justify-between pb-4 mb-4 border-b border-white/5">
+      <div className="w-full flex items-center justify-between pb-4 mb-4 border-b-2 border-black">
         <CosmicBackButton onClick={onBack} label="Kembali ke Beranda Tools" />
 
-        <div className={`flex items-center gap-2 text-xs font-mono px-3 py-1.5 rounded-full border ${scannabilityBadgeClass}`}>
-          <ShieldCheck className="w-3.5 h-3.5" />
+        <div className={`flex items-center gap-2 text-xs font-mono font-bold px-3 py-1.5 rounded-lg border-2 border-black ${scannabilityBadgeClass}`}>
+          <ShieldCheck className="w-4 h-4 stroke-[2.5]" />
           <span>{scannabilityLabel}</span>
         </div>
       </div>
 
       {/* Header Judul Fitur */}
       <div className="text-center mb-8 max-w-2xl">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded border-2 border-black bg-neutral-100 text-black text-xs font-mono font-bold uppercase tracking-wider mb-3">
-          <QrCode className="w-3.5 h-3.5" />
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded border-2 border-black bg-neutral-100 text-black text-xs font-mono font-bold uppercase tracking-wider mb-3 shadow-[2px_2px_0px_#000000]">
+          <QrCode className="w-3.5 h-3.5 stroke-[2.5]" />
           <span>QR Code Studio</span>
         </div>
         <h1 className="text-2xl sm:text-4xl font-black text-black mb-2 tracking-tight font-display">
           Customizer Kode QR Tingkat Lanjut
         </h1>
-        <p className="text-xs sm:text-sm text-neutral-600 leading-relaxed">
+        <p className="text-xs sm:text-sm text-neutral-600 leading-relaxed font-medium">
           Kustomisasi visual QR Code dengan bentuk titik cinta/bintang/daun, siluet masking perisai/hati, logo tengah berpresisi, dan format ekspor HD.
         </p>
       </div>
@@ -864,17 +864,18 @@ export default function QrStudioScreen({ onBack, initialUrl = '' }) {
         <div className="lg:col-span-7 space-y-6">
           
           {/* Input Konten Tautan / Teks */}
-          <div className="rounded-3xl p-6 bg-[#0e121d]/90 border border-white/10 shadow-xl space-y-3">
-            <label className="text-xs font-bold text-slate-300 flex items-center justify-between">
+          <div className="rounded-xl p-5 sm:p-6 bg-white border-2 border-black shadow-[4px_4px_0px_#000000] space-y-3">
+            <label className="text-xs font-mono font-bold text-black uppercase tracking-wider flex items-center justify-between">
               <span className="flex items-center gap-1.5">
-                <FileCode className="w-3.5 h-3.5 text-indigo-400" />
+                <FileCode className="w-4 h-4 text-black stroke-[2.5]" />
                 <span>Tautan / URL Tujuan:</span>
               </span>
               <button
+                type="button"
                 onClick={handleCopyLink}
-                className="text-[11px] text-indigo-400 hover:underline flex items-center gap-1 cursor-pointer"
+                className="text-[11px] font-mono font-bold text-black px-2.5 py-1 rounded border border-black bg-neutral-100 hover:bg-neutral-200 transition-colors flex items-center gap-1 cursor-pointer shadow-[1px_1px_0px_#000000]"
               >
-                {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                {copied ? <Check className="w-3.5 h-3.5 text-black stroke-[3]" /> : <Copy className="w-3.5 h-3.5 text-black stroke-[2]" />}
                 <span>{copied ? 'Tersalin' : 'Salin URL'}</span>
               </button>
             </label>
@@ -883,17 +884,17 @@ export default function QrStudioScreen({ onBack, initialUrl = '' }) {
               value={text}
               onChange={(e) => setText(e.target.value)}
               placeholder="(masukkan url tujuan ke sini)"
-              className="w-full px-4 py-2.5 rounded-xl bg-black/40 border border-white/10 text-xs text-white font-mono focus:border-indigo-500 focus:outline-none placeholder:text-slate-500 placeholder:italic"
+              className="w-full px-4 py-2.5 rounded-lg bg-white border-2 border-black text-xs sm:text-sm text-black font-mono focus:ring-2 focus:ring-black focus:outline-none placeholder:text-neutral-400 shadow-[2px_2px_0px_#000000]"
             />
           </div>
 
           {/* Preset Konsep Estetika */}
-          <div className="rounded-3xl p-6 bg-[#0e121d]/90 border border-white/10 shadow-xl space-y-3">
-            <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+          <div className="rounded-xl p-5 sm:p-6 bg-white border-2 border-black shadow-[4px_4px_0px_#000000] space-y-3">
+            <label className="text-xs font-mono font-bold text-black uppercase tracking-wider flex items-center gap-1.5 border-b-2 border-black pb-2">
+              <Sparkles className="w-4 h-4 text-black stroke-[2.5]" />
               <span>Preset Konsep & Estetika Instan:</span>
             </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
               {[
                 { id: 'cyberpunk', label: 'Cyber Neon', desc: 'Futuristik Diamond' },
                 { id: 'romantic_heart', label: 'Romantic Heart', desc: 'Siluet Hati & Love' },
@@ -903,27 +904,27 @@ export default function QrStudioScreen({ onBack, initialUrl = '' }) {
                 <button
                   key={c.id}
                   onClick={() => applyConcept(c.id)}
-                  className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer ${
+                  className={`p-3 rounded-lg border-2 border-black text-center transition-all cursor-pointer active:translate-x-[1px] active:translate-y-[1px] ${
                     activeConcept === c.id
-                      ? 'bg-indigo-600/25 border-indigo-400 text-indigo-200 font-bold shadow-sm'
-                      : 'bg-black/30 border-white/5 text-slate-400 hover:bg-white/5'
+                      ? 'bg-black text-white font-extrabold shadow-[2px_2px_0px_#000000]'
+                      : 'bg-neutral-100 hover:bg-neutral-200 text-black font-bold shadow-[2px_2px_0px_#000000]'
                   }`}
                 >
-                  <p className="text-xs">{c.label}</p>
-                  <p className="text-[9px] opacity-70">{c.desc}</p>
+                  <p className="text-xs font-bold">{c.label}</p>
+                  <p className="text-[10px] opacity-75 mt-0.5">{c.desc}</p>
                 </button>
               ))}
             </div>
           </div>
 
           {/* ─── A. BENTUK TITIK DATA (DOTS / MODULES STYLING) ─── */}
-          <div className="rounded-3xl p-6 bg-[#0e121d]/90 border border-white/10 shadow-xl space-y-4">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-1.5 border-b border-white/5 pb-2">
-              <Sliders className="w-4 h-4" />
+          <div className="rounded-xl p-5 sm:p-6 bg-white border-2 border-black shadow-[4px_4px_0px_#000000] space-y-4">
+            <h3 className="text-xs font-mono font-black uppercase tracking-wider text-black flex items-center gap-1.5 border-b-2 border-black pb-2">
+              <Sliders className="w-4 h-4 stroke-[2.5]" />
               <span>A. Bentuk Titik Data (Dots & Modules Styling)</span>
             </h3>
 
-            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2.5">
               {[
                 { id: 'heart', label: 'Love / Hati', icon: '❤️' },
                 { id: 'diamond', label: 'Belah Ketupat', icon: '🔶' },
@@ -938,10 +939,10 @@ export default function QrStudioScreen({ onBack, initialUrl = '' }) {
                 <button
                   key={d.id}
                   onClick={() => setDataPattern(d.id)}
-                  className={`p-2.5 rounded-xl text-xs font-semibold border flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
+                  className={`p-2.5 rounded-lg text-xs font-bold border-2 border-black flex flex-col items-center justify-center gap-1 transition-all cursor-pointer active:translate-x-[1px] active:translate-y-[1px] ${
                     dataPattern === d.id
-                      ? 'bg-indigo-600/30 border-indigo-400 text-white font-bold shadow-md shadow-indigo-600/20'
-                      : 'bg-black/30 border-white/5 text-slate-400 hover:bg-white/5 hover:text-white'
+                      ? 'bg-black text-white font-extrabold shadow-[2px_2px_0px_#000000]'
+                      : 'bg-neutral-100 hover:bg-neutral-200 text-black shadow-[2px_2px_0px_#000000]'
                   }`}
                 >
                   <span className="text-base">{d.icon}</span>
@@ -952,15 +953,17 @@ export default function QrStudioScreen({ onBack, initialUrl = '' }) {
           </div>
 
           {/* ─── B. KUSTOMISASI BENTUK MATA SUDUT (EYE FINDER PATTERNS) ─── */}
-          <div className="rounded-3xl p-6 bg-[#0e121d]/90 border border-white/10 shadow-xl space-y-5">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-1.5 border-b border-white/5 pb-2">
-              <Eye className="w-4 h-4" />
+          <div className="rounded-xl p-5 sm:p-6 bg-white border-2 border-black shadow-[4px_4px_0px_#000000] space-y-5">
+            <h3 className="text-xs font-mono font-black uppercase tracking-wider text-black flex items-center gap-1.5 border-b-2 border-black pb-2">
+              <Eye className="w-4 h-4 stroke-[2.5]" />
               <span>B. Kustomisasi Bentuk Mata Sudut (Eye Finder)</span>
             </h3>
 
             {/* Eye Outer Shape */}
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-slate-300">Bingkai Luar Mata (Eye Outer Shape):</label>
+              <label className="text-xs font-mono font-bold text-black uppercase tracking-wider">
+                Bingkai Luar Mata (Eye Outer Shape):
+              </label>
               <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                 {[
                   { id: 'square', label: 'Kotak Klasik' },
@@ -972,10 +975,10 @@ export default function QrStudioScreen({ onBack, initialUrl = '' }) {
                   <button
                     key={eo.id}
                     onClick={() => setEyeOuterShape(eo.id)}
-                    className={`py-2 px-2 rounded-xl text-[11px] font-semibold border text-center transition-all cursor-pointer ${
+                    className={`py-2 px-2 rounded-lg text-[11px] font-bold border-2 border-black text-center transition-all cursor-pointer active:translate-x-[1px] active:translate-y-[1px] ${
                       eyeOuterShape === eo.id
-                        ? 'bg-indigo-600/30 border-indigo-400 text-white font-bold'
-                        : 'bg-black/30 border-white/5 text-slate-400 hover:bg-white/5'
+                        ? 'bg-black text-white font-extrabold shadow-[2px_2px_0px_#000000]'
+                        : 'bg-neutral-100 hover:bg-neutral-200 text-black shadow-[2px_2px_0px_#000000]'
                     }`}
                   >
                     {eo.label}
@@ -985,8 +988,10 @@ export default function QrStudioScreen({ onBack, initialUrl = '' }) {
             </div>
 
             {/* Eye Inner Shape */}
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-slate-300">Titik Tengah Mata (Eye Inner Shape):</label>
+            <div className="space-y-2 pt-1">
+              <label className="text-xs font-mono font-bold text-black uppercase tracking-wider">
+                Titik Tengah Mata (Eye Inner Shape):
+              </label>
               <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                 {[
                   { id: 'dot', label: 'Dot Bulat' },
@@ -998,10 +1003,10 @@ export default function QrStudioScreen({ onBack, initialUrl = '' }) {
                   <button
                     key={ei.id}
                     onClick={() => setEyeInnerShape(ei.id)}
-                    className={`py-2 px-2 rounded-xl text-[11px] font-semibold border text-center transition-all cursor-pointer ${
+                    className={`py-2 px-2 rounded-lg text-[11px] font-bold border-2 border-black text-center transition-all cursor-pointer active:translate-x-[1px] active:translate-y-[1px] ${
                       eyeInnerShape === ei.id
-                        ? 'bg-indigo-600/30 border-indigo-400 text-white font-bold'
-                        : 'bg-black/30 border-white/5 text-slate-400 hover:bg-white/5'
+                        ? 'bg-black text-white font-extrabold shadow-[2px_2px_0px_#000000]'
+                        : 'bg-neutral-100 hover:bg-neutral-200 text-black shadow-[2px_2px_0px_#000000]'
                     }`}
                   >
                     {ei.label}
@@ -1012,16 +1017,18 @@ export default function QrStudioScreen({ onBack, initialUrl = '' }) {
           </div>
 
           {/* ─── C. CANVAS MASKING & SHAPE MATRIX (SILUET KESELURUHAN) ─── */}
-          <div className="rounded-3xl p-6 bg-[#0e121d]/90 border border-white/10 shadow-xl space-y-4">
-            <div className="flex items-center justify-between border-b border-white/5 pb-2">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-1.5">
-                <Layers className="w-4 h-4" />
+          <div className="rounded-xl p-5 sm:p-6 bg-white border-2 border-black shadow-[4px_4px_0px_#000000] space-y-4">
+            <div className="flex items-center justify-between border-b-2 border-black pb-2">
+              <h3 className="text-xs font-mono font-black uppercase tracking-wider text-black flex items-center gap-1.5">
+                <Layers className="w-4 h-4 stroke-[2.5]" />
                 <span>C. Canvas Masking & Shape Matrix</span>
               </h3>
-              <span className="text-[10px] font-mono text-emerald-400">Safe Zone Margin Aktif</span>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded border border-black bg-neutral-100 text-black font-bold">
+                Safe Margin Aktif
+              </span>
             </div>
 
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-neutral-600 font-medium">
               Bentuk keseluruhan tata letak QR mengikuti siluet khusus tanpa merusak keterbacaan scan kamera:
             </p>
 
@@ -1035,29 +1042,31 @@ export default function QrStudioScreen({ onBack, initialUrl = '' }) {
                 <button
                   key={m.id}
                   onClick={() => setCanvasMask(m.id)}
-                  className={`p-3 rounded-2xl border text-center transition-all cursor-pointer ${
+                  className={`p-3 rounded-lg border-2 border-black text-center transition-all cursor-pointer active:translate-x-[1px] active:translate-y-[1px] ${
                     canvasMask === m.id
-                      ? 'bg-indigo-600/30 border-indigo-400 text-white font-bold shadow-md shadow-indigo-600/20'
-                      : 'bg-black/30 border-white/5 text-slate-400 hover:bg-white/5 hover:text-white'
+                      ? 'bg-black text-white font-extrabold shadow-[2px_2px_0px_#000000]'
+                      : 'bg-neutral-100 hover:bg-neutral-200 text-black font-bold shadow-[2px_2px_0px_#000000]'
                   }`}
                 >
                   <p className="text-xs font-bold">{m.label}</p>
-                  <p className="text-[10px] opacity-70 mt-0.5">{m.desc}</p>
+                  <p className="text-[10px] opacity-75 mt-0.5">{m.desc}</p>
                 </button>
               ))}
             </div>
           </div>
 
           {/* ─── D. LOGO & IKON TENGAH ─── */}
-          <div className="rounded-3xl p-6 bg-[#0e121d]/90 border border-white/10 shadow-xl space-y-5">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-1.5 border-b border-white/5 pb-2">
-              <ImageIcon className="w-4 h-4" />
+          <div className="rounded-xl p-5 sm:p-6 bg-white border-2 border-black shadow-[4px_4px_0px_#000000] space-y-5">
+            <h3 className="text-xs font-mono font-black uppercase tracking-wider text-black flex items-center gap-1.5 border-b-2 border-black pb-2">
+              <ImageIcon className="w-4 h-4 stroke-[2.5]" />
               <span>D. Logo & Ikon Tengah</span>
             </h3>
 
             {/* Preset Ikon Media Sosial & Upload */}
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-slate-300">Pilih Preset Ikon atau Unggah Logo Kustom:</label>
+              <label className="text-xs font-mono font-bold text-black uppercase tracking-wider">
+                Pilih Preset Ikon atau Unggah Logo Kustom:
+              </label>
               <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
                 {[
                   { id: 'none', label: 'Kosong' },
@@ -1075,10 +1084,10 @@ export default function QrStudioScreen({ onBack, initialUrl = '' }) {
                   <button
                     key={l.id}
                     onClick={() => setLogoOption(l.id)}
-                    className={`py-2 px-1.5 rounded-xl text-[11px] font-semibold border text-center transition-all cursor-pointer ${
+                    className={`py-2 px-1.5 rounded-lg text-[11px] font-bold border-2 border-black text-center transition-all cursor-pointer active:translate-x-[1px] active:translate-y-[1px] ${
                       logoOption === l.id
-                        ? 'bg-indigo-600/30 border-indigo-400 text-white font-bold'
-                        : 'bg-black/30 border-white/5 text-slate-400 hover:bg-white/5'
+                        ? 'bg-black text-white font-extrabold shadow-[2px_2px_0px_#000000]'
+                        : 'bg-neutral-100 hover:bg-neutral-200 text-black shadow-[2px_2px_0px_#000000]'
                     }`}
                   >
                     {l.label}
@@ -1088,8 +1097,8 @@ export default function QrStudioScreen({ onBack, initialUrl = '' }) {
 
               {/* Upload Custom Logo Button */}
               <div className="pt-2">
-                <label className="w-full py-2.5 px-4 rounded-xl border border-dashed border-white/20 hover:border-indigo-400 bg-black/30 flex items-center justify-center gap-2 text-xs font-bold text-slate-300 hover:text-white transition-all cursor-pointer">
-                  <Upload className="w-4 h-4 text-indigo-400" />
+                <label className="w-full py-2.5 px-4 rounded-lg border-2 border-dashed border-black hover:bg-neutral-100 bg-white flex items-center justify-center gap-2 text-xs font-bold text-black transition-all cursor-pointer shadow-[2px_2px_0px_#000000]">
+                  <Upload className="w-4 h-4 text-black stroke-[2.5]" />
                   <span>{customLogoImage ? 'Ganti Custom Logo (PNG/SVG)' : 'Unggah Custom Logo Lokal (PNG/SVG)'}</span>
                   <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
                 </label>
@@ -1098,11 +1107,11 @@ export default function QrStudioScreen({ onBack, initialUrl = '' }) {
 
             {/* Slider Pengaturan Logo */}
             {logoOption !== 'none' && (
-              <div className="space-y-4 pt-2 border-t border-white/5">
+              <div className="space-y-4 pt-3 border-t-2 border-black">
                 <div>
-                  <div className="flex justify-between text-xs font-mono text-slate-400 mb-1">
+                  <div className="flex justify-between text-xs font-mono font-bold text-black mb-1">
                     <span>Ukuran Logo (Logo Size):</span>
-                    <span className="text-indigo-400 font-bold">{logoScale}%</span>
+                    <span className="px-1.5 py-0.5 rounded border border-black bg-neutral-100">{logoScale}%</span>
                   </div>
                   <input 
                     type="range" 
@@ -1110,14 +1119,14 @@ export default function QrStudioScreen({ onBack, initialUrl = '' }) {
                     max="30" 
                     value={logoScale} 
                     onChange={(e) => setLogoScale(Number(e.target.value))}
-                    className="w-full accent-indigo-500 cursor-pointer" 
+                    className="w-full accent-black cursor-pointer" 
                   />
                 </div>
 
                 <div>
-                  <div className="flex justify-between text-xs font-mono text-slate-400 mb-1">
+                  <div className="flex justify-between text-xs font-mono font-bold text-black mb-1">
                     <span>Border Radius Badge Logo:</span>
-                    <span className="text-indigo-400 font-bold">{logoRadius}px</span>
+                    <span className="px-1.5 py-0.5 rounded border border-black bg-neutral-100">{logoRadius}px</span>
                   </div>
                   <input 
                     type="range" 
@@ -1125,14 +1134,14 @@ export default function QrStudioScreen({ onBack, initialUrl = '' }) {
                     max="24" 
                     value={logoRadius} 
                     onChange={(e) => setLogoRadius(Number(e.target.value))}
-                    className="w-full accent-indigo-500 cursor-pointer" 
+                    className="w-full accent-black cursor-pointer" 
                   />
                 </div>
 
                 <div>
-                  <div className="flex justify-between text-xs font-mono text-slate-400 mb-1">
+                  <div className="flex justify-between text-xs font-mono font-bold text-black mb-1">
                     <span>Padding Pelindung Logo:</span>
-                    <span className="text-indigo-400 font-bold">{logoPadding}px</span>
+                    <span className="px-1.5 py-0.5 rounded border border-black bg-neutral-100">{logoPadding}px</span>
                   </div>
                   <input 
                     type="range" 
@@ -1140,7 +1149,7 @@ export default function QrStudioScreen({ onBack, initialUrl = '' }) {
                     max="16" 
                     value={logoPadding} 
                     onChange={(e) => setLogoPadding(Number(e.target.value))}
-                    className="w-full accent-indigo-500 cursor-pointer" 
+                    className="w-full accent-black cursor-pointer" 
                   />
                 </div>
               </div>
@@ -1148,30 +1157,32 @@ export default function QrStudioScreen({ onBack, initialUrl = '' }) {
           </div>
 
           {/* ─── E. PALET WARNA & BACKGROUND KREATIF ─── */}
-          <div className="rounded-3xl p-6 bg-[#0e121d]/90 border border-white/10 shadow-xl space-y-5">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-1.5 border-b border-white/5 pb-2">
-              <Palette className="w-4 h-4" />
+          <div className="rounded-xl p-5 sm:p-6 bg-white border-2 border-black shadow-[4px_4px_0px_#000000] space-y-5">
+            <h3 className="text-xs font-mono font-black uppercase tracking-wider text-black flex items-center gap-1.5 border-b-2 border-black pb-2">
+              <Palette className="w-4 h-4 stroke-[2.5]" />
               <span>E. Palet Warna & Background Kreatif</span>
             </h3>
 
             {/* Mode Gradasi vs Solid */}
             <div className="grid grid-cols-2 gap-2">
               <button
+                type="button"
                 onClick={() => setColorMode('gradient')}
-                className={`py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                className={`py-2 rounded-lg text-xs font-extrabold border-2 border-black transition-all cursor-pointer active:translate-x-[1px] active:translate-y-[1px] ${
                   colorMode === 'gradient'
-                    ? 'bg-indigo-600/30 border-indigo-400 text-white font-bold'
-                    : 'bg-black/30 border-white/5 text-slate-400'
+                    ? 'bg-black text-white shadow-[2px_2px_0px_#000000]'
+                    : 'bg-neutral-100 hover:bg-neutral-200 text-black shadow-[2px_2px_0px_#000000]'
                 }`}
               >
                 Multi-Stop Gradient
               </button>
               <button
+                type="button"
                 onClick={() => setColorMode('single')}
-                className={`py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                className={`py-2 rounded-lg text-xs font-extrabold border-2 border-black transition-all cursor-pointer active:translate-x-[1px] active:translate-y-[1px] ${
                   colorMode === 'single'
-                    ? 'bg-indigo-600/30 border-indigo-400 text-white font-bold'
-                    : 'bg-black/30 border-white/5 text-slate-400'
+                    ? 'bg-black text-white shadow-[2px_2px_0px_#000000]'
+                    : 'bg-neutral-100 hover:bg-neutral-200 text-black shadow-[2px_2px_0px_#000000]'
                 }`}
               >
                 Solid Color
@@ -1182,17 +1193,19 @@ export default function QrStudioScreen({ onBack, initialUrl = '' }) {
             {colorMode === 'gradient' && (
               <div className="flex items-center gap-2">
                 <button
+                  type="button"
                   onClick={() => setGradientType('linear')}
-                  className={`flex-1 py-1.5 rounded-lg text-[11px] font-semibold border ${
-                    gradientType === 'linear' ? 'bg-white/10 border-indigo-400 text-white' : 'bg-black/20 border-white/5 text-slate-400'
+                  className={`flex-1 py-1.5 rounded-lg text-xs font-bold border-2 border-black ${
+                    gradientType === 'linear' ? 'bg-black text-white shadow-[1px_1px_0px_#000000]' : 'bg-neutral-100 text-black hover:bg-neutral-200'
                   }`}
                 >
                   Linear Gradient
                 </button>
                 <button
+                  type="button"
                   onClick={() => setGradientType('radial')}
-                  className={`flex-1 py-1.5 rounded-lg text-[11px] font-semibold border ${
-                    gradientType === 'radial' ? 'bg-white/10 border-indigo-400 text-white' : 'bg-black/20 border-white/5 text-slate-400'
+                  className={`flex-1 py-1.5 rounded-lg text-xs font-bold border-2 border-black ${
+                    gradientType === 'radial' ? 'bg-black text-white shadow-[1px_1px_0px_#000000]' : 'bg-neutral-100 text-black hover:bg-neutral-200'
                   }`}
                 >
                   Radial Gradient
@@ -1204,25 +1217,26 @@ export default function QrStudioScreen({ onBack, initialUrl = '' }) {
             {colorMode === 'gradient' ? (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="space-y-1">
-                  <label className="text-[11px] text-slate-400">Warna Awal:</label>
+                  <label className="text-[11px] font-mono font-bold text-neutral-700">Warna Awal:</label>
                   <div className="flex items-center gap-2">
                     <input
                       type="color"
                       value={gradStart}
                       onChange={(e) => setGradStart(e.target.value)}
-                      className="w-8 h-8 rounded-lg border border-white/20 bg-transparent cursor-pointer"
+                      className="w-8 h-8 rounded border-2 border-black bg-white cursor-pointer"
                     />
-                    <span className="text-xs font-mono text-white">{gradStart}</span>
+                    <span className="text-xs font-mono font-bold text-black px-1.5 py-0.5 rounded border border-black bg-neutral-100">{gradStart}</span>
                   </div>
                 </div>
 
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
-                    <label className="text-[11px] text-slate-400">Warna Tengah:</label>
+                    <label className="text-[11px] font-mono font-bold text-neutral-700">Warna Tengah:</label>
                     <input 
                       type="checkbox" 
                       checked={useMidStop} 
                       onChange={(e) => setUseMidStop(e.target.checked)} 
+                      className="accent-black cursor-pointer"
                       title="Aktifkan stop tengah" 
                     />
                   </div>
@@ -1232,57 +1246,59 @@ export default function QrStudioScreen({ onBack, initialUrl = '' }) {
                       value={gradMid}
                       disabled={!useMidStop}
                       onChange={(e) => setGradMid(e.target.value)}
-                      className="w-8 h-8 rounded-lg border border-white/20 bg-transparent cursor-pointer disabled:opacity-40"
+                      className="w-8 h-8 rounded border-2 border-black bg-white cursor-pointer disabled:opacity-40"
                     />
-                    <span className="text-xs font-mono text-white">{useMidStop ? gradMid : 'Off'}</span>
+                    <span className="text-xs font-mono font-bold text-black px-1.5 py-0.5 rounded border border-black bg-neutral-100">{useMidStop ? gradMid : 'Off'}</span>
                   </div>
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[11px] text-slate-400">Warna Akhir:</label>
+                  <label className="text-[11px] font-mono font-bold text-neutral-700">Warna Akhir:</label>
                   <div className="flex items-center gap-2">
                     <input
                       type="color"
                       value={gradEnd}
                       onChange={(e) => setGradEnd(e.target.value)}
-                      className="w-8 h-8 rounded-lg border border-white/20 bg-transparent cursor-pointer"
+                      className="w-8 h-8 rounded border-2 border-black bg-white cursor-pointer"
                     />
-                    <span className="text-xs font-mono text-white">{gradEnd}</span>
+                    <span className="text-xs font-mono font-bold text-black px-1.5 py-0.5 rounded border border-black bg-neutral-100">{gradEnd}</span>
                   </div>
                 </div>
               </div>
             ) : (
               <div className="space-y-1">
-                <label className="text-[11px] text-slate-400">Warna Titik QR:</label>
+                <label className="text-[11px] font-mono font-bold text-neutral-700">Warna Titik QR:</label>
                 <div className="flex items-center gap-2">
                   <input
                     type="color"
                     value={singleColor}
                     onChange={(e) => setSingleColor(e.target.value)}
-                    className="w-8 h-8 rounded-lg border border-white/20 bg-transparent cursor-pointer"
+                    className="w-8 h-8 rounded border-2 border-black bg-white cursor-pointer"
                   />
-                  <span className="text-xs font-mono text-white">{singleColor}</span>
+                  <span className="text-xs font-mono font-bold text-black px-1.5 py-0.5 rounded border border-black bg-neutral-100">{singleColor}</span>
                 </div>
               </div>
             )}
 
             {/* Warna Mata Sudut */}
             <div className="space-y-1 pt-1">
-              <label className="text-[11px] text-slate-400">Warna Khusus Mata Sudut (Eye Color):</label>
+              <label className="text-[11px] font-mono font-bold text-neutral-700">Warna Khusus Mata Sudut (Eye Color):</label>
               <div className="flex items-center gap-2">
                 <input
                   type="color"
                   value={eyeColor}
                   onChange={(e) => setEyeColor(e.target.value)}
-                  className="w-8 h-8 rounded-lg border border-white/20 bg-transparent cursor-pointer"
+                  className="w-8 h-8 rounded border-2 border-black bg-white cursor-pointer"
                 />
-                <span className="text-xs font-mono text-white">{eyeColor}</span>
+                <span className="text-xs font-mono font-bold text-black px-1.5 py-0.5 rounded border border-black bg-neutral-100">{eyeColor}</span>
               </div>
             </div>
 
             {/* Opsi Latar Belakang (Background) */}
-            <div className="space-y-3 pt-3 border-t border-white/5">
-              <label className="text-xs font-semibold text-slate-300">Mode Latar Belakang (Background):</label>
+            <div className="space-y-3 pt-3 border-t-2 border-black">
+              <label className="text-xs font-mono font-bold text-black uppercase tracking-wider">
+                Mode Latar Belakang (Background):
+              </label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {[
                   { id: 'solid', label: 'Solid Color' },
@@ -1293,10 +1309,10 @@ export default function QrStudioScreen({ onBack, initialUrl = '' }) {
                   <button
                     key={b.id}
                     onClick={() => setBgMode(b.id)}
-                    className={`py-2 px-2 rounded-xl text-[11px] font-semibold border text-center transition-all cursor-pointer ${
+                    className={`py-2 px-2 rounded-lg text-[11px] font-bold border-2 border-black text-center transition-all cursor-pointer active:translate-x-[1px] active:translate-y-[1px] ${
                       bgMode === b.id
-                        ? 'bg-indigo-600/30 border-indigo-400 text-white font-bold'
-                        : 'bg-black/30 border-white/5 text-slate-400 hover:bg-white/5'
+                        ? 'bg-black text-white font-extrabold shadow-[2px_2px_0px_#000000]'
+                        : 'bg-neutral-100 hover:bg-neutral-200 text-black shadow-[2px_2px_0px_#000000]'
                     }`}
                   >
                     {b.label}
@@ -1306,54 +1322,54 @@ export default function QrStudioScreen({ onBack, initialUrl = '' }) {
 
               {bgMode === 'solid' && (
                 <div className="flex items-center gap-2 pt-1">
-                  <span className="text-xs text-slate-400">Pilih Warna BG:</span>
+                  <span className="text-xs font-mono font-bold text-neutral-700">Pilih Warna BG:</span>
                   <input
                     type="color"
                     value={bgColor}
                     onChange={(e) => setBgColor(e.target.value)}
-                    className="w-8 h-8 rounded-lg border border-white/20 bg-transparent cursor-pointer"
+                    className="w-8 h-8 rounded border-2 border-black bg-white cursor-pointer"
                   />
-                  <span className="text-xs font-mono text-white">{bgColor}</span>
+                  <span className="text-xs font-mono font-bold text-black px-1.5 py-0.5 rounded border border-black bg-neutral-100">{bgColor}</span>
                 </div>
               )}
 
               {bgMode === 'gradient' && (
                 <div className="grid grid-cols-2 gap-3 pt-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-slate-400">BG Awal:</span>
+                    <span className="text-xs font-mono font-bold text-neutral-700">BG Awal:</span>
                     <input
                       type="color"
                       value={bgGradStart}
                       onChange={(e) => setBgGradStart(e.target.value)}
-                      className="w-7 h-7 rounded border border-white/20 bg-transparent cursor-pointer"
+                      className="w-8 h-8 rounded border-2 border-black bg-white cursor-pointer"
                     />
-                    <span className="text-xs font-mono text-white">{bgGradStart}</span>
+                    <span className="text-xs font-mono font-bold text-black px-1.5 py-0.5 rounded border border-black bg-neutral-100">{bgGradStart}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-slate-400">BG Akhir:</span>
+                    <span className="text-xs font-mono font-bold text-neutral-700">BG Akhir:</span>
                     <input
                       type="color"
                       value={bgGradEnd}
                       onChange={(e) => setBgGradEnd(e.target.value)}
-                      className="w-7 h-7 rounded border border-white/20 bg-transparent cursor-pointer"
+                      className="w-8 h-8 rounded border-2 border-black bg-white cursor-pointer"
                     />
-                    <span className="text-xs font-mono text-white">{bgGradEnd}</span>
+                    <span className="text-xs font-mono font-bold text-black px-1.5 py-0.5 rounded border border-black bg-neutral-100">{bgGradEnd}</span>
                   </div>
                 </div>
               )}
 
               {bgMode === 'image' && (
                 <div className="space-y-3 pt-2">
-                  <label className="w-full py-2 px-3 rounded-xl border border-dashed border-white/20 hover:border-indigo-400 bg-black/30 flex items-center justify-center gap-2 text-xs font-bold text-slate-300 hover:text-white transition-all cursor-pointer">
-                    <Upload className="w-3.5 h-3.5 text-indigo-400" />
+                  <label className="w-full py-2.5 px-3 rounded-lg border-2 border-dashed border-black hover:bg-neutral-100 bg-white flex items-center justify-center gap-2 text-xs font-bold text-black transition-all cursor-pointer shadow-[2px_2px_0px_#000000]">
+                    <Upload className="w-4 h-4 text-black stroke-[2.5]" />
                     <span>{bgImage ? 'Ganti Gambar Background' : 'Unggah File Gambar Background'}</span>
                     <input type="file" accept="image/*" onChange={handleBgImageUpload} className="hidden" />
                   </label>
 
                   <div>
-                    <div className="flex justify-between text-xs font-mono text-slate-400 mb-1">
+                    <div className="flex justify-between text-xs font-mono font-bold text-black mb-1">
                       <span>Opacity Gambar:</span>
-                      <span className="text-indigo-400 font-bold">{bgImageOpacity}%</span>
+                      <span className="px-1.5 py-0.5 rounded border border-black bg-neutral-100">{bgImageOpacity}%</span>
                     </div>
                     <input 
                       type="range" 
@@ -1361,14 +1377,14 @@ export default function QrStudioScreen({ onBack, initialUrl = '' }) {
                       max="100" 
                       value={bgImageOpacity} 
                       onChange={(e) => setBgImageOpacity(Number(e.target.value))}
-                      className="w-full accent-indigo-500 cursor-pointer" 
+                      className="w-full accent-black cursor-pointer" 
                     />
                   </div>
 
                   <div>
-                    <div className="flex justify-between text-xs font-mono text-slate-400 mb-1">
+                    <div className="flex justify-between text-xs font-mono font-bold text-black mb-1">
                       <span>Blur Efek Gambar:</span>
-                      <span className="text-indigo-400 font-bold">{bgImageBlur}px</span>
+                      <span className="px-1.5 py-0.5 rounded border border-black bg-neutral-100">{bgImageBlur}px</span>
                     </div>
                     <input 
                       type="range" 
@@ -1376,7 +1392,7 @@ export default function QrStudioScreen({ onBack, initialUrl = '' }) {
                       max="20" 
                       value={bgImageBlur} 
                       onChange={(e) => setBgImageBlur(Number(e.target.value))}
-                      className="w-full accent-indigo-500 cursor-pointer" 
+                      className="w-full accent-black cursor-pointer" 
                     />
                   </div>
                 </div>
@@ -1386,9 +1402,9 @@ export default function QrStudioScreen({ onBack, initialUrl = '' }) {
           </div>
 
           {/* ─── FRAME & CALL TO ACTION (CTA) ─── */}
-          <div className="rounded-3xl p-6 bg-[#0e121d]/90 border border-white/10 shadow-xl space-y-4">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-1.5 border-b border-white/5 pb-2">
-              <Type className="w-4 h-4" />
+          <div className="rounded-xl p-5 sm:p-6 bg-white border-2 border-black shadow-[4px_4px_0px_#000000] space-y-4">
+            <h3 className="text-xs font-mono font-black uppercase tracking-wider text-black flex items-center gap-1.5 border-b-2 border-black pb-2">
+              <Type className="w-4 h-4 stroke-[2.5]" />
               <span>Bingkai & Call To Action (CTA Text)</span>
             </h3>
 
@@ -1402,10 +1418,10 @@ export default function QrStudioScreen({ onBack, initialUrl = '' }) {
                 <button
                   key={f.id}
                   onClick={() => setFrameStyle(f.id)}
-                  className={`py-2 px-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                  className={`py-2 px-2 rounded-lg text-xs font-bold border-2 border-black transition-all cursor-pointer active:translate-x-[1px] active:translate-y-[1px] ${
                     frameStyle === f.id
-                      ? 'bg-indigo-600/30 border-indigo-400 text-white font-bold'
-                      : 'bg-black/30 border-white/5 text-slate-400 hover:bg-white/5'
+                      ? 'bg-black text-white font-extrabold shadow-[2px_2px_0px_#000000]'
+                      : 'bg-neutral-100 hover:bg-neutral-200 text-black shadow-[2px_2px_0px_#000000]'
                   }`}
                 >
                   {f.label}
@@ -1420,7 +1436,7 @@ export default function QrStudioScreen({ onBack, initialUrl = '' }) {
                   value={ctaText}
                   onChange={(e) => setCtaText(e.target.value)}
                   placeholder="SCAN ME / SCAN UNTUK MENU"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-black/40 border border-white/10 text-xs text-white uppercase font-mono focus:border-indigo-500 focus:outline-none"
+                  className="w-full px-3.5 py-2.5 rounded-lg bg-white border-2 border-black text-xs text-black uppercase font-mono font-bold focus:ring-2 focus:ring-black focus:outline-none shadow-[2px_2px_0px_#000000]"
                 />
               </div>
             )}
@@ -1431,51 +1447,47 @@ export default function QrStudioScreen({ onBack, initialUrl = '' }) {
         {/* ======================================================== */}
         {/* KOLOM KANAN: LIVE CANVAS PREVIEW & EXPORT (5 COLUMNS) - STICKY MENGIKUTI SCROLL */}
         {/* ======================================================== */}
-        <div className="lg:col-span-5 flex flex-col items-center gap-6 lg:sticky lg:top-24 self-start z-30">
+        <div className="lg:col-span-5 flex flex-col items-center gap-6 lg:sticky lg:top-24 self-start z-30 w-full">
           
-          <div className="rounded-3xl p-6 sm:p-8 shadow-2xl border border-indigo-500/30 bg-[#0e121d]/95 backdrop-blur-2xl flex flex-col items-center gap-6 w-full text-center">
+          <div className="rounded-xl p-5 sm:p-7 shadow-[6px_6px_0px_#000000] border-2 border-black bg-white flex flex-col items-center gap-5 w-full text-center text-black">
             
-            <div className="w-full flex items-center justify-between pb-3 border-b border-white/5 text-xs">
-              <span className="font-bold text-indigo-400 flex items-center gap-1.5 font-mono">
-                <Sparkles className="w-4 h-4" />
+            <div className="w-full flex items-center justify-between pb-3 border-b-2 border-black text-xs">
+              <span className="font-mono font-black text-xs uppercase text-black flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 stroke-[2.5]" />
                 <span>Live Canvas Preview</span>
               </span>
-              <span className={`font-mono text-[11px] px-2.5 py-0.5 rounded-full border ${
+              <span className={`font-mono text-[11px] font-bold px-2.5 py-1 rounded border-2 border-black ${
                 scanResult.scannable
-                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 font-bold'
-                  : 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+                  ? 'bg-neutral-100 text-black shadow-[1px_1px_0px_#000000]'
+                  : 'bg-neutral-200 text-black'
               }`}>
                 {scanResult.scannable ? '100% Scannable (Verified ✅)' : 'Periksa Kontras'}
               </span>
             </div>
 
             {/* Canvas Tempat Render QR Code */}
-            <div className={`p-4 rounded-2xl shadow-2xl border border-white/10 max-w-full overflow-hidden flex items-center justify-center transition-all ${
-              bgMode === 'transparent' ? 'bg-checkerboard' : 'bg-black/60'
+            <div className={`p-4 rounded-xl shadow-[3px_3px_0px_#000000] border-2 border-black max-w-full overflow-hidden flex items-center justify-center transition-all ${
+              bgMode === 'transparent' ? 'bg-checkerboard' : 'bg-neutral-100'
             }`}>
               <canvas
                 ref={canvasRef}
-                className="max-w-full h-auto object-contain rounded-xl shadow-lg"
+                className="max-w-full h-auto object-contain rounded-lg border border-black shadow-[2px_2px_0px_#000000]"
               />
             </div>
 
             {/* Real-time Scanner Live Status (jsQR Verification) */}
-            <div className={`p-4 rounded-2xl border w-full text-left transition-all ${
-              scanResult.scannable 
-                ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-200 shadow-md shadow-emerald-500/10' 
-                : 'bg-amber-950/40 border-amber-500/40 text-amber-200 shadow-md shadow-amber-500/10'
-            }`}>
+            <div className="p-3.5 rounded-xl border-2 border-black w-full text-left transition-all shadow-[2px_2px_0px_#000000] bg-neutral-50 text-black">
               <div className="flex items-center gap-2 mb-1.5">
                 {scanResult.scannable ? (
-                  <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+                  <CheckCircle2 className="w-5 h-5 text-black shrink-0 stroke-[2.5]" />
                 ) : (
-                  <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0" />
+                  <AlertTriangle className="w-5 h-5 text-black shrink-0 stroke-[2.5]" />
                 )}
                 <div className="flex-1">
-                  <div className="text-xs font-bold font-mono tracking-wide flex items-center gap-1.5">
-                    <span>{scanResult.scannable ? 'Status Pemindaian: Terbaca Jelas ✅' : 'Status Pemindaian: Periksa Kontras ⚠️'}</span>
+                  <div className="text-xs font-mono font-black tracking-wide text-black">
+                    {scanResult.scannable ? 'Status Pemindaian: Terbaca Jelas ✅' : 'Status Pemindaian: Periksa Kontras ⚠️'}
                   </div>
-                  <div className="text-[10px] text-slate-300">
+                  <div className="text-[11px] text-neutral-600 font-medium">
                     {scanResult.scannable 
                       ? 'Kamera HP & Scanner Barcode dijamin dapat membaca QR ini secara instan.'
                       : 'Kamera mungkin kesulitan memindai. Tingkatkan kontras warna atau perkecil logo.'}
@@ -1484,42 +1496,42 @@ export default function QrStudioScreen({ onBack, initialUrl = '' }) {
               </div>
 
               {scanResult.scannable && scanResult.content && (
-                <div className="mt-2 pt-2 border-t border-emerald-500/20 flex items-center justify-between gap-2">
+                <div className="mt-2 pt-2 border-t border-black/20 flex items-center justify-between gap-2">
                   <div className="min-w-0 flex-1">
-                    <div className="text-[10px] uppercase font-mono text-emerald-400 font-semibold">Tautan Hasil Scan Kamera:</div>
-                    <div className="text-xs font-mono text-white truncate">{scanResult.content}</div>
+                    <div className="text-[10px] uppercase font-mono text-neutral-600 font-bold">Tautan Hasil Scan Kamera:</div>
+                    <div className="text-xs font-mono font-bold text-black truncate">{scanResult.content}</div>
                   </div>
                   <a
                     href={scanResult.content.startsWith('http') ? scanResult.content : `https://${scanResult.content}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 text-[11px] font-semibold flex items-center gap-1 shrink-0 transition-colors"
+                    className="px-2.5 py-1 rounded border border-black bg-black text-white hover:bg-neutral-800 text-[11px] font-bold flex items-center gap-1 shrink-0 transition-colors shadow-[1px_1px_0px_#000000]"
                   >
                     <span>Tes Link</span>
-                    <ExternalLink className="w-3 h-3" />
+                    <ExternalLink className="w-3 h-3 stroke-[2.5]" />
                   </a>
                 </div>
               )}
             </div>
 
             {/* Scannability Protection Info Card */}
-            <div className="p-3.5 rounded-2xl bg-black/40 border border-white/5 w-full text-left space-y-1.5">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-white">
-                <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+            <div className="p-3 rounded-xl bg-neutral-50 border-2 border-black w-full text-left space-y-1 shadow-[2px_2px_0px_#000000]">
+              <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-black">
+                <ShieldCheck className="w-4 h-4 text-black shrink-0 stroke-[2.5]" />
                 <span>Auto-Protect Error Correction: Level {effectiveEccLevel}</span>
               </div>
-              <p className="text-[11px] text-slate-400 leading-relaxed">
+              <p className="text-[11px] text-neutral-600 leading-relaxed font-medium">
                 Toleransi pemulihan 30% aktif otomatis sehingga QR tetap 100% terbaca kamera HP meskipun menggunakan siluet hati, bintang, atau logo tengah.
               </p>
             </div>
 
             {/* Tombol Unduh PNG High-Res */}
-            <div className="w-full space-y-2 pt-2">
+            <div className="w-full space-y-2 pt-1">
               <button
                 onClick={handleDownload}
-                className="w-full py-3.5 px-6 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30 active:scale-98 transition-all cursor-pointer"
+                className="w-full min-h-[48px] py-3.5 px-6 rounded-lg bg-black hover:bg-neutral-800 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 border-2 border-black shadow-[3px_3px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all cursor-pointer"
               >
-                <Download className="w-4 h-4" />
+                <Download className="w-4 h-4 stroke-[2.5]" />
                 <span>Unduh Kode QR (PNG High-Res)</span>
               </button>
             </div>

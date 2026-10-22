@@ -315,7 +315,7 @@ function detectUserDevice() {
             >
               <video 
                 ref={videoRef}
-                src="/videos/blackholev2.mp4"
+                src="/videos/wpanime.mp4"
                 preload="auto"
                 autoPlay 
                 loop 
@@ -336,7 +336,7 @@ function detectUserDevice() {
             <div className="flex items-center justify-between pb-3 border-b-2 border-black">
               <div className="flex flex-col">
                 <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-500 font-bold">
-                  Pengguna Aktif
+                  Nama Kreator
                 </span>
                 <span className="text-xl sm:text-2xl font-black text-black tracking-tight font-display">
                   kaze

@@ -33,6 +33,16 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 app.use('/api', downloadRoutes);
 app.use('/api', toolsRoutes);
 
+// Endpoint real-time ping untuk telemetri jaringan
+app.get('/api/ping', (req, res) => {
+  res.set({
+    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0'
+  });
+  res.json({ ok: true, timestamp: Date.now() });
+});
+
 // Endpoint verifikasi login admin
 app.post('/api/verify-admin', (req, res) => {
   const { password } = req.body || {};

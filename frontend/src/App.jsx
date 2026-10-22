@@ -13,6 +13,7 @@ import PngToPdfScreen from './components/PngToPdfScreen';
 import MediaCompressorScreen from './components/MediaCompressorScreen';
 import QrStudioScreen from './components/QrStudioScreen';
 import AudioMergerScreen from './components/AudioMergerScreen';
+import FallingLeavesBackground from './components/FallingLeavesBackground';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 
@@ -33,7 +34,10 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-white text-black font-sans selection:bg-black selection:text-white">
+    <div className="min-h-screen flex flex-col bg-white text-black font-sans selection:bg-black selection:text-white relative">
+      {/* Background Animasi Daun Gugur Terbawa Angin */}
+      <FallingLeavesBackground />
+
       {/* Top Header Navigation */}
       <Navbar
         currentScreen={currentScreen}

@@ -55,12 +55,15 @@ export default function JjFinderScreen({ onBack }) {
         body: JSON.stringify({ query: targetQuery })
       });
 
-      if (res.status === 404) {
-        res = await fetch('/api/jj/find', {
+      if (res.status === 404 || !res.ok) {
+        const fallbackRes = await fetch('/api/jj/find', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ query: targetQuery })
         });
+        if (fallbackRes.ok) {
+          res = fallbackRes;
+        }
       }
 
       const contentType = res.headers.get('content-type') || '';
@@ -69,17 +72,22 @@ export default function JjFinderScreen({ onBack }) {
       if (contentType.includes('application/json')) {
         data = await res.json();
       } else {
+        // Jika server mengembalikan teks atau html
         const rawText = await res.text();
-        throw new Error(rawText || 'Format balasan server tidak sesuai.');
+        try {
+          data = JSON.parse(rawText);
+        } catch {
+          throw new Error('Layanan sedang menyinkronkan data TikTok. Pastikan video bersifat publik dan coba klik "Cari Preset" sekali lagi.');
+        }
       }
 
-      if (res.ok && data.success && data.data) {
+      if (res.ok && data?.success && data?.data) {
         setResultData(data.data);
       } else {
-        throw new Error(data.message || 'Gagal mengekstrak preset dari tautan TikTok ini.');
+        throw new Error(data?.message || 'Gagal mengekstrak preset dari tautan TikTok ini. Pastikan video dapat diakses publik.');
       }
     } catch (err) {
-      setError(err.message || 'Terjadi gangguan saat memproses tautan TikTok.');
+      setError(err.message || 'Terjadi kendala saat menghubungkan ke server pencarian JJ.');
     } finally {
       setLoading(false);
     }
