@@ -14,12 +14,28 @@ import {
   Sparkles,
   Film,
   Scissors,
-  Images
+  Images,
+  Home,
+  History,
+  Settings
 } from 'lucide-react';
+import { translations } from '../utils/translations';
 
-export default function Navbar({ currentScreen, onSelectTool, onGoHome }) {
+export default function Navbar({ 
+  currentScreen, 
+  onSelectTool, 
+  onGoHome, 
+  onNavigate,
+  settings 
+}) {
   const [toolsDropdownOpen, setToolsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+
+  const lang = settings?.language || 'id';
+  const t = translations[lang] || translations.id;
+
+  const showGallery = settings?.showGallery !== false;
+  const showHistory = settings?.showHistory !== false;
 
   const tools = [
     { id: 'downloader', label: 'Media Downloader', icon: Download },
@@ -37,6 +53,7 @@ export default function Navbar({ currentScreen, onSelectTool, onGoHome }) {
   ];
 
   const currentToolObj = tools.find(t => t.id === currentScreen);
+  const isMainTab = currentScreen === 'welcome' || currentScreen === 'gallery' || currentScreen === 'history' || currentScreen === 'settings';
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -49,6 +66,18 @@ export default function Navbar({ currentScreen, onSelectTool, onGoHome }) {
   }, []);
 
   const handleSearchClick = () => {
+    if (currentScreen !== 'welcome' && onGoHome) {
+      onGoHome();
+      setTimeout(() => {
+        const searchEl = document.getElementById('search-tools-input');
+        if (searchEl) {
+          searchEl.focus();
+          searchEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
+      return;
+    }
+
     const searchEl = document.getElementById('search-tools-input');
     if (searchEl) {
       searchEl.focus();
@@ -56,14 +85,21 @@ export default function Navbar({ currentScreen, onSelectTool, onGoHome }) {
     }
   };
 
+  const desktopNavItems = [
+    { id: 'welcome', label: t.nav.home, icon: Home },
+    ...(showGallery ? [{ id: 'gallery', label: t.nav.gallery, icon: Images }] : []),
+    ...(showHistory ? [{ id: 'history', label: t.nav.history, icon: History }] : []),
+    { id: 'settings', label: t.nav.settings, icon: Settings }
+  ];
+
   return (
     <header className="sticky top-0 z-50 bg-white border-b-2 border-black w-full">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-3">
         
         {/* Brand Logo: KURO STUDIO */}
         <button
           onClick={onGoHome}
-          className="flex items-center gap-2 group cursor-pointer text-left transition-transform active:scale-98"
+          className="flex items-center gap-2 group cursor-pointer text-left transition-transform active:scale-98 shrink-0"
           title="Kuro Studio - Beranda"
         >
           <div className="w-8 h-8 rounded-md bg-black text-white flex items-center justify-center font-mono font-black text-sm border-2 border-black shadow-[1.5px_1.5px_0px_#000000]">
@@ -79,15 +115,41 @@ export default function Navbar({ currentScreen, onSelectTool, onGoHome }) {
           </div>
         </button>
 
-        {/* Right Section Navigation */}
-        <div className="flex items-center gap-2.5">
-          {currentScreen === 'welcome' ? (
+        {/* Desktop Navigation Links & Search Menu */}
+        <div className="flex items-center gap-2 sm:gap-2.5">
+          
+          {/* Navigation Bar Desktop (Di dekat menu cari bagian atas) */}
+          <nav aria-label="Desktop Navigation" className="hidden md:flex items-center gap-1 bg-neutral-100 p-1 rounded-lg border-2 border-black">
+            {desktopNavItems.map(item => {
+              const Icon = item.icon;
+              const isActive = currentScreen === item.id || (item.id === 'welcome' && !['gallery', 'history', 'settings'].includes(currentScreen));
+              
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => onNavigate(item.id)}
+                  className={`px-2.5 py-1 rounded-md text-xs font-bold font-sans flex items-center gap-1.5 transition-all cursor-pointer ${
+                    isActive
+                      ? 'bg-black text-white shadow-[1.5px_1.5px_0px_#000000]'
+                      : 'text-neutral-700 hover:text-black hover:bg-white/70'
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5 stroke-[2.2]" />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+
+          {/* Tombol Cari atau Tool Switcher */}
+          {isMainTab ? (
             <button
               onClick={handleSearchClick}
               className="px-3.5 py-1.5 rounded-lg border-2 border-black bg-black text-white font-bold text-xs sm:text-sm hover:bg-neutral-800 transition-all flex items-center gap-1.5 shadow-[2px_2px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none cursor-pointer"
             >
               <Search className="w-3.5 h-3.5 stroke-[2.5]" />
-              <span>Cari</span>
+              <span>{t.nav.search}</span>
             </button>
           ) : (
             <div className="flex items-center gap-2" ref={dropdownRef}>
@@ -96,7 +158,7 @@ export default function Navbar({ currentScreen, onSelectTool, onGoHome }) {
                 className="px-3 py-1.5 rounded-lg border-2 border-black bg-white text-black font-bold text-xs sm:text-sm hover:bg-black hover:text-white transition-all flex items-center gap-1.5 shadow-[2px_2px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none cursor-pointer"
               >
                 <ArrowLeft className="w-3.5 h-3.5 stroke-[2.5]" />
-                <span className="hidden xs:inline">Beranda</span>
+                <span className="hidden xs:inline">{t.nav.backToHome}</span>
               </button>
 
               {/* Tool Switcher Dropdown */}
@@ -106,7 +168,7 @@ export default function Navbar({ currentScreen, onSelectTool, onGoHome }) {
                   className="px-3 py-1.5 rounded-lg border-2 border-black bg-white text-black font-bold text-xs flex items-center gap-1.5 transition-all shadow-[2px_2px_0px_#000000] hover:bg-neutral-50 cursor-pointer"
                 >
                   <span className="max-w-[120px] truncate">
-                    {currentToolObj?.label || 'Pilih Alat'}
+                    {currentToolObj?.label || t.nav.switchTool}
                   </span>
                   <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-150 ${toolsDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
@@ -114,7 +176,7 @@ export default function Navbar({ currentScreen, onSelectTool, onGoHome }) {
                 {toolsDropdownOpen && (
                   <div className="absolute right-0 mt-2 w-56 rounded-lg p-1.5 bg-white border-2 border-black shadow-[4px_4px_0px_#000000] z-50">
                     <div className="px-2.5 py-1 text-[10px] font-mono uppercase text-black font-bold border-b border-black mb-1">
-                      Beralih ke Alat Lain
+                      {t.nav.switchTool}
                     </div>
                     <div className="max-h-64 overflow-y-auto space-y-0.5 custom-scrollbar">
                       {tools.map((t) => {
@@ -147,6 +209,7 @@ export default function Navbar({ currentScreen, onSelectTool, onGoHome }) {
               </div>
             </div>
           )}
+
         </div>
 
       </div>

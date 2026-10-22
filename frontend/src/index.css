@@ -145,3 +145,89 @@ html, body {
   background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
   background-color: #ffffff;
 }
+
+/* ─── DYNAMIC THEME ENGINE (SETTINGS B. THEME) ─── */
+
+/* 1. Dark Mode Neobrutalism Overrides */
+html.dark {
+  color-scheme: dark;
+  background-color: #0d0d0d !important;
+}
+
+html.dark body {
+  background-color: #0d0d0d !important;
+  color: #f5f5f5 !important;
+}
+
+html.dark .bg-white,
+html.dark .bg-\[\#fafafa\],
+html.dark .bg-\[\#fcfcfc\] {
+  background-color: #171717 !important;
+  color: #f5f5f5 !important;
+}
+
+html.dark .bg-neutral-50,
+html.dark .bg-neutral-100 {
+  background-color: #242424 !important;
+  color: #f5f5f5 !important;
+}
+
+html.dark .border-black {
+  border-color: #e5e5e5 !important;
+}
+
+html.dark .text-black {
+  color: #f5f5f5 !important;
+}
+
+html.dark .text-neutral-600,
+html.dark .text-neutral-500 {
+  color: #a3a3a3 !important;
+}
+
+html.dark .shadow-\[4px_4px_0px_\#000000\],
+html.dark .shadow-\[3px_3px_0px_\#000000\],
+html.dark .shadow-\[2px_2px_0px_\#000000\],
+html.dark .shadow-\[1\.5px_1\.5px_0px_\#000000\] {
+  box-shadow: 2.5px 2.5px 0px #ffffff !important;
+}
+
+/* 2. Custom Typography Switcher */
+html[data-font="Outfit"] body {
+  font-family: 'Outfit', sans-serif !important;
+}
+
+html[data-font="JetBrains Mono"] body {
+  font-family: 'JetBrains Mono', monospace !important;
+}
+
+/* 3. Text Sizing */
+html[data-text-size="small"] {
+  font-size: 14px;
+}
+
+html[data-text-size="large"] {
+  font-size: 17px;
+}
+
+/* 4. Corner Style Switcher */
+html[data-corner="sharp"] * {
+  border-radius: 0px !important;
+}
+
+html[data-corner="soft"] .rounded-xl,
+html[data-corner="soft"] .rounded-2xl {
+  border-radius: 0.5rem !important;
+}
+
+/* 5. Compact Mode */
+html[data-compact="true"] main {
+  padding-top: 1rem !important;
+  padding-bottom: 1rem !important;
+}
+
+html[data-compact="true"] .p-5,
+html[data-compact="true"] .p-6 {
+  padding: 1rem !important;
+}
+
