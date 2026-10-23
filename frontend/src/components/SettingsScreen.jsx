@@ -90,6 +90,38 @@ export default function SettingsScreen({
     }
   };
 
+  const handleBorderChange = (thickness) => {
+    onUpdateSettings({ borderThickness: thickness });
+    if (onShowToast) {
+      const label = thickness === 'thin' ? st.borderThin : thickness === 'heavy' ? st.borderHeavy : st.borderNormal;
+      onShowToast(`${t.toasts.borderChanged} ${label}`);
+    }
+  };
+
+  const handleShadowChange = (shadow) => {
+    onUpdateSettings({ shadowOffset: shadow });
+    if (onShowToast) {
+      const label = shadow === 'flat' ? st.shadowFlat : shadow === 'deep' ? st.shadowDeep : st.shadowHard;
+      onShowToast(`${t.toasts.shadowChanged} ${label}`);
+    }
+  };
+
+  const handleBgFxChange = (fx) => {
+    onUpdateSettings({ backgroundFx: fx });
+    if (onShowToast) {
+      const label = fx === 'grid' ? st.bgFxGrid : fx === 'off' ? st.bgFxOff : st.bgFxSakura;
+      onShowToast(`${t.toasts.bgFxChanged} ${label}`);
+    }
+  };
+
+  const handleAccentChange = (accent) => {
+    onUpdateSettings({ accentColor: accent });
+    if (onShowToast) {
+      const label = accent === 'yellow' ? st.accentYellow : accent === 'pink' ? st.accentPink : accent === 'mint' ? st.accentMint : st.accentMonochrome;
+      onShowToast(`${t.toasts.accentChanged} ${label}`);
+    }
+  };
+
   const handleCopyDeviceId = () => {
     navigator.clipboard?.writeText(deviceId);
     setCopiedDeviceId(true);
@@ -455,26 +487,265 @@ export default function SettingsScreen({
                   </button>
                 </div>
 
-                {/* Font Aplikasi */}
-                <div className="p-4 rounded-xl border-2 border-black bg-white shadow-[3px_3px_0px_#000000] flex flex-col gap-2">
-                  <h3 className="font-bold text-xs sm:text-sm text-black">
-                    {st.fontTitle}
-                  </h3>
-                  <div className="grid grid-cols-3 gap-2">
-                    {['Inter', 'Outfit', 'JetBrains Mono'].map(font => (
-                      <button
-                        key={font}
-                        type="button"
-                        onClick={() => handleFontChange(font)}
-                        className={`py-2 px-2 rounded-lg border-2 border-black text-xs font-bold transition-all cursor-pointer ${
-                          settings.fontFamily === font
-                            ? 'bg-black text-white shadow-[2px_2px_0px_#000000]'
-                            : 'bg-white text-black hover:bg-neutral-100'
-                        }`}
-                      >
-                        {font}
-                      </button>
-                    ))}
+                {/* 1. OPSI FONT APLIKASI (5 PILIHAN FONT) */}
+                <div className="p-4 rounded-xl border-2 border-black bg-white shadow-[3px_3px_0px_#000000] flex flex-col gap-2.5">
+                  <div>
+                    <h3 className="font-bold text-xs sm:text-sm text-black">
+                      {st.fontTitle}
+                    </h3>
+                    <p className="text-[11px] text-neutral-600 mt-0.5">
+                      {st.fontDesc}
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {[
+                      { name: 'Inter', desc: 'Default Sans', style: { fontFamily: "'Inter', sans-serif" } },
+                      { name: 'Outfit', desc: 'Display Sans', style: { fontFamily: "'Outfit', sans-serif" } },
+                      { name: 'JetBrains Mono', desc: 'Code Mono', style: { fontFamily: "'JetBrains Mono', monospace" } },
+                      { name: 'Plus Jakarta Sans', desc: 'Clean Sans', style: { fontFamily: "'Plus Jakarta Sans', sans-serif" } },
+                      { name: 'Space Grotesk', desc: 'Brutalist Display', style: { fontFamily: "'Space Grotesk', sans-serif" } }
+                    ].map(font => {
+                      const isSelected = settings.fontFamily === font.name;
+                      return (
+                        <button
+                          key={font.name}
+                          type="button"
+                          onClick={() => handleFontChange(font.name)}
+                          className={`py-2 px-2.5 rounded-lg border-2 border-black text-left flex flex-col justify-center transition-all cursor-pointer min-h-[44px] ${
+                            isSelected
+                              ? 'bg-black text-white shadow-[2px_2px_0px_#000000] active-accent-target'
+                              : 'bg-white text-black hover:bg-neutral-100'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between w-full">
+                            <span className="font-bold text-xs truncate" style={font.style}>
+                              {font.name}
+                            </span>
+                            {isSelected && <Check className="w-3 h-3 stroke-[3] shrink-0 ml-1" />}
+                          </div>
+                          <span className={`text-[10px] ${isSelected ? 'text-neutral-300' : 'text-neutral-500'}`}>
+                            {font.desc}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* 2. NEOBRUTALIST BORDER & SHADOW */}
+                <div className="p-4 rounded-xl border-2 border-black bg-white shadow-[3px_3px_0px_#000000] flex flex-col gap-3.5">
+                  
+                  {/* Border Thickness */}
+                  <div className="flex flex-col gap-2">
+                    <div>
+                      <h3 className="font-bold text-xs sm:text-sm text-black">
+                        {st.borderThicknessTitle}
+                      </h3>
+                      <p className="text-[11px] text-neutral-600 mt-0.5">
+                        {st.borderThicknessDesc}
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { id: 'thin', label: st.borderThin },
+                        { id: 'normal', label: st.borderNormal },
+                        { id: 'heavy', label: st.borderHeavy }
+                      ].map(item => {
+                        const isSelected = (settings.borderThickness || 'normal') === item.id;
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => handleBorderChange(item.id)}
+                            className={`py-2 px-2 rounded-lg border-2 border-black text-xs font-bold transition-all cursor-pointer min-h-[44px] flex items-center justify-center gap-1 ${
+                              isSelected
+                                ? 'bg-black text-white shadow-[2px_2px_0px_#000000] active-accent-target'
+                                : 'bg-white text-black hover:bg-neutral-100'
+                            }`}
+                          >
+                            <span>{item.label}</span>
+                            {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Hard Shadow Offset */}
+                  <div className="flex flex-col gap-2 pt-2 border-t border-neutral-200">
+                    <div>
+                      <h3 className="font-bold text-xs sm:text-sm text-black">
+                        {st.shadowOffsetTitle}
+                      </h3>
+                      <p className="text-[11px] text-neutral-600 mt-0.5">
+                        {st.shadowOffsetDesc}
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { id: 'flat', label: st.shadowFlat },
+                        { id: 'hard', label: st.shadowHard },
+                        { id: 'deep', label: st.shadowDeep }
+                      ].map(item => {
+                        const isSelected = (settings.shadowOffset || 'hard') === item.id;
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => handleShadowChange(item.id)}
+                            className={`py-2 px-2 rounded-lg border-2 border-black text-xs font-bold transition-all cursor-pointer min-h-[44px] flex items-center justify-center gap-1 ${
+                              isSelected
+                                ? 'bg-black text-white shadow-[2px_2px_0px_#000000] active-accent-target'
+                                : 'bg-white text-black hover:bg-neutral-100'
+                            }`}
+                          >
+                            <span>{item.label}</span>
+                            {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* 3. ACCENT HIGHLIGHT COLOR */}
+                <div className="p-4 rounded-xl border-2 border-black bg-white shadow-[3px_3px_0px_#000000] flex flex-col gap-2.5">
+                  <div>
+                    <h3 className="font-bold text-xs sm:text-sm text-black">
+                      {st.accentColorTitle}
+                    </h3>
+                    <p className="text-[11px] text-neutral-600 mt-0.5">
+                      {st.accentColorDesc}
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {[
+                      { 
+                        id: 'monochrome', 
+                        name: st.accentMonochrome, 
+                        swatchBg: '#000000', 
+                        dotColor: '#ffffff'
+                      },
+                      { 
+                        id: 'yellow', 
+                        name: st.accentYellow, 
+                        swatchBg: '#FFE600', 
+                        dotColor: '#000000'
+                      },
+                      { 
+                        id: 'pink', 
+                        name: st.accentPink, 
+                        swatchBg: '#FF76CE', 
+                        dotColor: '#000000'
+                      },
+                      { 
+                        id: 'mint', 
+                        name: st.accentMint, 
+                        swatchBg: '#00F5D4', 
+                        dotColor: '#000000'
+                      }
+                    ].map(accent => {
+                      const isSelected = (settings.accentColor || 'monochrome') === accent.id;
+                      return (
+                        <button
+                          key={accent.id}
+                          type="button"
+                          onClick={() => handleAccentChange(accent.id)}
+                          className={`p-2.5 rounded-lg border-2 border-black text-left flex items-center justify-between gap-2.5 transition-all cursor-pointer min-h-[44px] ${
+                            isSelected
+                              ? 'bg-neutral-100 shadow-[2px_2px_0px_#000000] ring-2 ring-black'
+                              : 'bg-white hover:bg-neutral-50'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            {/* Kotak Swatch Warna dengan Border Tebal */}
+                            <div 
+                              className="w-5 h-5 rounded border-2 border-black shrink-0 flex items-center justify-center shadow-[1px_1px_0px_#000000]"
+                              style={{ backgroundColor: accent.swatchBg }}
+                            >
+                              {isSelected && (
+                                <div 
+                                  className="w-2 h-2 rounded-full" 
+                                  style={{ backgroundColor: accent.dotColor }}
+                                />
+                              )}
+                            </div>
+                            <span className="font-bold text-xs text-black truncate">
+                              {accent.name}
+                            </span>
+                          </div>
+
+                          {isSelected && (
+                            <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border border-black bg-black text-white shrink-0">
+                              ACTIVE
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* 4. BACKGROUND VISUAL FX & POWER SAVING MODE */}
+                <div className="p-4 rounded-xl border-2 border-black bg-white shadow-[3px_3px_0px_#000000] flex flex-col gap-3.5">
+                  <div className="flex flex-col gap-2">
+                    <div>
+                      <h3 className="font-bold text-xs sm:text-sm text-black">
+                        {st.backgroundFxTitle}
+                      </h3>
+                      <p className="text-[11px] text-neutral-600 mt-0.5">
+                        {st.backgroundFxDesc}
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { id: 'sakura', label: st.bgFxSakura, icon: '🌸' },
+                        { id: 'grid', label: st.bgFxGrid, icon: '⚡' },
+                        { id: 'off', label: st.bgFxOff, icon: '🚫' }
+                      ].map(item => {
+                        const isSelected = (settings.backgroundFx || 'sakura') === item.id;
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => handleBgFxChange(item.id)}
+                            className={`py-2 px-1.5 rounded-lg border-2 border-black text-xs font-bold transition-all cursor-pointer min-h-[44px] flex flex-col sm:flex-row items-center justify-center gap-1 text-center ${
+                              isSelected
+                                ? 'bg-black text-white shadow-[2px_2px_0px_#000000] active-accent-target'
+                                : 'bg-white text-black hover:bg-neutral-100'
+                            }`}
+                          >
+                            <span>{item.icon}</span>
+                            <span className="truncate">{item.label.split(' ')[0]}</span>
+                            {isSelected && <Check className="w-3 h-3 stroke-[3] hidden sm:inline" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Toggle Matikan Animasi (Power Saving Mode) */}
+                  <div className="pt-2 border-t border-neutral-200 flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <h3 className="font-bold text-xs sm:text-sm text-black">
+                        {st.powerSavingTitle}
+                      </h3>
+                      <p className="text-[11px] text-neutral-600 mt-0.5">
+                        {st.powerSavingDesc}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleToggle('hideAnimations', t.toasts.animationsOff, t.toasts.animationsOn)}
+                      className={`w-12 h-6 rounded-full border-2 border-black p-0.5 transition-colors cursor-pointer shrink-0 ${
+                        settings.hideAnimations ? 'bg-black' : 'bg-neutral-200'
+                      }`}
+                    >
+                      <div className={`w-4 h-4 rounded-full bg-white border border-black transition-transform ${
+                        settings.hideAnimations ? 'translate-x-6' : 'translate-x-0'
+                      }`} />
+                    </button>
                   </div>
                 </div>
 
@@ -493,9 +764,9 @@ export default function SettingsScreen({
                         key={item.id}
                         type="button"
                         onClick={() => handleTextSizeChange(item.id)}
-                        className={`py-2 px-2 rounded-lg border-2 border-black text-xs font-bold transition-all cursor-pointer ${
+                        className={`py-2 px-2 rounded-lg border-2 border-black text-xs font-bold transition-all cursor-pointer min-h-[44px] ${
                           settings.textSize === item.id
-                            ? 'bg-black text-white shadow-[2px_2px_0px_#000000]'
+                            ? 'bg-black text-white shadow-[2px_2px_0px_#000000] active-accent-target'
                             : 'bg-white text-black hover:bg-neutral-100'
                         }`}
                       >
@@ -520,9 +791,9 @@ export default function SettingsScreen({
                         key={item.id}
                         type="button"
                         onClick={() => handleSpeedChange(item.id)}
-                        className={`py-2 px-2 rounded-lg border-2 border-black text-xs font-bold transition-all cursor-pointer ${
+                        className={`py-2 px-2 rounded-lg border-2 border-black text-xs font-bold transition-all cursor-pointer min-h-[44px] ${
                           settings.animationSpeed === item.id
-                            ? 'bg-black text-white shadow-[2px_2px_0px_#000000]'
+                            ? 'bg-black text-white shadow-[2px_2px_0px_#000000] active-accent-target'
                             : 'bg-white text-black hover:bg-neutral-100'
                         }`}
                       >
@@ -547,9 +818,9 @@ export default function SettingsScreen({
                         key={item.id}
                         type="button"
                         onClick={() => handleCornerChange(item.id)}
-                        className={`py-2 px-2 rounded-lg border-2 border-black text-xs font-bold transition-all cursor-pointer ${
+                        className={`py-2 px-2 rounded-lg border-2 border-black text-xs font-bold transition-all cursor-pointer min-h-[44px] ${
                           settings.cornerStyle === item.id
-                            ? 'bg-black text-white shadow-[2px_2px_0px_#000000]'
+                            ? 'bg-black text-white shadow-[2px_2px_0px_#000000] active-accent-target'
                             : 'bg-white text-black hover:bg-neutral-100'
                         }`}
                       >
@@ -557,29 +828,6 @@ export default function SettingsScreen({
                       </button>
                     ))}
                   </div>
-                </div>
-
-                {/* Matikan Animasi Latar (Hemat Baterai) */}
-                <div className="p-4 rounded-xl border-2 border-black bg-white shadow-[3px_3px_0px_#000000] flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <h3 className="font-bold text-xs sm:text-sm text-black">
-                      {st.hideAnimationsTitle}
-                    </h3>
-                    <p className="text-[11px] text-neutral-600 mt-0.5">
-                      {st.hideAnimationsDesc}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleToggle('hideAnimations', t.toasts.animationsOff, t.toasts.animationsOn)}
-                    className={`w-12 h-6 rounded-full border-2 border-black p-0.5 transition-colors cursor-pointer shrink-0 ${
-                      settings.hideAnimations ? 'bg-black' : 'bg-neutral-200'
-                    }`}
-                  >
-                    <div className={`w-4 h-4 rounded-full bg-white border border-black transition-transform ${
-                      settings.hideAnimations ? 'translate-x-6' : 'translate-x-0'
-                    }`} />
-                  </button>
                 </div>
 
               </div>

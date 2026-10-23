@@ -55,7 +55,7 @@ export const DEFAULT_SETTINGS = {
   appSecurity: false,
 
   // B. Theme & Tampilan
-  fontFamily: 'Inter', // 'Inter' | 'Outfit' | 'JetBrains Mono'
+  fontFamily: 'Inter', // 'Inter' | 'Outfit' | 'JetBrains Mono' | 'Plus Jakarta Sans' | 'Space Grotesk'
   textSize: 'normal', // 'small' | 'normal' | 'large'
   animationSpeed: 'normal', // 'fast' | 'normal' | 'relaxed'
   cornerStyle: 'rounded', // 'rounded' | 'sharp' | 'soft'
@@ -63,7 +63,13 @@ export const DEFAULT_SETTINGS = {
   compactMode: false,
   showGallery: true,
   showHistory: true,
-  hideAnimations: false
+  hideAnimations: false,
+
+  // Kustomisasi Neobrutalist Baru
+  borderThickness: 'normal', // 'thin' (1px) | 'normal' (2px) | 'heavy' (4px)
+  shadowOffset: 'hard', // 'flat' (none) | 'hard' (4px 4px) | 'deep' (8px 8px)
+  backgroundFx: 'sakura', // 'sakura' | 'grid' | 'off'
+  accentColor: 'monochrome' // 'monochrome' | 'yellow' | 'pink' | 'mint'
 };
 
 // Inisialisasi awal galeri dan riwayat: Kosong secara default agar perangkat baru bersih.

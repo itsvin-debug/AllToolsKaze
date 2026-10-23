@@ -1,5 +1,5 @@
 /* Kuro Studio - Clean Neobrutalism Design System */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
 :root {
   color-scheme: light;
@@ -201,6 +201,14 @@ html[data-font="JetBrains Mono"] body {
   font-family: 'JetBrains Mono', monospace !important;
 }
 
+html[data-font="Plus Jakarta Sans"] body {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif !important;
+}
+
+html[data-font="Space Grotesk"] body {
+  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif !important;
+}
+
 /* 3. Text Sizing */
 html[data-text-size="small"] {
   font-size: 14px;
@@ -230,4 +238,107 @@ html[data-compact="true"] .p-5,
 html[data-compact="true"] .p-6 {
   padding: 1rem !important;
 }
+
+/* 6. Neobrutalist Border Thickness Switcher */
+html[data-border="thin"] .border-2,
+html[data-border="thin"] .border-\[2px\],
+html[data-border="thin"] .nb-card,
+html[data-border="thin"] .nb-button,
+html[data-border="thin"] .nb-button-white,
+html[data-border="thin"] .studio-card,
+html[data-border="thin"] .border-black {
+  border-width: 1px !important;
+}
+
+html[data-border="heavy"] .border-2,
+html[data-border="heavy"] .border-\[2px\],
+html[data-border="heavy"] .nb-card,
+html[data-border="heavy"] .nb-button,
+html[data-border="heavy"] .nb-button-white,
+html[data-border="heavy"] .studio-card,
+html[data-border="heavy"] .border-black {
+  border-width: 4px !important;
+}
+
+/* 7. Neobrutalist Hard Shadow Offset Switcher */
+html[data-shadow="flat"] .shadow-\[5px_5px_0px_\#000000\],
+html[data-shadow="flat"] .shadow-\[4px_4px_0px_\#000000\],
+html[data-shadow="flat"] .shadow-\[3px_3px_0px_\#000000\],
+html[data-shadow="flat"] .shadow-\[2px_2px_0px_\#000000\],
+html[data-shadow="flat"] .shadow-\[1\.5px_1\.5px_0px_\#000000\],
+html[data-shadow="flat"] .shadow-\[1px_1px_0px_\#000000\],
+html[data-shadow="flat"] .shadow-brutal,
+html[data-shadow="flat"] .shadow-brutal-lg,
+html[data-shadow="flat"] .shadow-brutal-sm,
+html[data-shadow="flat"] .nb-card,
+html[data-shadow="flat"] .nb-button,
+html[data-shadow="flat"] .studio-card {
+  box-shadow: none !important;
+}
+
+html[data-shadow="deep"] .shadow-\[5px_5px_0px_\#000000\],
+html[data-shadow="deep"] .shadow-\[4px_4px_0px_\#000000\],
+html[data-shadow="deep"] .shadow-\[3px_3px_0px_\#000000\],
+html[data-shadow="deep"] .shadow-\[2px_2px_0px_\#000000\],
+html[data-shadow="deep"] .shadow-brutal,
+html[data-shadow="deep"] .shadow-brutal-lg,
+html[data-shadow="deep"] .nb-card,
+html[data-shadow="deep"] .studio-card {
+  box-shadow: 8px 8px 0px #000000 !important;
+}
+
+html.dark[data-shadow="deep"] .shadow-\[5px_5px_0px_\#000000\],
+html.dark[data-shadow="deep"] .shadow-\[4px_4px_0px_\#000000\],
+html.dark[data-shadow="deep"] .shadow-\[3px_3px_0px_\#000000\],
+html.dark[data-shadow="deep"] .shadow-\[2px_2px_0px_\#000000\],
+html.dark[data-shadow="deep"] .shadow-brutal,
+html.dark[data-shadow="deep"] .shadow-brutal-lg,
+html.dark[data-shadow="deep"] .nb-card,
+html.dark[data-shadow="deep"] .studio-card {
+  box-shadow: 8px 8px 0px #ffffff !important;
+}
+
+/* 8. Accent Highlight Colors */
+:root {
+  --nb-accent: #000000;
+  --nb-accent-text: #ffffff;
+}
+
+html[data-accent="yellow"] {
+  --nb-accent: #FFE600;
+  --nb-accent-text: #000000;
+}
+
+html[data-accent="pink"] {
+  --nb-accent: #FF76CE;
+  --nb-accent-text: #000000;
+}
+
+html[data-accent="mint"] {
+  --nb-accent: #00F5D4;
+  --nb-accent-text: #000000;
+}
+
+/* Accent Highlights for Active Badges, Pills, and Active Highlight Targets */
+html[data-accent="yellow"] .nb-accent-active,
+html[data-accent="yellow"] .nb-pill.active,
+html[data-accent="yellow"] .btn-active-highlight {
+  background-color: #FFE600 !important;
+  color: #000000 !important;
+}
+
+html[data-accent="pink"] .nb-accent-active,
+html[data-accent="pink"] .nb-pill.active,
+html[data-accent="pink"] .btn-active-highlight {
+  background-color: #FF76CE !important;
+  color: #000000 !important;
+}
+
+html[data-accent="mint"] .nb-accent-active,
+html[data-accent="mint"] .nb-pill.active,
+html[data-accent="mint"] .btn-active-highlight {
+  background-color: #00F5D4 !important;
+  color: #000000 !important;
+}
+
 

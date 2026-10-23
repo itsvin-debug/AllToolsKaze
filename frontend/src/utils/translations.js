@@ -220,6 +220,36 @@ export const translations = {
       cornerRounded: 'Modern (Bulat)',
       cornerSharp: 'Brutalist (Lancip)',
       cornerSoft: 'Soft (Halus)',
+
+      // Border & Bayangan Neobrutalisme
+      borderThicknessTitle: 'Ketebalan Garis Border (Border Thickness)',
+      borderThicknessDesc: 'Atur ketebalan garis tepi neobrutalism pada kartu dan tombol.',
+      borderThin: 'Thin (1px)',
+      borderNormal: 'Normal (2px - Default)',
+      borderHeavy: 'Heavy (4px)',
+      shadowOffsetTitle: 'Offset Bayangan Keras (Hard Shadow Offset)',
+      shadowOffsetDesc: 'Pilih kedalaman bayangan tajam tanpa blur khas gaya Neobrutalisme.',
+      shadowFlat: 'Flat (No Shadow)',
+      shadowHard: 'Hard Offset (4px 4px)',
+      shadowDeep: 'Deep Offset (8px 8px)',
+
+      // Efek Visual Latar Belakang
+      backgroundFxTitle: 'Efek Visual Latar (Background Particles / FX)',
+      backgroundFxDesc: 'Pilih animasi partikel atau suasana latar belakang yang tampil di balik layar.',
+      bgFxSakura: 'Sakura Falling (Default)',
+      bgFxGrid: 'Cyber Grid',
+      bgFxOff: 'Off / Minimal',
+      powerSavingTitle: 'Matikan Semua Animasi (Mode Hemat Daya)',
+      powerSavingDesc: 'Nonaktifkan seluruh animasi dan efek latar untuk performa maksimal dan hemat baterai.',
+
+      // Warna Aksen
+      accentColorTitle: 'Warna Aksen Sorotan (Accent Highlight Color)',
+      accentColorDesc: 'Beri warna aksen kontras tinggi pada tombol dan lencana yang sedang aktif.',
+      accentMonochrome: 'Monokrom (Hitam/Putih - Default)',
+      accentYellow: 'Cyber Yellow (#FFE600)',
+      accentPink: 'Neobrutalist Pink (#FF76CE)',
+      accentMint: 'Neon Mint (#00F5D4)',
+
       hideAnimationsTitle: 'Matikan Animasi Latar (Hemat Baterai)',
       hideAnimationsDesc: 'Sembunyikan animasi sakura gugur & partikel agar performa super ringan.',
 
@@ -284,6 +314,10 @@ export const translations = {
       fontChanged: 'Font aplikasi diubah ke',
       textSizeChanged: 'Ukuran teks diatur ke',
       cornerChanged: 'Gaya sudut diubah ke',
+      borderChanged: 'Ketebalan border diatur ke',
+      shadowChanged: 'Offset bayangan diatur ke',
+      bgFxChanged: 'Efek latar diatur ke',
+      accentChanged: 'Warna aksen sorotan diatur ke',
       langSwitched: 'Bahasa berhasil diubah ke Bahasa Indonesia',
       inputAutoToggled: 'Pengaturan otomasi input diperbarui',
       securityToggled: 'Pengaturan keamanan sesi diperbarui'
@@ -674,6 +708,36 @@ export const translations = {
       cornerRounded: 'Modern (Rounded)',
       cornerSharp: 'Brutalist (Sharp)',
       cornerSoft: 'Soft (Subtle)',
+
+      // Neobrutalist Border & Shadow
+      borderThicknessTitle: 'Border Thickness',
+      borderThicknessDesc: 'Adjust outline border thickness for cards and buttons.',
+      borderThin: 'Thin (1px)',
+      borderNormal: 'Normal (2px - Default)',
+      borderHeavy: 'Heavy (4px)',
+      shadowOffsetTitle: 'Hard Shadow Offset',
+      shadowOffsetDesc: 'Select the depth of unblurred hard drop shadows.',
+      shadowFlat: 'Flat (No Shadow)',
+      shadowHard: 'Hard Offset (4px 4px)',
+      shadowDeep: 'Deep Offset (8px 8px)',
+
+      // Background Visual FX
+      backgroundFxTitle: 'Background Particles / FX',
+      backgroundFxDesc: 'Choose ambient background particle animation behind the UI.',
+      bgFxSakura: 'Sakura Falling (Default)',
+      bgFxGrid: 'Cyber Grid',
+      bgFxOff: 'Off / Minimal',
+      powerSavingTitle: 'Disable Animations (Power Saving Mode)',
+      powerSavingDesc: 'Turn off all background animations and particles for peak performance and battery savings.',
+
+      // Accent Color
+      accentColorTitle: 'Accent Highlight Color',
+      accentColorDesc: 'Set high-contrast highlight accent for active buttons and badges.',
+      accentMonochrome: 'Monochrome (Black/White - Default)',
+      accentYellow: 'Cyber Yellow (#FFE600)',
+      accentPink: 'Neobrutalist Pink (#FF76CE)',
+      accentMint: 'Neon Mint (#00F5D4)',
+
       hideAnimationsTitle: 'Hide Background Animations (Eco Mode)',
       hideAnimationsDesc: 'Hide falling sakura leaves and particle effects for maximum battery performance.',
 
@@ -738,6 +802,10 @@ export const translations = {
       fontChanged: 'Application font changed to',
       textSizeChanged: 'Text size set to',
       cornerChanged: 'Corner style changed to',
+      borderChanged: 'Border thickness set to',
+      shadowChanged: 'Shadow offset set to',
+      bgFxChanged: 'Background FX set to',
+      accentChanged: 'Accent highlight color set to',
       langSwitched: 'Language switched to English',
       inputAutoToggled: 'Input automation setting updated',
       securityToggled: 'Session security setting updated'

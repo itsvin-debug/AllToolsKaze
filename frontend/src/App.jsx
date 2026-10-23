@@ -17,6 +17,7 @@ import GalleryScreen from './components/GalleryScreen';
 import HistoryScreen from './components/HistoryScreen';
 import SettingsScreen from './components/SettingsScreen';
 import FallingLeavesBackground from './components/FallingLeavesBackground';
+import CyberGridBackground from './components/CyberGridBackground';
 import Navbar from './components/Navbar';
 import MobileBottomNav from './components/MobileBottomNav';
 import Toast from './components/Toast';
@@ -63,11 +64,14 @@ export default function App() {
       localStorage.setItem('kuro_theme', 'light');
     }
 
-    // Atribut kustom untuk Font, Text Size, Corner Style, dan Compact Mode
+    // Atribut kustom untuk Font, Text Size, Corner Style, Compact Mode, Border, Shadow, dan Accent
     root.setAttribute('data-font', settings.fontFamily || 'Inter');
     root.setAttribute('data-text-size', settings.textSize || 'normal');
     root.setAttribute('data-corner', settings.cornerStyle || 'rounded');
     root.setAttribute('data-compact', settings.compactMode ? 'true' : 'false');
+    root.setAttribute('data-border', settings.borderThickness || 'normal');
+    root.setAttribute('data-shadow', settings.shadowOffset || 'hard');
+    root.setAttribute('data-accent', settings.accentColor || 'monochrome');
   }, [settings]);
 
   // Fungsi pembaruan pengaturan
@@ -111,8 +115,14 @@ export default function App() {
         onClose={() => setToastMessage(null)} 
       />
 
-      {/* Background Animasi Sakura Gugur (Hanya aktif jika opsi 'Matikan Animasi' dinonaktifkan) */}
-      {!settings.hideAnimations && <FallingLeavesBackground />}
+      {/* Background Visual FX: Sakura Falling, Cyber Grid, atau Off (juga dihormati oleh opsi hideAnimations) */}
+      {!settings.hideAnimations && settings.backgroundFx !== 'off' && (
+        (settings.backgroundFx === 'grid') ? (
+          <CyberGridBackground />
+        ) : (
+          <FallingLeavesBackground />
+        )
+      )}
 
       {/* Konten Halaman (Lapisan Depan z-10 agar menutup animasi latar) */}
       <div className="relative z-10 flex flex-col flex-1 pb-20 md:pb-6">
