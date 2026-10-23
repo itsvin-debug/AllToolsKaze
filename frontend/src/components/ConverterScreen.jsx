@@ -24,9 +24,13 @@ import {
   ExternalLink
 } from 'lucide-react';
 import ResultsSection from './ResultsSection';
+import { translations } from '../utils/translations';
 
 export default function ConverterScreen({ activePlatform: initialPlatform = 'tiktok', onSelectPlatform, onBack, lang = 'id' }) {
   const isEn = lang === 'en';
+  const t = translations[lang] || translations.id;
+  const dl = t.downloader;
+
   const [activePlatform, setActivePlatform] = useState(initialPlatform);
   const [urlInput, setUrlInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -40,41 +44,41 @@ export default function ConverterScreen({ activePlatform: initialPlatform = 'tik
     setActivePlatform(initialPlatform);
   }, [initialPlatform]);
 
-  // 16 Platform Medsos & Streaming yang Didukung
+  // 16 Platform Medsos & Streaming yang Didukung (Dwibahasa dinamis via translations)
   const platforms = [
     {
       id: 'tiktok',
       name: 'TikTok',
-      badge: 'Video & Slide',
-      placeholder: 'Tempel link video atau slide TikTok (vt.tiktok.com atau tiktok.com/@user/...)',
-      hint: 'Mendukung video HD tanpa watermark dan kumpulan slide gambar TikTok.',
+      badge: dl.platforms.tiktok.badge,
+      placeholder: dl.platforms.tiktok.placeholder,
+      hint: dl.platforms.tiktok.hint,
       icon: Music2,
       domains: ['tiktok.com']
     },
     {
       id: 'instagram',
       name: 'Instagram',
-      badge: 'Reels & Post',
-      placeholder: 'Tempel link Reels, Carousel, atau Foto IG (instagram.com/reel/... atau /p/...)',
-      hint: 'Mendukung video Reels, postingan carousel multi-foto, dan foto resolusi tinggi.',
+      badge: dl.platforms.instagram.badge,
+      placeholder: dl.platforms.instagram.placeholder,
+      hint: dl.platforms.instagram.hint,
       icon: Camera,
       domains: ['instagram.com', 'instagr.am', 'ig.me']
     },
     {
       id: 'youtube',
       name: 'YouTube',
-      badge: 'Shorts & MP3',
-      placeholder: 'Tempel link video atau Shorts (youtube.com/watch?v=... atau youtu.be/...)',
-      hint: 'Mendukung video reguler, YouTube Shorts, serta konversi audio MP3.',
+      badge: dl.platforms.youtube.badge,
+      placeholder: dl.platforms.youtube.placeholder,
+      hint: dl.platforms.youtube.hint,
       icon: Play,
       domains: ['youtube.com', 'youtu.be']
     },
     {
       id: 'twitter',
       name: 'X (Twitter)',
-      badge: 'Tweet Video',
-      placeholder: 'Tempel link postingan tweet video (x.com/.../status/... atau twitter.com/...)',
-      hint: 'Mendukung unduhan file MP4 kualitas master dari postingan video di platform X.',
+      badge: dl.platforms.twitter.badge,
+      placeholder: dl.platforms.twitter.placeholder,
+      hint: dl.platforms.twitter.hint,
       icon: () => (
         <svg viewBox="0 0 24 24" aria-hidden="true" className="w-4 h-4 fill-current inline">
           <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path>
@@ -85,157 +89,155 @@ export default function ConverterScreen({ activePlatform: initialPlatform = 'tik
     {
       id: 'spotify',
       name: 'Spotify',
-      badge: 'Audio Trek',
-      placeholder: 'Tempel link lagu atau album Spotify (open.spotify.com/track/...)',
-      hint: 'Ekstrak metadata lagu, cover album resolusi penuh, dan trek audio.',
+      badge: dl.platforms.spotify.badge,
+      placeholder: dl.platforms.spotify.placeholder,
+      hint: dl.platforms.spotify.hint,
       icon: Music,
       domains: ['spotify.com', 'spotify.link', 'spoti.fi']
     },
     {
       id: 'bilibili',
       name: 'Bilibili',
-      badge: 'Anime & HD',
-      placeholder: 'Tempel link video Bilibili (bilibili.com/video/... atau b23.tv/...)',
-      hint: 'Unduh klip anime dan konten video streaming Bilibili tanpa penurunan resolusi.',
+      badge: dl.platforms.bilibili.badge,
+      placeholder: dl.platforms.bilibili.placeholder,
+      hint: dl.platforms.bilibili.hint,
       icon: Tv,
       domains: ['bilibili.com', 'bilibili.tv', 'b23.tv']
     },
     {
       id: 'douyin',
       name: 'Douyin',
-      badge: 'Video China',
-      placeholder: 'Tempel link video Douyin (douyin.com/video/... atau iesdouyin.com/...)',
-      hint: 'Unduh video original Douyin tanpa watermark langsung dalam format MP4.',
+      badge: dl.platforms.douyin.badge,
+      placeholder: dl.platforms.douyin.placeholder,
+      hint: dl.platforms.douyin.hint,
       icon: Music2,
       domains: ['douyin.com', 'iesdouyin.com', 'v.douyin.com']
     },
     {
       id: 'rednote',
       name: 'Rednote',
-      badge: 'Xiaohongshu',
-      placeholder: 'Tempel link postingan Rednote / Xiaohongshu (xhslink.com/... atau xiaohongshu.com/...)',
-      hint: 'Unduh album foto lifestyle dan video pendek resolusi tinggi dari Xiaohongshu.',
+      badge: dl.platforms.rednote.badge,
+      placeholder: dl.platforms.rednote.placeholder,
+      hint: dl.platforms.rednote.hint,
       icon: Disc,
       domains: ['xiaohongshu.com', 'xhslink.com']
     },
     {
       id: 'threads',
       name: 'Threads',
-      badge: 'Post Media',
-      placeholder: 'Tempel link postingan Threads (threads.net/@user/post/...)',
-      hint: 'Ekstrak video dan gambar dari postingan teks multimedia Threads.',
+      badge: dl.platforms.threads.badge,
+      placeholder: dl.platforms.threads.placeholder,
+      hint: dl.platforms.threads.hint,
       icon: Share2,
       domains: ['threads.net']
     },
     {
       id: 'pinterest',
       name: 'Pinterest',
-      badge: 'Pins & Foto',
-      placeholder: 'Tempel link pin Pinterest (pinterest.com/pin/... atau pin.it/...)',
-      hint: 'Unduh gambar resolusi asli penuh dan video pin dari Pinterest.',
+      badge: dl.platforms.pinterest.badge,
+      placeholder: dl.platforms.pinterest.placeholder,
+      hint: dl.platforms.pinterest.hint,
       icon: ImageIcon,
       domains: ['pinterest.com', 'pin.it']
     },
     {
       id: 'appleMusic',
       name: 'Apple Music',
-      badge: 'Artwork & Audio',
-      placeholder: 'Tempel link lagu Apple Music (music.apple.com/.../album/...)',
-      hint: 'Ekstrak artwork cover beresolusi tinggi dan metadata resmi Apple Music.',
+      badge: dl.platforms.appleMusic.badge,
+      placeholder: dl.platforms.appleMusic.placeholder,
+      hint: dl.platforms.appleMusic.hint,
       icon: Music,
-      domains: ['music.apple.com', 'itunes.apple.com', 'apple.co']
+      domains: ['music.apple.com']
     },
     {
       id: 'facebook',
       name: 'Facebook',
-      badge: 'Reels & Video',
-      placeholder: 'Tempel link video atau Reels Facebook (facebook.com/watch/... atau fb.watch/...)',
-      hint: 'Unduh video publik dan klip video Facebook dalam format MP4 HD.',
+      badge: dl.platforms.facebook.badge,
+      placeholder: dl.platforms.facebook.placeholder,
+      hint: dl.platforms.facebook.hint,
       icon: Play,
-      domains: ['facebook.com', 'fb.watch', 'fb.com']
+      domains: ['facebook.com', 'fb.watch']
     },
     {
       id: 'bandcamp',
       name: 'Bandcamp',
-      badge: 'Musik Lossless',
-      placeholder: 'Tempel link album atau trek Bandcamp (artist.bandcamp.com/track/...)',
-      hint: 'Unduh streaming preview audio dan cover artwork artis independen.',
-      icon: Radio,
+      badge: dl.platforms.bandcamp.badge,
+      placeholder: dl.platforms.bandcamp.placeholder,
+      hint: dl.platforms.bandcamp.hint,
+      icon: Disc,
       domains: ['bandcamp.com']
     },
     {
       id: 'pixiv',
       name: 'Pixiv',
-      badge: 'Artwork Ilustrasi',
-      placeholder: 'Tempel link karya ilustrasi Pixiv (pixiv.net/artworks/...)',
-      hint: 'Unduh karya seni ilustrasi master langsung dalam resolusi asli gambar.',
+      badge: dl.platforms.pixiv.badge,
+      placeholder: dl.platforms.pixiv.placeholder,
+      hint: dl.platforms.pixiv.hint,
       icon: ImageIcon,
-      domains: ['pixiv.net', 'phixiv.net', 'pximg.net']
+      domains: ['pixiv.net']
     },
     {
       id: 'reddit',
       name: 'Reddit',
-      badge: 'Video & Post',
-      placeholder: 'Tempel link postingan video Reddit (reddit.com/r/.../comments/...)',
-      hint: 'Ekstrak video dengan sinkronisasi trek audio dari server media Reddit.',
-      icon: Flame,
-      domains: ['reddit.com', 'v.redd.it', 'redd.it']
+      badge: dl.platforms.reddit.badge,
+      placeholder: dl.platforms.reddit.placeholder,
+      hint: dl.platforms.reddit.hint,
+      icon: Disc,
+      domains: ['reddit.com', 'redd.it']
     },
     {
       id: 'terabox',
       name: 'Terabox',
-      badge: 'Cloud Media',
-      placeholder: 'Tempel tautan file publik Terabox (terabox.com/s/... atau 1024tera.com/...)',
-      hint: 'Bypass antrean unduhan file media publik dari penyimpanan cloud Terabox.',
+      badge: dl.platforms.terabox.badge,
+      placeholder: dl.platforms.terabox.placeholder,
+      hint: dl.platforms.terabox.hint,
       icon: FolderDown,
       domains: ['terabox.com', '1024tera.com', 'teraboxapp.com']
     }
   ];
 
-  const currentMeta = platforms.find(p => p.id === activePlatform) || platforms[0];
+  const currentMeta = platforms.find((p) => p.id === activePlatform) || platforms[0];
   const CurrentIcon = currentMeta.icon;
-
-  const detectPlatformFromUrl = (rawUrl) => {
-    if (!rawUrl) return null;
-    const lower = rawUrl.toLowerCase();
-    for (const p of platforms) {
-      for (const dom of p.domains) {
-        if (lower.includes(dom)) return p.id;
-      }
-    }
-    return 'unknown';
-  };
 
   const handlePasteClipboard = async () => {
     try {
       if (navigator.clipboard && navigator.clipboard.readText) {
         const text = await navigator.clipboard.readText();
         if (text) {
-          const cleanText = text.trim();
-          setUrlInput(cleanText);
-          validateUrlAgainstPlatform(cleanText, activePlatform);
+          handleUrlChange(text);
         }
       }
     } catch {
-      // ignore
+      // Browser permissions error fallback
     }
   };
 
-  const validateUrlAgainstPlatform = (url, platformId) => {
+  const detectPlatformFromUrl = (url) => {
+    const raw = url.toLowerCase().trim();
+    for (const p of platforms) {
+      for (const d of p.domains) {
+        if (raw.includes(d)) {
+          return p.id;
+        }
+      }
+    }
+    return 'unknown';
+  };
+
+  const validateUrlAgainstPlatform = (url, targetPlatformId) => {
     if (!url) {
       setErrorMsg('');
       setSuggestedPlatform(null);
-      return true;
+      return false;
     }
 
     const detected = detectPlatformFromUrl(url);
-    const targetObj = platforms.find(p => p.id === platformId) || platforms[0];
+    const targetObj = platforms.find((p) => p.id === targetPlatformId);
 
-    if (detected !== 'unknown' && detected !== platformId) {
-      const detectedObj = platforms.find(p => p.id === detected);
-      setErrorMsg(
-        `Link yang dimasukkan terdeteksi sebagai tautan ${detectedObj?.name || detected}, bukan ${targetObj.name}. Silakan beralih ke selector ${detectedObj?.name || detected}.`
-      );
+    if (detected !== 'unknown' && detected !== targetPlatformId) {
+      const detectedObj = platforms.find((p) => p.id === detected);
+      const switchText = dl.switchSuggestion.replace('{suggested}', detectedObj ? detectedObj.name : detected);
+      setErrorMsg(switchText);
       setSuggestedPlatform(detected);
       return false;
     }
@@ -243,7 +245,7 @@ export default function ConverterScreen({ activePlatform: initialPlatform = 'tik
     if (detected === 'unknown') {
       const allowedDomains = targetObj.domains.join(', ');
       setErrorMsg(
-        `Tautan tidak cocok dengan domain resmi ${targetObj.name}. Pastikan URL memuat domain ${allowedDomains}.`
+        dl.invalidDomainError.replace('{name}', targetObj.name).replace('{domains}', allowedDomains)
       );
       setSuggestedPlatform(null);
       return false;
@@ -282,7 +284,7 @@ export default function ConverterScreen({ activePlatform: initialPlatform = 'tik
 
     const trimmedUrl = urlInput.trim();
     if (!trimmedUrl) {
-      setErrorMsg('Silakan tempelkan link media terlebih dahulu.');
+      setErrorMsg(dl.emptyUrlError);
       return;
     }
 
@@ -334,10 +336,10 @@ export default function ConverterScreen({ activePlatform: initialPlatform = 'tik
           });
         }, 400);
       } else {
-        throw new Error(response.data?.message || 'Gagal memproses tautan media.');
+        throw new Error(response.data?.message || (isEn ? 'Failed to process media link.' : 'Gagal memproses tautan media.'));
       }
     } catch (err) {
-      const serverMsg = err.response?.data?.message || err.message || 'Terjadi kesalahan saat memproses media.';
+      const serverMsg = err.response?.data?.message || err.message || (isEn ? 'An error occurred while extracting media.' : 'Terjadi kesalahan saat memproses media.');
       setErrorMsg(serverMsg);
       setLoading(false);
       setDownloadProgress(0);
@@ -359,30 +361,28 @@ export default function ConverterScreen({ activePlatform: initialPlatform = 'tik
         
         {/* Navigation & Header Status */}
         <div className="w-full flex items-center justify-between">
-          <CosmicBackButton onClick={onBack} label="Kembali ke Beranda" />
+          <CosmicBackButton onClick={onBack} label={t.nav.backToHome} />
 
           <span className="text-[10px] font-mono font-bold px-2.5 py-1 rounded border-2 border-black bg-neutral-100 text-black uppercase">
-            16 Platform Tersedia
+            {dl.platformsAvailable}
           </span>
         </div>
 
         {/* Clean Page Title & Functional Description */}
         <div className="w-full border-b-2 border-black pb-4">
           <h1 className="text-xl sm:text-3xl font-black text-black tracking-tight font-display uppercase">
-            Media Downloader
+            {dl.title}
           </h1>
           <p className="text-xs sm:text-sm text-neutral-600 mt-1.5 leading-relaxed max-w-2xl">
-            {isEn 
-              ? 'Download high-definition videos, photo slide collections, and audio tracks without watermarks from 16 social media and streaming platforms. Select a platform below, paste a valid link, and download directly.'
-              : 'Unduh video definisi tinggi, kumpulan slide foto, dan trek audio tanpa watermark dari 16 platform media sosial dan konten streaming. Pilih platform di bawah, tempelkan tautan yang valid, lalu unduh secara langsung.'}
+            {dl.subtitle}
           </p>
         </div>
 
         {/* ─── 16 PLATFORM SELECTOR GRID (NEOBRUTALISM STYLE) ─── */}
         <div className="w-full">
           <div className="text-[11px] font-mono font-bold uppercase tracking-wider text-black mb-2 flex items-center justify-between">
-            <span>{isEn ? 'Choose Media Platform' : 'Pilih Platform Media'}</span>
-            <span className="text-neutral-500">{currentMeta.name} {isEn ? 'Active' : 'Aktif'}</span>
+            <span>{dl.choosePlatform}</span>
+            <span className="text-neutral-500 font-bold">{currentMeta.name} {dl.activeStatus}</span>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5">
@@ -426,7 +426,7 @@ export default function ConverterScreen({ activePlatform: initialPlatform = 'tik
             </div>
             <div>
               <h2 className="text-sm sm:text-base font-extrabold text-black uppercase tracking-tight">
-                {isEn ? 'Download' : 'Unduh'} Media {currentMeta.name}
+                {dl.downloadMediaPrefix} {currentMeta.name}
               </h2>
               <p className="text-xs text-neutral-600 mt-0.5">
                 {currentMeta.hint}
@@ -456,7 +456,7 @@ export default function ConverterScreen({ activePlatform: initialPlatform = 'tik
                 className="absolute inset-y-0 right-2 px-3 my-2 text-xs font-mono font-bold rounded border border-black bg-neutral-100 hover:bg-neutral-200 text-black transition-all flex items-center gap-1 cursor-pointer"
               >
                 <Clipboard className="w-3.5 h-3.5 stroke-[2.5]" />
-                <span>{isEn ? 'Paste' : 'Tempel'}</span>
+                <span>{dl.pasteButton}</span>
               </button>
             </div>
 
@@ -474,7 +474,7 @@ export default function ConverterScreen({ activePlatform: initialPlatform = 'tik
                     onClick={() => handleSwitchPlatform(suggestedPlatform)}
                     className="shrink-0 px-3 py-1 rounded border-2 border-black bg-black text-white font-bold text-xs hover:bg-neutral-800 transition-all flex items-center gap-1 cursor-pointer"
                   >
-                    <span>{isEn ? 'Switch to' : 'Pindah ke'} {platforms.find(p => p.id === suggestedPlatform)?.name || suggestedPlatform}</span>
+                    <span>{dl.switchButton}: {platforms.find(p => p.id === suggestedPlatform)?.name || suggestedPlatform}</span>
                     <ArrowRight className="w-3 h-3 stroke-[2.5]" />
                   </button>
                 )}
@@ -506,12 +506,12 @@ export default function ConverterScreen({ activePlatform: initialPlatform = 'tik
                 {loading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin text-white" />
-                    <span>{isEn ? 'Downloading...' : 'Mengunduh...'} {downloadProgress}%</span>
+                    <span>{dl.processingButton} {downloadProgress}%</span>
                   </>
                 ) : (
                   <>
                     <Download className="w-4 h-4 stroke-[2.5]" />
-                    <span>{isEn ? `Download ${currentMeta.name} Media` : `Download Media ${currentMeta.name}`}</span>
+                    <span>{dl.downloadButton} ({currentMeta.name})</span>
                   </>
                 )}
               </button>
@@ -528,7 +528,7 @@ export default function ConverterScreen({ activePlatform: initialPlatform = 'tik
               <div className="flex items-center justify-between w-full text-xs font-mono font-bold">
                 <span className="flex items-center gap-1.5">
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>Proses Ekstraksi {currentMeta.name}</span>
+                  <span>{isEn ? `Extracting ${currentMeta.name} Media...` : `Proses Ekstraksi ${currentMeta.name}`}</span>
                 </span>
                 <span>{downloadProgress}%</span>
               </div>
@@ -542,8 +542,8 @@ export default function ConverterScreen({ activePlatform: initialPlatform = 'tik
 
               <p className="text-[11px] text-neutral-600 text-center font-mono">
                 {downloadProgress < 100 
-                  ? `Mengambil tautan media kualitas master dari ${currentMeta.name}...` 
-                  : 'Selesai. Memuat pratinjau output media...'}
+                  ? (isEn ? `Fetching master quality streams from ${currentMeta.name}...` : `Mengambil tautan media kualitas master dari ${currentMeta.name}...`)
+                  : (isEn ? 'Completed. Rendering output media previews...' : 'Selesai. Memuat pratinjau output media...')}
               </p>
             </div>
           </div>
@@ -556,6 +556,7 @@ export default function ConverterScreen({ activePlatform: initialPlatform = 'tik
             preferredFormat={selectedFormat}
             onReset={handleReset}
             onBack={onBack}
+            lang={lang}
           />
         )}
 

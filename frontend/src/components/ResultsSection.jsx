@@ -25,7 +25,8 @@ import {
   Zap
 } from 'lucide-react';
 
-export default function ResultsSection({ result, preferredFormat = '1080p', onReset, onBack }) {
+export default function ResultsSection({ result, preferredFormat = '1080p', onReset, onBack, lang = 'id' }) {
+  const isEn = lang === 'en';
   if (!result || !result.downloadLinks || result.downloadLinks.length === 0) {
     return null;
   }
@@ -664,10 +665,10 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
                 )}
                 <span>
                   {activeSlide.type === 'video'
-                    ? `Unduh Video Slide MP4 (#${currentSlideIndex + 1})`
+                    ? (isEn ? `Download Video Slide MP4 (#${currentSlideIndex + 1})` : `Unduh Video Slide MP4 (#${currentSlideIndex + 1})`)
                     : activeSlide.type === 'live_wallpaper'
-                    ? `Unduh Live Wallpaper HD (#${currentSlideIndex + 1})`
-                    : `Unduh Slide Ini (Foto #${currentSlideIndex + 1})`}
+                    ? (isEn ? `Download Live Wallpaper HD (#${currentSlideIndex + 1})` : `Unduh Live Wallpaper HD (#${currentSlideIndex + 1})`)
+                    : (isEn ? `Download This Slide (Photo #${currentSlideIndex + 1})` : `Unduh Slide Ini (Foto #${currentSlideIndex + 1})`)}
                 </span>
               </button>
             )}
@@ -681,12 +682,12 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
                 {downloadingAllPhotos ? (
                   <>
                     <RefreshCw className="w-4 h-4 animate-spin" />
-                    <span>{downloadAllProgressText || 'Menyiapkan ZIP...'}</span>
+                    <span>{downloadAllProgressText || (isEn ? 'Preparing ZIP...' : 'Menyiapkan ZIP...')}</span>
                   </>
                 ) : (
                   <>
                     <FileArchive className="w-4 h-4 stroke-[2.5]" />
-                    <span>Unduh Semua Slide ({photoSlides.length} Foto ZIP)</span>
+                    <span>{isEn ? `Download All Slides (${photoSlides.length} Photos ZIP)` : `Unduh Semua Slide (${photoSlides.length} Foto ZIP)`}</span>
                   </>
                 )}
               </button>
@@ -722,12 +723,12 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
             ) : (
               <div className="flex flex-col items-center justify-center text-neutral-400 p-4 text-center">
                 <Play className="w-10 h-10 text-white" />
-                <span className="text-xs mt-2 text-white">Video Siap Diputar</span>
+                <span className="text-xs mt-2 text-white">{isEn ? 'Video Ready to Play' : 'Video Siap Diputar'}</span>
               </div>
             )}
 
             <div className="absolute top-2.5 left-2.5 bg-white text-black font-mono font-bold text-[10px] px-2 py-0.5 rounded border border-black shadow-xs">
-              Tanpa Watermark
+              {isEn ? 'No Watermark' : 'Tanpa Watermark'}
             </div>
 
             {displayDuration && (
@@ -745,12 +746,12 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
                   {result.platform || 'Video HD'}
                 </span>
                 <span className="px-2 py-0.5 rounded text-xs font-mono font-bold border border-black bg-black text-white">
-                  Bebas Watermark
+                  {isEn ? 'Watermark Free' : 'Bebas Watermark'}
                 </span>
               </div>
 
               <h3 className="text-base sm:text-lg font-extrabold text-black line-clamp-2 leading-snug font-sans">
-                {result.title || 'Video Siap Diunduh'}
+                {result.title || (isEn ? 'Video Ready to Download' : 'Video Siap Diunduh')}
               </h3>
 
               {result.author && (
@@ -760,7 +761,7 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
               )}
 
               <p className="text-neutral-600 text-xs mt-1">
-                Pilih opsi resolusi video untuk disimpan ke perangkat:
+                {isEn ? 'Choose video resolution to save to your device:' : 'Pilih opsi resolusi video untuk disimpan ke perangkat:'}
               </p>
             </div>
 
@@ -789,7 +790,7 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
                     key={`wp-${wpIdx}`}
                     onClick={() => downloadToDevice(liveWp, liveWp.filename)}
                     className="px-3 py-2 rounded-lg text-xs font-bold font-mono transition-all duration-150 cursor-pointer border-2 border-black flex items-center justify-center gap-1.5 bg-neutral-100 hover:bg-neutral-200 text-black shadow-xs"
-                    title="Unduh versi Live Wallpaper animasi loop"
+                    title={isEn ? 'Download loop animation Live Wallpaper' : 'Unduh versi Live Wallpaper animasi loop'}
                   >
                     <Sparkles className="w-3.5 h-3.5 stroke-[2.5]" />
                     <span>Live Wallpaper</span>
@@ -809,7 +810,7 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
                     <Download className="w-4 h-4 stroke-[2.5]" />
                   )}
                   <span>
-                    {downloading ? 'Menyimpan...' : `Download Video MP4 (${activeRegularVideo.label || activeRegularVideo.quality})`}
+                    {downloading ? (isEn ? 'Saving...' : 'Menyimpan...') : `${isEn ? 'Download Video MP4' : 'Download Video MP4'} (${activeRegularVideo.label || activeRegularVideo.quality})`}
                   </span>
                 </button>
               )}
@@ -853,13 +854,13 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
 
               <div className="flex flex-col min-w-0">
                 <span className="text-[10px] font-mono font-bold uppercase text-neutral-500">
-                  Audio Resmi
+                  {isEn ? 'Official Audio' : 'Audio Resmi'}
                 </span>
                 <h4 className="text-sm sm:text-base font-extrabold text-black truncate">
-                  {result.musicInfo?.title || result.title || 'Trek Audio'}
+                  {result.musicInfo?.title || result.title || (isEn ? 'Audio Track' : 'Trek Audio')}
                 </h4>
                 <p className="text-xs text-neutral-600 truncate font-mono">
-                  {result.musicInfo?.author || result.author || 'Audio Creator'}
+                  {result.musicInfo?.author || result.author || (isEn ? 'Audio Artist' : 'Audio Creator')}
                 </p>
               </div>
             </div>
@@ -883,7 +884,7 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
             <div className="flex items-center justify-between text-xs font-mono font-bold">
               <span>{formatTime(audioCurrentTime)}</span>
               <span className="text-neutral-500 font-normal">
-                {isAudioLoading ? 'Memuat audio...' : isPlayingAudio ? 'Sedang Diputar' : 'Pratinjau Suara'}
+                {isAudioLoading ? (isEn ? 'Loading audio...' : 'Memuat audio...') : isPlayingAudio ? (isEn ? 'Playing' : 'Sedang Diputar') : (isEn ? 'Audio Preview' : 'Pratinjau Suara')}
               </span>
               <span>{formatTime(audioDuration)}</span>
             </div>
@@ -902,7 +903,7 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
                 type="button"
                 onClick={togglePlayAudio}
                 className="w-11 h-11 rounded-lg border-2 border-black bg-black text-white flex items-center justify-center shadow-[2px_2px_0px_#000000] hover:bg-neutral-800 cursor-pointer"
-                aria-label={isPlayingAudio ? 'Jeda Audio' : 'Putar Audio'}
+                aria-label={isPlayingAudio ? (isEn ? 'Pause Audio' : 'Jeda Audio') : (isEn ? 'Play Audio' : 'Putar Audio')}
               >
                 {isAudioLoading ? (
                   <RefreshCw className="w-4 h-4 animate-spin" />
@@ -926,7 +927,7 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
                 type="button"
                 onClick={toggleAudioMute}
                 className="p-2 rounded border border-black hover:bg-neutral-200 cursor-pointer"
-                title={isAudioMuted ? 'Nyalakan' : 'Bisukan'}
+                title={isAudioMuted ? (isEn ? 'Unmute' : 'Nyalakan') : (isEn ? 'Mute' : 'Bisukan')}
               >
                 {isAudioMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
               </button>
@@ -943,7 +944,7 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
             ) : (
               <Download className="w-4 h-4 stroke-[2.5]" />
             )}
-            <span>Download File Audio MP3</span>
+            <span>{isEn ? 'Download Audio MP3 File' : 'Download File Audio MP3'}</span>
           </button>
 
         </div>
@@ -952,7 +953,7 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
       {/* ─── RESET & NAVIGASI KEMBALI ─── */}
       <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2 w-full">
         {onBack && (
-          <CosmicBackButton onClick={onBack} label="Kembali ke Beranda" />
+          <CosmicBackButton onClick={onBack} label={isEn ? 'Back to Home' : 'Kembali ke Beranda'} />
         )}
 
         <button
@@ -960,7 +961,7 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
           className="w-full sm:w-auto px-6 py-2.5 rounded-lg border-2 border-black bg-white hover:bg-neutral-100 text-black text-xs font-extrabold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-[2px_2px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none"
         >
           <RefreshCw className="w-4 h-4 stroke-[2.5]" />
-          <span>Unduh Tautan Lainnya</span>
+          <span>{isEn ? 'Download Another Link' : 'Unduh Tautan Lainnya'}</span>
         </button>
       </div>
 

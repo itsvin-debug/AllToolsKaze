@@ -38,18 +38,18 @@ export default function Navbar({
   const showHistory = settings?.showHistory !== false;
 
   const tools = [
-    { id: 'downloader', label: 'Media Downloader', icon: Download },
-    { id: 'jjFinder', label: 'Cari Link JJ', icon: Flame },
-    { id: 'pngToPdf', label: 'PNG to PDF', icon: Images },
-    { id: 'linkToDoc', label: 'Link to PDF/PPT', icon: FileText },
-    { id: 'imageToLink', label: 'File ke Link', icon: Link2 },
-    { id: 'compressor', label: 'Kompres Media HD', icon: Minimize2 },
-    { id: 'qrStudio', label: 'QR Code Studio', icon: QrCode },
-    { id: 'audioMerger', label: 'Audio Merger', icon: Music },
-    { id: 'photoStudio', label: 'Photo Studio', icon: Sparkles },
-    { id: 'videoStudio', label: 'Video Studio', icon: Film },
-    { id: 'videoTrimmer', label: 'Video Trimmer', icon: Scissors },
-    { id: 'bgRemover', label: 'Hapus Background', icon: Scissors }
+    { id: 'downloader', label: t.welcome?.tools?.downloader?.name || 'Media Downloader', icon: Download },
+    { id: 'jjFinder', label: t.welcome?.tools?.jjFinder?.name || 'Cari Link JJ', icon: Flame },
+    { id: 'pngToPdf', label: t.welcome?.tools?.pngToPdf?.name || 'PNG to PDF', icon: Images },
+    { id: 'linkToDoc', label: t.welcome?.tools?.linkToDoc?.name || 'Link to PDF/PPT', icon: FileText },
+    { id: 'imageToLink', label: t.welcome?.tools?.imageToLink?.name || 'File ke Link', icon: Link2 },
+    { id: 'compressor', label: t.welcome?.tools?.compressor?.name || 'Kompres Media HD', icon: Minimize2 },
+    { id: 'qrStudio', label: t.welcome?.tools?.qrStudio?.name || 'QR Code Studio', icon: QrCode },
+    { id: 'audioMerger', label: t.welcome?.tools?.audioMerger?.name || 'Audio Merger', icon: Music },
+    { id: 'photoStudio', label: t.welcome?.tools?.photoStudio?.name || 'Photo Studio', icon: Sparkles },
+    { id: 'videoStudio', label: t.welcome?.tools?.videoStudio?.name || 'Video Studio', icon: Film },
+    { id: 'videoTrimmer', label: t.welcome?.tools?.videoTrimmer?.name || 'Video Trimmer', icon: Scissors },
+    { id: 'bgRemover', label: t.welcome?.tools?.bgRemover?.name || 'Hapus Background', icon: Scissors }
   ];
 
   const currentToolObj = tools.find(t => t.id === currentScreen);

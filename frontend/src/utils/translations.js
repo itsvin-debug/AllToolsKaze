@@ -288,6 +288,171 @@ export const translations = {
       inputAutoToggled: 'Pengaturan otomasi input diperbarui',
       securityToggled: 'Pengaturan keamanan sesi diperbarui'
     },
+    downloader: {
+      title: 'MEDIA DOWNLOADER',
+      subtitle: 'Unduh video definisi tinggi, kumpulan slide foto, dan trek audio tanpa watermark dari 16 platform media sosial dan konten streaming. Pilih platform di bawah, tempelkan tautan yang valid, lalu unduh secara langsung.',
+      platformsAvailable: '16 PLATFORM TERSEDIA',
+      choosePlatform: 'PILIH PLATFORM MEDIA',
+      activeStatus: 'AKTIF',
+      downloadMediaPrefix: 'UNDUH MEDIA',
+      pasteButton: 'Tempel',
+      downloadButton: 'Unduh Media',
+      processingButton: 'Memproses Media...',
+      emptyUrlError: 'Silakan tempelkan tautan media terlebih dahulu.',
+      invalidDomainError: 'Tautan tidak cocok dengan domain resmi {name}. Pastikan URL memuat domain {domains}.',
+      switchSuggestion: 'Tautan ini terdeteksi dari {suggested}. Beralih ke platform {suggested}?',
+      switchButton: 'Beralih Platform',
+      platforms: {
+        tiktok: {
+          badge: 'Video & Slide',
+          placeholder: 'Tempel link video atau slide TikTok (vt.tiktok.com atau tiktok.com/@user/...)',
+          hint: 'Mendukung video HD tanpa watermark dan kumpulan slide gambar TikTok.'
+        },
+        instagram: {
+          badge: 'Reels & Post',
+          placeholder: 'Tempel link Reels, Carousel, atau Foto IG (instagram.com/reel/... atau /p/...)',
+          hint: 'Mendukung video Reels, postingan carousel multi-foto, dan foto resolusi tinggi.'
+        },
+        youtube: {
+          badge: 'Shorts & MP3',
+          placeholder: 'Tempel link video atau Shorts (youtube.com/watch?v=... atau youtu.be/...)',
+          hint: 'Mendukung video reguler, YouTube Shorts, serta konversi audio MP3.'
+        },
+        twitter: {
+          badge: 'Tweet Video',
+          placeholder: 'Tempel link postingan tweet video (x.com/.../status/... atau twitter.com/...)',
+          hint: 'Mendukung unduhan file MP4 kualitas master dari postingan video di platform X.'
+        },
+        spotify: {
+          badge: 'Audio Trek',
+          placeholder: 'Tempel link lagu atau album Spotify (open.spotify.com/track/...)',
+          hint: 'Ekstrak metadata lagu, cover album resolusi penuh, dan trek audio.'
+        },
+        bilibili: {
+          badge: 'Anime & HD',
+          placeholder: 'Tempel link video Bilibili (bilibili.com/video/... atau b23.tv/...)',
+          hint: 'Unduh klip anime dan konten video streaming Bilibili tanpa penurunan resolusi.'
+        },
+        douyin: {
+          badge: 'Video China',
+          placeholder: 'Tempel link video Douyin (douyin.com/video/... atau iesdouyin.com/...)',
+          hint: 'Unduh video original Douyin tanpa watermark langsung dalam format MP4.'
+        },
+        rednote: {
+          badge: 'Xiaohongshu',
+          placeholder: 'Tempel link postingan Rednote / Xiaohongshu (xhslink.com/... atau xiaohongshu.com/...)',
+          hint: 'Unduh album foto lifestyle dan video pendek resolusi tinggi dari Xiaohongshu.'
+        },
+        threads: {
+          badge: 'Post Media',
+          placeholder: 'Tempel link postingan Threads (threads.net/@user/post/...)',
+          hint: 'Unduh konten video dan lampiran gambar resolusi penuh dari Threads.'
+        },
+        pinterest: {
+          badge: 'Pins & Foto',
+          placeholder: 'Tempel link Pin Pinterest (pinterest.com/pin/... atau pin.it/...)',
+          hint: 'Unduh foto inspirasi resolusi ultra tinggi dan video Pin original.'
+        },
+        appleMusic: {
+          badge: 'Artwork & Audio',
+          placeholder: 'Tempel link album/lagu Apple Music (music.apple.com/...)',
+          hint: 'Ekstrak cover artwork resolusi tinggi dan pratinjau trek audio lossless.'
+        },
+        facebook: {
+          badge: 'Reels & Video',
+          placeholder: 'Tempel link video/Reels FB (facebook.com/reel/... atau /watch/...)',
+          hint: 'Unduh video publik Facebook kualitas HD MP4 secara instan.'
+        },
+        bandcamp: {
+          badge: 'Musik Lossless',
+          placeholder: 'Tempel link trek Bandcamp (artist.bandcamp.com/track/...)',
+          hint: 'Unduh trek audio berkualitas tinggi dan artwork cover album musisi indie.'
+        },
+        pixiv: {
+          badge: 'Artwork Ilustrasi',
+          placeholder: 'Tempel link karya Pixiv (pixiv.net/artworks/...)',
+          hint: 'Unduh ilustrasi anime, manga, dan karya seni digital kualitas asli.'
+        },
+        reddit: {
+          badge: 'Video & Post',
+          placeholder: 'Tempel link postingan Reddit (reddit.com/r/.../comments/...)',
+          hint: 'Unduh video Reddit lengkap dengan audio tersinkronisasi dalam format MP4.'
+        },
+        terabox: {
+          badge: 'Cloud Media',
+          placeholder: 'Tempel link unduhan Terabox (terabox.com/s/... atau 1024tera.com/...)',
+          hint: 'Akses dan unduh berkas video cloud media langsung tanpa aplikasi tambahan.'
+        }
+      }
+    },
+    audioMerger: {
+      studioBadge: 'Multi-Track Timeline Studio',
+      title: 'Penggabungan Audio & Video',
+      subtitle: 'Gabungkan video dengan lagu favorit atau satukan beberapa track audio. Tonton dan dengarkan langsung hasilnya sebelum mengunduh.',
+      trackListHeader: 'Daftar Track',
+      trackListSubtitle: 'Atur durasi potong (menit & detik), volume, dan tonton/dengarkan preview tiap track.',
+      addTrackBtn: 'Tambah Audio / Video',
+      emptyTracksTitle: 'Belum Ada Media yang Ditambahkan',
+      emptyTracksDesc: 'Klik tombol di atas untuk memasukkan file Video (MP4, WebM) atau Audio (MP3, WAV, M4A).',
+      startLabel: 'Mulai (Menit : Detik)',
+      endLabel: 'Selesai (Menit : Detik)',
+      volumeLabel: 'Volume',
+      durationLabel: 'Durasi Potongan',
+      testClipBtn: 'Tes Dengar',
+      testVideoBtn: 'Pratinjau Video',
+      moveUp: 'Geser ke Atas',
+      moveDown: 'Geser ke Bawah',
+      deleteTrack: 'Hapus Track',
+      mergeBtn: 'Satukan & Gabungkan Sekarang',
+      mergingBtn: 'Menggabungkan Media via FFmpeg...',
+      successTitle: 'Media Berhasil Digabungkan!',
+      successSubtitleVideo: 'Video dan audio Anda telah berhasil digabungkan menjadi file MP4 baru.',
+      successSubtitleAudio: 'Track audio Anda telah berhasil digabungkan menjadi file MP3 master.',
+      outputPreviewTitle: 'Pratinjau Hasil Penggabungan',
+      outputPreviewSubtitle: 'Tonton atau dengarkan hasil sebelum mengunduh berkas ke perangkat Anda.',
+      downloadVideoBtn: 'Unduh Video MP4',
+      downloadAudioBtn: 'Unduh Audio MP3'
+    },
+    pngToPdf: {
+      badge: 'Word & Docs Style Layout Engine',
+      title: 'PNG to PDF & Word Studio',
+      subtitle: 'Atur foto dan teks secara terstruktur layaknya dokumen Word/Docs, lengkapi dengan toolbar tipografi, dan ekspor menjadi PDF.',
+      addPhotos: 'Tambah Foto / Gambar',
+      paperFormat: 'Ukuran Kertas',
+      orientationPortrait: 'Potret (Tegak)',
+      orientationLandscape: 'Lanskap (Mendatar)',
+      marginNormal: 'Margin Normal',
+      marginNarrow: 'Margin Sempit',
+      marginWide: 'Margin Lebar',
+      showPageNumbers: 'Nomor Halaman',
+      toolbarFont: 'Font Dokumen',
+      toolbarSize: 'Ukuran Font',
+      toolbarBold: 'Tebal (Bold)',
+      toolbarItalic: 'Miring (Italic)',
+      toolbarUnderline: 'Garis Bawah (Underline)',
+      toolbarStrike: 'Coret (Strikethrough)',
+      toolbarCase: 'Ubah Huruf (Case)',
+      toolbarColor: 'Warna Teks',
+      toolbarHighlight: 'Sorot Warna (Highlight)',
+      toolbarBullet: 'Daftar Poin (Bullets)',
+      toolbarNumber: 'Daftar Angka (Numbers)',
+      toolbarAlignLeft: 'Rata Kiri',
+      toolbarAlignCenter: 'Rata Tengah',
+      toolbarAlignRight: 'Rata Kanan',
+      toolbarJustify: 'Rata Kanan-Kiri (Justify)',
+      styleNormal: 'Teks Normal',
+      styleHeading1: 'Judul 1 (Heading 1)',
+      styleHeading2: 'Judul 2 (Heading 2)',
+      styleHeading3: 'Judul 3 (Heading 3)',
+      textPlaceholder: 'Ketik atau tempel teks dokumen di sini...',
+      generatePdfBtn: 'Ekspor Dokumen PDF',
+      generatingPdf: 'Menyusun Dokumen PDF...',
+      previewPage: 'Halaman',
+      downloadModalTitle: 'Unduh Dokumen PDF',
+      downloadModalDesc: 'Beri nama berkas dokumen PDF yang siap disimpan ke perangkat Anda.',
+      fileNameLabel: 'Nama Berkas PDF',
+      confirmDownloadBtn: 'Simpan PDF ke Perangkat'
+    },
     footer: {
       suite: 'UTILITY SUITE',
       text: 'Platform utilitas all-in-one untuk media, dokumen, audio, dan alat kreatif digital.'
@@ -576,6 +741,171 @@ export const translations = {
       langSwitched: 'Language switched to English',
       inputAutoToggled: 'Input automation setting updated',
       securityToggled: 'Session security setting updated'
+    },
+    downloader: {
+      title: 'MEDIA DOWNLOADER',
+      subtitle: 'Download high-definition videos, photo slide decks, and watermark-free audio tracks from 16 social media and streaming platforms. Select a platform below, paste a valid link, and download instantly.',
+      platformsAvailable: '16 PLATFORMS AVAILABLE',
+      choosePlatform: 'CHOOSE MEDIA PLATFORM',
+      activeStatus: 'ACTIVE',
+      downloadMediaPrefix: 'DOWNLOAD',
+      pasteButton: 'Paste',
+      downloadButton: 'Download Media',
+      processingButton: 'Processing Media...',
+      emptyUrlError: 'Please paste a valid media link first.',
+      invalidDomainError: 'Link does not match official domains for {name}. Ensure URL contains {domains}.',
+      switchSuggestion: 'This link was detected as {suggested}. Switch to {suggested} platform?',
+      switchButton: 'Switch Platform',
+      platforms: {
+        tiktok: {
+          badge: 'Video & Slide',
+          placeholder: 'Paste TikTok video or slide link (vt.tiktok.com or tiktok.com/@user/...)',
+          hint: 'Supports HD video without watermark and TikTok slide photo collections.'
+        },
+        instagram: {
+          badge: 'Reels & Post',
+          placeholder: 'Paste IG Reels, Carousel, or Photo link (instagram.com/reel/... or /p/...)',
+          hint: 'Supports Reels video, multi-photo carousels, and high-resolution photos.'
+        },
+        youtube: {
+          badge: 'Shorts & MP3',
+          placeholder: 'Paste video or Shorts link (youtube.com/watch?v=... or youtu.be/...)',
+          hint: 'Supports regular videos, YouTube Shorts, and MP3 audio conversion.'
+        },
+        twitter: {
+          badge: 'Tweet Video',
+          placeholder: 'Paste tweet video post link (x.com/.../status/... or twitter.com/...)',
+          hint: 'Supports master quality MP4 downloads from video posts on the X platform.'
+        },
+        spotify: {
+          badge: 'Audio Track',
+          placeholder: 'Paste Spotify song or album link (open.spotify.com/track/...)',
+          hint: 'Extract song metadata, full-resolution cover art, and audio streams.'
+        },
+        bilibili: {
+          badge: 'Anime & HD',
+          placeholder: 'Paste Bilibili video link (bilibili.com/video/... or b23.tv/...)',
+          hint: 'Download anime clips and streaming videos without resolution downscaling.'
+        },
+        douyin: {
+          badge: 'China Video',
+          placeholder: 'Paste Douyin video link (douyin.com/video/... or iesdouyin.com/...)',
+          hint: 'Download original Douyin videos without watermark directly in MP4 format.'
+        },
+        rednote: {
+          badge: 'Xiaohongshu',
+          placeholder: 'Paste Rednote / Xiaohongshu post link (xhslink.com/... or xiaohongshu.com/...)',
+          hint: 'Download lifestyle photo albums and high-res short clips from Xiaohongshu.'
+        },
+        threads: {
+          badge: 'Post Media',
+          placeholder: 'Paste Threads post link (threads.net/@user/post/...)',
+          hint: 'Download video clips and full-resolution image attachments from Threads.'
+        },
+        pinterest: {
+          badge: 'Pins & Photo',
+          placeholder: 'Paste Pinterest Pin link (pinterest.com/pin/... or pin.it/...)',
+          hint: 'Download ultra high-resolution inspiration images and original Pin videos.'
+        },
+        appleMusic: {
+          badge: 'Artwork & Audio',
+          placeholder: 'Paste Apple Music album/song link (music.apple.com/...)',
+          hint: 'Extract high-resolution album artwork and lossless audio previews.'
+        },
+        facebook: {
+          badge: 'Reels & Video',
+          placeholder: 'Paste FB video/Reels link (facebook.com/reel/... or /watch/...)',
+          hint: 'Download public Facebook videos in high definition MP4 format instantly.'
+        },
+        bandcamp: {
+          badge: 'Lossless Music',
+          placeholder: 'Paste Bandcamp track link (artist.bandcamp.com/track/...)',
+          hint: 'Download high-quality audio tracks and album covers from independent artists.'
+        },
+        pixiv: {
+          badge: 'Artwork Art',
+          placeholder: 'Paste Pixiv artwork link (pixiv.net/artworks/...)',
+          hint: 'Download anime, manga, and digital illustrations in original master quality.'
+        },
+        reddit: {
+          badge: 'Video & Post',
+          placeholder: 'Paste Reddit post link (reddit.com/r/.../comments/...)',
+          hint: 'Download Reddit videos with synchronized audio tracks in MP4 format.'
+        },
+        terabox: {
+          badge: 'Cloud Media',
+          placeholder: 'Paste Terabox download link (terabox.com/s/... or 1024tera.com/...)',
+          hint: 'Access and download cloud video files directly without additional apps.'
+        }
+      }
+    },
+    audioMerger: {
+      studioBadge: 'Multi-Track Timeline Studio',
+      title: 'Audio & Video Merger',
+      subtitle: 'Merge video with your favorite soundtrack or combine multiple audio tracks. Watch and listen to the result before downloading.',
+      trackListHeader: 'Track List',
+      trackListSubtitle: 'Adjust trimming duration (min & sec), volume, and watch/listen to preview for each track.',
+      addTrackBtn: 'Add Audio / Video',
+      emptyTracksTitle: 'No Media Added Yet',
+      emptyTracksDesc: 'Click the button above to insert Video (MP4, WebM) or Audio (MP3, WAV, M4A) files.',
+      startLabel: 'Start (Min : Sec)',
+      endLabel: 'End (Min : Sec)',
+      volumeLabel: 'Volume',
+      durationLabel: 'Clip Duration',
+      testClipBtn: 'Preview Audio',
+      testVideoBtn: 'Preview Video',
+      moveUp: 'Move Up',
+      moveDown: 'Move Down',
+      deleteTrack: 'Delete Track',
+      mergeBtn: 'Merge & Combine Now',
+      mergingBtn: 'Merging Media via FFmpeg...',
+      successTitle: 'Media Successfully Merged!',
+      successSubtitleVideo: 'Your video and audio have been combined into a new MP4 file.',
+      successSubtitleAudio: 'Your audio tracks have been combined into a master MP3 track.',
+      outputPreviewTitle: 'Merged Output Preview',
+      outputPreviewSubtitle: 'Watch or listen to the output before downloading to your device.',
+      downloadVideoBtn: 'Download Video MP4',
+      downloadAudioBtn: 'Download Audio MP3'
+    },
+    pngToPdf: {
+      badge: 'Word & Docs Style Layout Engine',
+      title: 'PNG to PDF & Word Studio',
+      subtitle: 'Arrange photos and text like a Word/Docs document with a typography toolbar and export to PDF.',
+      addPhotos: 'Add Photos / Images',
+      paperFormat: 'Paper Format',
+      orientationPortrait: 'Portrait',
+      orientationLandscape: 'Landscape',
+      marginNormal: 'Normal Margin',
+      marginNarrow: 'Narrow Margin',
+      marginWide: 'Wide Margin',
+      showPageNumbers: 'Page Numbers',
+      toolbarFont: 'Document Font',
+      toolbarSize: 'Font Size',
+      toolbarBold: 'Bold',
+      toolbarItalic: 'Italic',
+      toolbarUnderline: 'Underline',
+      toolbarStrike: 'Strikethrough',
+      toolbarCase: 'Change Case',
+      toolbarColor: 'Text Color',
+      toolbarHighlight: 'Highlight Color',
+      toolbarBullet: 'Bulleted List',
+      toolbarNumber: 'Numbered List',
+      toolbarAlignLeft: 'Align Left',
+      toolbarAlignCenter: 'Align Center',
+      toolbarAlignRight: 'Align Right',
+      toolbarJustify: 'Justify',
+      styleNormal: 'Normal Text',
+      styleHeading1: 'Heading 1',
+      styleHeading2: 'Heading 2',
+      styleHeading3: 'Heading 3',
+      textPlaceholder: 'Type or paste document text here...',
+      generatePdfBtn: 'Export PDF Document',
+      generatingPdf: 'Building PDF Document...',
+      previewPage: 'Page',
+      downloadModalTitle: 'Download PDF Document',
+      downloadModalDesc: 'Provide a filename for the PDF document ready to be saved to your device.',
+      fileNameLabel: 'PDF File Name',
+      confirmDownloadBtn: 'Save PDF to Device'
     },
     footer: {
       suite: 'UTILITY SUITE',

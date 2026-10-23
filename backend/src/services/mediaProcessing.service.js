@@ -108,76 +108,153 @@ export async function compressVideoService({
   }
 }
 
-// Penggabungan audio beberapa track dengan ffmpeg concat demuxer.
+// Penggabungan media (Audio & Video) via FFmpeg. Mendukung output Video MP4 jika ada video, atau Audio MP3 jika hanya audio.
 export async function mergeAudiosService({ tracks = [] }) {
   if (!tracks || tracks.length === 0) {
-    throw new Error('Tidak ada track audio yang diberikan untuk digabungkan.');
+    throw new Error('Tidak ada track media yang diberikan untuk digabungkan.');
   }
 
   const uid = Date.now() + '_' + Math.random().toString(36).substring(2, 7);
-  const trimmedFiles = [];
-  const outputPath = path.join(uploadsDir, `kaze_merged_audio_${uid}.mp3`);
-  const listFilePath = path.join(tempDir, `concat_list_${uid}.txt`);
+  const tempFiles = [];
+
+  // Deteksi apakah ada track yang berupa video
+  const videoTrackIndex = tracks.findIndex(t => 
+    t.isVideo || 
+    (t.base64 && t.base64.startsWith('data:video/')) || 
+    (t.name && (t.name.endsWith('.mp4') || t.name.endsWith('.webm') || t.name.endsWith('.mov')))
+  );
+
+  const hasVideo = videoTrackIndex !== -1;
 
   try {
-    for (let i = 0; i < tracks.length; i++) {
-      const track = tracks[i];
-      const trackInPath = path.join(tempDir, `track_in_${uid}_${i}.mp3`);
-      const trackOutPath = path.join(tempDir, `track_trimmed_${uid}_${i}.mp3`);
+    if (hasVideo) {
+      // ─── PENGGABUNGAN VIDEO DENGAN AUDIO -> OUTPUT MP4 ───
+      const videoTrack = tracks[videoTrackIndex];
+      const audioTracks = tracks.filter((_, idx) => idx !== videoTrackIndex);
 
-      const base64Data = (track.base64 || '').replace(/^data:[a-zA-Z0-9.-]+\/[a-zA-Z0-9.-]+;base64,/, '');
-      fs.writeFileSync(trackInPath, Buffer.from(base64Data, 'base64'));
+      const videoInPath = path.join(tempDir, `video_in_${uid}.mp4`);
+      const videoBase64 = (videoTrack.base64 || '').replace(/^data:video\/[a-zA-Z0-9.-]+;base64,/, '');
+      fs.writeFileSync(videoInPath, Buffer.from(videoBase64, 'base64'));
+      tempFiles.push(videoInPath);
 
-      const startTime = Number(track.startTime) || 0;
-      const endTime = Number(track.endTime) || 0;
-      const volume = Number(track.volume) || 1.0;
-
-      let timeFilter = `-ss ${startTime}`;
-      if (endTime > startTime) {
-        timeFilter += ` -to ${endTime}`;
+      const vStartTime = Number(videoTrack.startTime) || 0;
+      const vEndTime = Number(videoTrack.endTime) || 0;
+      let vTimeFilter = `-ss ${vStartTime}`;
+      if (vEndTime > vStartTime) {
+        vTimeFilter += ` -to ${vEndTime}`;
       }
 
-      const trimCmd = `ffmpeg -y ${timeFilter} -i "${trackInPath}" -filter:a "volume=${volume}" -vn -ar 44100 -ac 2 -b:a 192k "${trackOutPath}"`;
-      await execPromise(trimCmd, { timeout: 45000 });
+      const outputPath = path.join(uploadsDir, `kuro_merged_video_${uid}.mp4`);
 
-      if (fs.existsSync(trackOutPath)) {
-        trimmedFiles.push(trackOutPath);
+      if (audioTracks.length > 0) {
+        // Ambil audio track untuk disematkan ke video
+        const audioTrack = audioTracks[0];
+        const audioInPath = path.join(tempDir, `audio_in_${uid}.mp3`);
+        const audioBase64 = (audioTrack.base64 || '').replace(/^data:[a-zA-Z0-9.-]+\/[a-zA-Z0-9.-]+;base64,/, '');
+        fs.writeFileSync(audioInPath, Buffer.from(audioBase64, 'base64'));
+        tempFiles.push(audioInPath);
+
+        const aStartTime = Number(audioTrack.startTime) || 0;
+        const aEndTime = Number(audioTrack.endTime) || 0;
+        const aVol = Number(audioTrack.volume) || 1.0;
+        let aTimeFilter = `-ss ${aStartTime}`;
+        if (aEndTime > aStartTime) {
+          aTimeFilter += ` -to ${aEndTime}`;
+        }
+
+        const audioTrimmedPath = path.join(tempDir, `audio_trimmed_${uid}.mp3`);
+        const trimAudioCmd = `ffmpeg -y ${aTimeFilter} -i "${audioInPath}" -filter:a "volume=${aVol}" -ar 44100 -ac 2 "${audioTrimmedPath}"`;
+        await execPromise(trimAudioCmd, { timeout: 45000 });
+        tempFiles.push(audioTrimmedPath);
+
+        // Gabungkan video dengan track audio baru via FFmpeg
+        const mergeCmd = `ffmpeg -y ${vTimeFilter} -i "${videoInPath}" -i "${audioTrimmedPath}" -map 0:v:0 -map 1:a:0 -c:v libx264 -pix_fmt yuv420p -c:a aac -b:a 192k -shortest "${outputPath}"`;
+        await execPromise(mergeCmd, { timeout: 60000 });
+      } else {
+        // Hanya video yang dipotong durasinya
+        const cutCmd = `ffmpeg -y ${vTimeFilter} -i "${videoInPath}" -c:v libx264 -pix_fmt yuv420p -c:a aac "${outputPath}"`;
+        await execPromise(cutCmd, { timeout: 60000 });
       }
 
-      try { if (fs.existsSync(trackInPath)) fs.unlinkSync(trackInPath); } catch {}
+      if (!fs.existsSync(outputPath)) {
+        throw new Error('Gagal menggabungkan file video dan audio.');
+      }
+
+      const stat = fs.statSync(outputPath);
+      const fileName = path.basename(outputPath);
+      return {
+        success: true,
+        isVideo: true,
+        fileName,
+        url: `/uploads/${fileName}`,
+        size: stat.size,
+        sizeFormatted: formatBytes(stat.size),
+        totalTracksMerged: tracks.length
+      };
+
+    } else {
+      // ─── PENGGABUNGAN AUDIO TRACK SAJA -> OUTPUT MP3 ───
+      const trimmedFiles = [];
+      const outputPath = path.join(uploadsDir, `kaze_merged_audio_${uid}.mp3`);
+      const listFilePath = path.join(tempDir, `concat_list_${uid}.txt`);
+      tempFiles.push(listFilePath);
+
+      for (let i = 0; i < tracks.length; i++) {
+        const track = tracks[i];
+        const trackInPath = path.join(tempDir, `track_in_${uid}_${i}.mp3`);
+        const trackOutPath = path.join(tempDir, `track_trimmed_${uid}_${i}.mp3`);
+        tempFiles.push(trackInPath, trackOutPath);
+
+        const base64Data = (track.base64 || '').replace(/^data:[a-zA-Z0-9.-]+\/[a-zA-Z0-9.-]+;base64,/, '');
+        fs.writeFileSync(trackInPath, Buffer.from(base64Data, 'base64'));
+
+        const startTime = Number(track.startTime) || 0;
+        const endTime = Number(track.endTime) || 0;
+        const volume = Number(track.volume) || 1.0;
+
+        let timeFilter = `-ss ${startTime}`;
+        if (endTime > startTime) {
+          timeFilter += ` -to ${endTime}`;
+        }
+
+        const trimCmd = `ffmpeg -y ${timeFilter} -i "${trackInPath}" -filter:a "volume=${volume}" -vn -ar 44100 -ac 2 -b:a 192k "${trackOutPath}"`;
+        await execPromise(trimCmd, { timeout: 45000 });
+
+        if (fs.existsSync(trackOutPath)) {
+          trimmedFiles.push(trackOutPath);
+        }
+      }
+
+      if (trimmedFiles.length === 0) {
+        throw new Error('Tidak ada potongan audio yang berhasil diproses.');
+      }
+
+      const listContent = trimmedFiles.map(f => `file '${f.replace(/\\/g, '/')}'`).join('\n');
+      fs.writeFileSync(listFilePath, listContent, 'utf8');
+
+      const concatCmd = `ffmpeg -y -f concat -safe 0 -i "${listFilePath}" -c copy "${outputPath}"`;
+      await execPromise(concatCmd, { timeout: 60000 });
+
+      if (!fs.existsSync(outputPath)) {
+        throw new Error('Gagal menggabungkan seluruh track audio.');
+      }
+
+      const stat = fs.statSync(outputPath);
+      const fileName = path.basename(outputPath);
+      return {
+        success: true,
+        isVideo: false,
+        fileName,
+        url: `/uploads/${fileName}`,
+        size: stat.size,
+        sizeFormatted: formatBytes(stat.size),
+        totalTracksMerged: trimmedFiles.length
+      };
     }
-
-    if (trimmedFiles.length === 0) {
-      throw new Error('Tidak ada potongan audio yang berhasil diproses.');
-    }
-
-    const listContent = trimmedFiles.map(f => `file '${f.replace(/\\/g, '/')}'`).join('\n');
-    fs.writeFileSync(listFilePath, listContent, 'utf8');
-
-    const concatCmd = `ffmpeg -y -f concat -safe 0 -i "${listFilePath}" -c copy "${outputPath}"`;
-    await execPromise(concatCmd, { timeout: 60000 });
-
-    if (!fs.existsSync(outputPath)) {
-      throw new Error('Gagal menggabungkan seluruh track audio.');
-    }
-
-    const stat = fs.statSync(outputPath);
-    const fileName = path.basename(outputPath);
-    const relativeUrl = `/uploads/${fileName}`;
-
-    return {
-      success: true,
-      fileName,
-      url: relativeUrl,
-      size: stat.size,
-      sizeFormatted: formatBytes(stat.size),
-      totalTracksMerged: trimmedFiles.length
-    };
   } finally {
-    trimmedFiles.forEach(f => {
+    tempFiles.forEach(f => {
       try { if (fs.existsSync(f)) fs.unlinkSync(f); } catch {}
     });
-    try { if (fs.existsSync(listFilePath)) fs.unlinkSync(listFilePath); } catch {}
   }
 }
 

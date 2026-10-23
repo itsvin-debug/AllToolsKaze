@@ -66,122 +66,10 @@ export const DEFAULT_SETTINGS = {
   hideAnimations: false
 };
 
-// Item galeri awal beresolusi nyata (memiliki visual pratinjau asli untuk video, QR, dan audio)
-const SEED_GALLERY_ITEMS = [
-  {
-    id: 'gal-seed-1',
-    title: 'Kuro Studio Cyber Neon QR Code',
-    type: 'image',
-    category: 'QR Studio',
-    extension: 'PNG',
-    size: '184 KB',
-    createdAt: new Date(Date.now() - 3600000 * 2).toISOString(),
-    // Data SVG QR Code presisi yang dapat dilihat dan di-scan langsung
-    previewUrl: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(`
-      <svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 120 120">
-        <rect width="120" height="120" fill="#ffffff" rx="10"/>
-        <!-- Finder Eye Kiri Atas -->
-        <rect x="10" y="10" width="28" height="28" fill="#000000" rx="6"/>
-        <rect x="14" y="14" width="20" height="20" fill="#ffffff" rx="4"/>
-        <rect x="18" y="18" width="12" height="12" fill="#06b6d4" rx="2"/>
-        <!-- Finder Eye Kanan Atas -->
-        <rect x="82" y="10" width="28" height="28" fill="#000000" rx="6"/>
-        <rect x="86" y="14" width="20" height="20" fill="#ffffff" rx="4"/>
-        <rect x="90" y="18" width="12" height="12" fill="#06b6d4" rx="2"/>
-        <!-- Finder Eye Kiri Bawah -->
-        <rect x="10" y="82" width="28" height="28" fill="#000000" rx="6"/>
-        <rect x="14" y="86" width="20" height="20" fill="#ffffff" rx="4"/>
-        <rect x="18" y="90" width="12" height="12" fill="#06b6d4" rx="2"/>
-        <!-- Titik Data Artistik Neon -->
-        <rect x="44" y="12" width="6" height="6" fill="#ec4899" rx="3"/>
-        <rect x="54" y="12" width="6" height="6" fill="#8b5cf6" rx="3"/>
-        <rect x="64" y="12" width="6" height="6" fill="#06b6d4" rx="3"/>
-        <rect x="44" y="24" width="6" height="6" fill="#8b5cf6" rx="3"/>
-        <rect x="64" y="24" width="6" height="6" fill="#ec4899" rx="3"/>
-        <rect x="44" y="44" width="32" height="32" fill="#000000" rx="8"/>
-        <circle cx="60" cy="60" r="10" fill="#06b6d4"/>
-        <text x="60" y="63" font-size="8" font-family="sans-serif" font-weight="bold" fill="#ffffff" text-anchor="middle">K</text>
-        <rect x="12" y="48" width="6" height="6" fill="#06b6d4" rx="3"/>
-        <rect x="24" y="48" width="6" height="6" fill="#8b5cf6" rx="3"/>
-        <rect x="88" y="48" width="6" height="6" fill="#ec4899" rx="3"/>
-        <rect x="100" y="48" width="6" height="6" fill="#06b6d4" rx="3"/>
-        <rect x="44" y="88" width="6" height="6" fill="#8b5cf6" rx="3"/>
-        <rect x="56" y="88" width="6" height="6" fill="#ec4899" rx="3"/>
-        <rect x="68" y="88" width="6" height="6" fill="#06b6d4" rx="3"/>
-        <rect x="88" y="88" width="20" height="20" fill="#000000" rx="4"/>
-      </svg>
-    `),
-    downloadData: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 120 120"><rect width="120" height="120" fill="#ffffff" rx="10"/><rect x="10" y="10" width="28" height="28" fill="#000000" rx="6"/><rect x="14" y="14" width="20" height="20" fill="#ffffff" rx="4"/><rect x="18" y="18" width="12" height="12" fill="#06b6d4" rx="2"/><rect x="82" y="10" width="28" height="28" fill="#000000" rx="6"/><rect x="86" y="14" width="20" height="20" fill="#ffffff" rx="4"/><rect x="90" y="18" width="12" height="12" fill="#06b6d4" rx="2"/><rect x="10" y="82" width="28" height="28" fill="#000000" rx="6"/><rect x="14" y="86" width="20" height="20" fill="#ffffff" rx="4"/><rect x="18" y="90" width="12" height="12" fill="#06b6d4" rx="2"/><circle cx="60" cy="60" r="10" fill="#06b6d4"/></svg>'),
-    filename: 'kuro_qr_cyber_neon.png'
-  },
-  {
-    id: 'gal-seed-2',
-    title: 'Anime Drift Sakura Video Wallpaper HD',
-    type: 'video',
-    category: 'Video Studio',
-    extension: 'MP4',
-    size: '1.3 MB',
-    createdAt: new Date(Date.now() - 3600000 * 5).toISOString(),
-    previewUrl: '/videos/wpanime.mp4',
-    downloadData: '/videos/wpanime.mp4',
-    filename: 'wpanime_sakura_drift.mp4'
-  },
-  {
-    id: 'gal-seed-3',
-    title: 'Preset Jedag Jedug 5MB TikTok Drift',
-    type: 'document',
-    category: 'Cari Link JJ',
-    extension: 'XML',
-    size: '42 KB',
-    createdAt: new Date(Date.now() - 3600000 * 18).toISOString(),
-    previewUrl: null,
-    downloadData: 'data:text/xml;charset=utf-8,' + encodeURIComponent('<?xml version="1.0" encoding="utf-8"?>\n<alightmotion project="KuroJJDrift" version="5.0">\n  <shape type="rect" width="1080" height="1920">\n    <effect type="shake" intensity="0.8" frequency="12.5"/>\n    <effect type="rgb_split" distance="14"/>\n    <effect type="blur_motion" angle="45"/>\n  </shape>\n</alightmotion>'),
-    filename: 'preset_jj_kuro_drift.xml'
-  },
-  {
-    id: 'gal-seed-4',
-    title: 'Sample Lo-Fi Beat Chill Audio',
-    type: 'audio',
-    category: 'Audio Merger',
-    extension: 'MP3',
-    size: '2.4 MB',
-    createdAt: new Date(Date.now() - 3600000 * 36).toISOString(),
-    previewUrl: 'https://actions.google.com/sounds/v1/water/rain_heavy.ogg',
-    downloadData: 'https://actions.google.com/sounds/v1/water/rain_heavy.ogg',
-    filename: 'kuro_chill_lofi.mp3'
-  }
-];
-
-// Riwayat awal saat pertama kali dibuka pada perangkat ini
-const SEED_HISTORY_ITEMS = [
-  {
-    id: 'hist-seed-1',
-    toolId: 'jjFinder',
-    toolName: 'Cari Link JJ',
-    action: 'Mengekstrak preset Alight Motion & XML',
-    target: 'vt.tiktok.com/ZS-sample',
-    timestamp: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
-    status: 'success'
-  },
-  {
-    id: 'hist-seed-2',
-    toolId: 'qrStudio',
-    toolName: 'QR Code Studio',
-    action: 'Membuat QR Code kustom Cyber Neon',
-    target: 'https://kuro-studio.app',
-    timestamp: new Date(Date.now() - 1000 * 60 * 55).toISOString(),
-    status: 'success'
-  },
-  {
-    id: 'hist-seed-3',
-    toolId: 'downloader',
-    toolName: 'Media Downloader',
-    action: 'Memeriksa link video TikTok HD',
-    target: 'tiktok.com/@user/video/739',
-    timestamp: new Date(Date.now() - 1000 * 60 * 180).toISOString(),
-    status: 'success'
-  }
-];
+// Inisialisasi awal galeri dan riwayat: Kosong secara default agar perangkat baru bersih.
+// Item hanya akan terisi saat pengguna benar-benar menghasilkan karya dari fitur Kuro Studio.
+const SEED_GALLERY_ITEMS = [];
+const SEED_HISTORY_ITEMS = [];
 
 // --- PENGATURAN (DEVICE-ISOLATED SETTINGS) ---
 export function getSettings() {
@@ -224,14 +112,19 @@ export function getGalleryItems() {
     const key = getDeviceGalleryKey();
     const raw = localStorage.getItem(key);
     if (!raw) {
-      // Inisialisasi data awal khusus perangkat ini
-      localStorage.setItem(key, JSON.stringify(SEED_GALLERY_ITEMS));
-      return SEED_GALLERY_ITEMS;
+      return [];
     }
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : SEED_GALLERY_ITEMS;
+    if (!Array.isArray(parsed)) return [];
+    
+    // Bersihkan data dummy warisan (gal-seed-*) jika sebelumnya sempat tersimpan
+    const cleaned = parsed.filter(item => !String(item.id).startsWith('gal-seed-'));
+    if (cleaned.length !== parsed.length) {
+      localStorage.setItem(key, JSON.stringify(cleaned));
+    }
+    return cleaned;
   } catch {
-    return SEED_GALLERY_ITEMS;
+    return [];
   }
 }
 
@@ -291,13 +184,19 @@ export function getHistoryItems() {
     const key = getDeviceHistoryKey();
     const raw = localStorage.getItem(key);
     if (!raw) {
-      localStorage.setItem(key, JSON.stringify(SEED_HISTORY_ITEMS));
-      return SEED_HISTORY_ITEMS;
+      return [];
     }
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : SEED_HISTORY_ITEMS;
+    if (!Array.isArray(parsed)) return [];
+
+    // Bersihkan riwayat dummy warisan (hist-seed-*) jika sebelumnya ada
+    const cleaned = parsed.filter(item => !String(item.id).startsWith('hist-seed-'));
+    if (cleaned.length !== parsed.length) {
+      localStorage.setItem(key, JSON.stringify(cleaned));
+    }
+    return cleaned;
   } catch {
-    return SEED_HISTORY_ITEMS;
+    return [];
   }
 }
 

@@ -206,7 +206,9 @@ router.post('/merge-audio', async (req, res) => {
 
     return res.json({
       success: true,
-      message: `Berhasil menggabungkan ${result.totalTracksMerged} audio menjadi satu track master!`,
+      message: result.isVideo 
+        ? `Berhasil menggabungkan video dan audio menjadi video MP4 master!` 
+        : `Berhasil menggabungkan ${result.totalTracksMerged} audio menjadi satu track master!`,
       data: result
     });
   } catch (err) {
