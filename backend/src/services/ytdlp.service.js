@@ -9,9 +9,17 @@ const ytDlpPath = path.join(__dirname, '..', '..', 'bin', 'yt-dlp.exe');
 // Ekstraksi umum berbasis yt-dlp untuk platform media video & audio
 export async function downloadWithYtDlp(url, platformName = 'Media') {
   return new Promise((resolve, reject) => {
+    const args = ['-J', '--no-warnings'];
+    if (platformName === 'YouTube') {
+      args.push('--no-playlist');
+    } else {
+      args.push('--playlist-items', '1-25');
+    }
+    args.push(url);
+
     execFile(
       ytDlpPath,
-      ['-J', '--no-warnings', '--no-playlist', url],
+      args,
       { maxBuffer: 15 * 1024 * 1024, timeout: 35000 },
       (error, stdout, stderr) => {
         if (error) {
@@ -28,22 +36,34 @@ export async function downloadWithYtDlp(url, platformName = 'Media') {
 
           const downloadLinks = [];
           const photos = [];
+          const videoSlides = [];
           const formats = info.formats || [];
 
-          // 1. Ekstraksi gambar jika postingan berupa galeri/gambar
+          // 1. Ekstraksi galeri gambar dan video slide
           if (info._type === 'playlist' && info.entries && info.entries.length > 0) {
             info.entries.forEach((entry, idx) => {
-              if (entry.url) {
+              const entryUrl = entry.url || (entry.formats && entry.formats[0]?.url);
+              if (entryUrl) {
                 const isImg = entry.ext === 'jpg' || entry.ext === 'png' || entry.ext === 'webp';
                 if (isImg) {
                   photos.push({
                     id: idx + 1,
-                    label: `Foto #${idx + 1}`,
+                    label: `Foto Slide #${idx + 1}`,
                     quality: 'HD Image',
-                    url: entry.url,
+                    url: entryUrl,
                     type: 'image',
                     extension: entry.ext || 'jpg',
                     filename: `${platformName.toLowerCase()}_slide_${idx + 1}.${entry.ext || 'jpg'}`
+                  });
+                } else {
+                  videoSlides.push({
+                    id: `videoslide_${idx + 1}`,
+                    label: `Video Slide #${idx + 1}`,
+                    quality: 'HD Video Slide',
+                    url: entryUrl,
+                    type: 'video',
+                    extension: entry.ext || 'mp4',
+                    filename: `${platformName.toLowerCase()}_video_slide_${idx + 1}.${entry.ext || 'mp4'}`
                   });
                 }
               }
@@ -111,24 +131,28 @@ export async function downloadWithYtDlp(url, platformName = 'Media') {
             });
           }
 
+          if (videoSlides.length > 0) {
+            downloadLinks.unshift(...videoSlides);
+          }
           if (photos.length > 0) {
             downloadLinks.unshift(...photos);
           }
 
           if (downloadLinks.length > 0) {
+            const isSlide = photos.length > 0 || videoSlides.length > 0;
             return resolve({
               success: true,
               platform: platformName,
-              mediaType: photos.length > 0 ? 'slide' : 'video',
-              isSlide: photos.length > 0,
+              mediaType: isSlide ? 'slide' : 'video',
+              isSlide,
               title,
               author,
               thumbnail,
               duration,
               photos,
               hasPhotos: photos.length > 0,
-              videoSlides: [],
-              hasVideoSlides: false,
+              videoSlides,
+              hasVideoSlides: videoSlides.length > 0,
               liveWallpapers: [],
               hasLiveWallpapers: false,
               musicInfo: audioUrl ? {

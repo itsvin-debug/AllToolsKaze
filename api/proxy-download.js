@@ -50,18 +50,37 @@ export default async function handler(req, res) {
       referer = 'https://y2down.cc/';
     }
 
-    const headers = {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
-    };
-    if (referer) headers['Referer'] = referer;
+    let response = null;
+    const userAgents = [
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1'
+    ];
 
-    const response = await axios({
-      method: 'GET',
-      url: targetUrl,
-      responseType: 'stream',
-      headers,
-      timeout: 30000
-    });
+    const attempts = [
+      { headers: { 'User-Agent': userAgents[0], ...(referer ? { 'Referer': referer } : {}) } },
+      { headers: { 'User-Agent': userAgents[0] } },
+      { headers: { 'User-Agent': userAgents[1] } }
+    ];
+
+    for (const attempt of attempts) {
+      try {
+        response = await axios({
+          method: 'GET',
+          url: targetUrl,
+          responseType: 'stream',
+          headers: attempt.headers,
+          timeout: 25000,
+          maxRedirects: 5
+        });
+        if (response && response.status >= 200 && response.status < 300) {
+          break;
+        }
+      } catch (_) {}
+    }
+
+    if (!response || !response.data) {
+      throw new Error('Gagal mengambil file dari server CDN sumber.');
+    }
 
     res.setHeader('Content-Disposition', `attachment; filename="${safeFilename}"`);
     res.setHeader('Content-Type', response.headers['content-type'] || 'application/octet-stream');
@@ -72,6 +91,11 @@ export default async function handler(req, res) {
     response.data.pipe(res);
   } catch (error) {
     console.error('Proxy stream error:', error.message);
-    return res.redirect(302, decodeURIComponent(url));
+    if (!res.headersSent) {
+      return res.status(502).json({
+        success: false,
+        message: 'Gagal mengunduh berkas media dari server sumber CDN.'
+      });
+    }
   }
 }
