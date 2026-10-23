@@ -178,7 +178,9 @@ function detectUserDevice() {
     // Ambil status telemetri baterai real-time dari backend sistem agar seragam di semua browser
     const fetchSystemBattery = async () => {
       try {
-        const res = await fetch('http://localhost:5001/api/system-battery');
+        const res = await fetch('/api/system-battery', {
+          headers: { 'Cache-Control': 'no-cache' }
+        });
         if (res.ok) {
           const data = await res.json();
           if (data && isSubscribed) {

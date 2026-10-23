@@ -320,6 +320,8 @@ export default function KuroIdentityCard({
     let batteryManager = null;
     let isSubscribed = true;
 
+    let batteryInterval = null;
+
     // 1. Cek Native W3C Battery Status API (Chrome, Edge, Samsung Internet di Android/Desktop)
     if (typeof navigator !== 'undefined' && typeof navigator.getBattery === 'function') {
       navigator.getBattery()
@@ -344,35 +346,54 @@ export default function KuroIdentityCard({
           battery.addEventListener('chargingchange', syncNativeBattery);
         })
         .catch(() => {
-          handleBatteryFallback(currentDevice);
+          startSystemBatteryPolling();
         });
     } else {
-      handleBatteryFallback(currentDevice);
+      startSystemBatteryPolling();
     }
 
-    async function handleBatteryFallback(dev) {
+    function startSystemBatteryPolling() {
+      fetchSystemBattery(currentDevice);
+      // Polling setiap 4 detik untuk peramban seperti Firefox / Safari desktop
+      if (currentDevice.type === 'desktop') {
+        batteryInterval = setInterval(() => {
+          if (isSubscribed) fetchSystemBattery(currentDevice);
+        }, 4000);
+      }
+    }
+
+    async function fetchSystemBattery(dev) {
       if (!isSubscribed) return;
 
-      // Jika di desktop (Windows/Mac/Linux) dan dibuka secara lokal, coba telemetri server
+      // Jika di desktop (Windows/Mac/Linux), ambil telemetri hardware server
       if (dev.type === 'desktop') {
         try {
-          const res = await fetch('/api/system-battery');
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 2500);
+          const res = await fetch('/api/system-battery', {
+            signal: controller.signal,
+            headers: { 'Cache-Control': 'no-cache' }
+          });
+          clearTimeout(timeoutId);
+
           if (res.ok && isSubscribed) {
             const data = await res.json();
             if (data && typeof data.level === 'number') {
               setBatteryLevel(data.level);
               setIsCharging(Boolean(data.isCharging));
-              setBatteryMode('system');
+              setBatteryMode(data.source === 'hardware' ? 'system' : 'fallback');
+              try {
+                localStorage.setItem('kuro_battery_level', data.level.toString());
+              } catch {}
               return;
             }
           }
         } catch {
-          // Gagal fetch, gunakan fallback desktop
+          // Gagal fetch, gunakan fallback
         }
       }
 
-      // Fallback untuk iOS (iPhone/iPad) & peramban non-Battery API
-      // Menjaga UI rapi tanpa crash atau persentase palsu yang membingungkan
+      // Fallback untuk iOS (iPhone/iPad) & peramban mobile tanpa Battery API
       if (isSubscribed) {
         setBatteryLevel(100);
         setIsCharging(false);
@@ -382,6 +403,7 @@ export default function KuroIdentityCard({
 
     return () => {
       isSubscribed = false;
+      if (batteryInterval) clearInterval(batteryInterval);
       if (batteryManager) {
         batteryManager.removeEventListener('levelchange', () => {});
         batteryManager.removeEventListener('chargingchange', () => {});

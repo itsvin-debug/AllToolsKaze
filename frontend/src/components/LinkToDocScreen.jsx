@@ -156,7 +156,7 @@ export default function LinkToDocScreen({ onBack }) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2500);
     } catch {
-      alert('Gagal menyalin ke clipboard.');
+      setErrorMessage('Gagal menyalin ke clipboard.');
     }
   };
 
@@ -607,7 +607,7 @@ export default function LinkToDocScreen({ onBack }) {
       doc.save(`${safeName}.pdf`);
     } catch (err) {
       console.error('PDF Generation Error:', err);
-      alert('Gagal membuat PDF: ' + err.message);
+      setErrorMessage('Gagal membuat PDF: ' + err.message);
     } finally {
       setGenerating(false);
       setStatusMessage('');
@@ -785,7 +785,7 @@ export default function LinkToDocScreen({ onBack }) {
       await pptx.writeFile({ fileName: `${safeName}.pptx` });
     } catch (err) {
       console.error('PPTX Generation Error:', err);
-      alert('Gagal membuat PPTX: ' + err.message);
+      setErrorMessage('Gagal membuat PPTX: ' + err.message);
     } finally {
       setGenerating(false);
       setStatusMessage('');

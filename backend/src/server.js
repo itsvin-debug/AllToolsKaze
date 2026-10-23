@@ -84,8 +84,8 @@ app.use((err, req, res, next) => {
   });
 });
 
-// nyalain server express
-app.listen(PORT, () => {
+// nyalain server express di 0.0.0.0 agar kompatibel dengan 127.0.0.1 dan localhost
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`=============================================`);
   console.log(`🚀 Kuro Studio Fullstack Suite Aktif!`);
   console.log(`🌐 Frontend (Web UI)  : http://localhost:5173`);

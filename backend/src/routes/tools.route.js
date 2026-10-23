@@ -2,7 +2,7 @@ import express from 'express';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { exec } from 'child_process';
+import { exec, execFile } from 'child_process';
 import axios from 'axios';
 import { extractScribdDocument, extractWebDocument } from '../services/scribd.service.js';
 import { findJjTemplates } from '../services/jj.service.js';
@@ -294,54 +294,105 @@ let lastBatteryFetch = 0;
 
 export function getSystemBatteryInfo() {
   const now = Date.now();
-  if (batteryCache && (now - lastBatteryFetch < 4000)) {
+  if (batteryCache && (now - lastBatteryFetch < 2000)) {
     return Promise.resolve(batteryCache);
   }
 
   return new Promise((resolve) => {
-    // Jalankan query CIM Win32_Battery untuk Windows
-    const cmd = `powershell -NoProfile -Command "Get-CimInstance Win32_Battery | Select-Object -Property EstimatedChargeRemaining, BatteryStatus | ConvertTo-Json"`;
-    exec(cmd, { timeout: 3000 }, (error, stdout) => {
-      if (error || !stdout || !stdout.trim()) {
-        batteryCache = {
-          success: true,
-          level: 100,
-          isCharging: true,
-          hasBattery: false,
-          source: 'system'
-        };
-        lastBatteryFetch = now;
-        return resolve(batteryCache);
-      }
+    // 1. Windows: Gunakan SystemInformation.PowerStatus (100% akurat sesuai tray baterai Windows)
+    if (process.platform === 'win32') {
+      const psScript = "[void][System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms'); [System.Windows.Forms.SystemInformation]::PowerStatus | Select-Object BatteryLifePercent, PowerLineStatus, BatteryChargeStatus | ConvertTo-Json";
+      execFile('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', psScript], { timeout: 2500 }, (error, stdout) => {
+        if (!error && stdout && stdout.trim()) {
+          try {
+            const data = JSON.parse(stdout.trim());
+            const percent = typeof data.BatteryLifePercent === 'number' ? data.BatteryLifePercent : -1;
+            if (percent >= 0) {
+              const level = Math.max(0, Math.min(100, Math.round(percent * 100)));
+              const isCharging = data.PowerLineStatus === 1 || ((data.BatteryChargeStatus || 0) & 8) !== 0;
+              const hasBattery = (data.BatteryChargeStatus || 0) !== 128;
 
-      try {
-        const parsed = JSON.parse(stdout.trim());
-        const data = Array.isArray(parsed) ? parsed[0] : parsed;
-        const level = typeof data.EstimatedChargeRemaining === 'number' ? data.EstimatedChargeRemaining : 100;
-        const status = data.BatteryStatus || 2;
-        const isCharging = [2, 3, 6, 7, 8, 9].includes(status);
+              batteryCache = {
+                success: true,
+                level,
+                isCharging,
+                hasBattery,
+                source: 'hardware'
+              };
+              lastBatteryFetch = now;
+              return resolve(batteryCache);
+            }
+          } catch {}
+        }
 
-        batteryCache = {
-          success: true,
-          level: Math.max(0, Math.min(100, level)),
-          isCharging,
-          hasBattery: true,
-          source: 'hardware'
-        };
-        lastBatteryFetch = now;
-        return resolve(batteryCache);
-      } catch {
-        batteryCache = {
-          success: true,
-          level: 100,
-          isCharging: true,
-          hasBattery: false,
-          source: 'system'
-        };
-        lastBatteryFetch = now;
-        return resolve(batteryCache);
-      }
-    });
+        // Fallback Windows CIM Win32_Battery jika PowerStatus tidak mengembalikan data
+        const fallbackCmd = 'powershell -NoProfile -Command "Get-CimInstance Win32_Battery | Select-Object -Property EstimatedChargeRemaining, BatteryStatus | ConvertTo-Json"';
+        exec(fallbackCmd, { timeout: 2500 }, (err2, stdout2) => {
+          if (!err2 && stdout2 && stdout2.trim()) {
+            try {
+              const parsed = JSON.parse(stdout2.trim());
+              const b = Array.isArray(parsed) ? parsed[0] : parsed;
+              const level = typeof b.EstimatedChargeRemaining === 'number' ? b.EstimatedChargeRemaining : 100;
+              const isCharging = [2, 3, 6, 7, 8, 9].includes(b.BatteryStatus || 2);
+              batteryCache = {
+                success: true,
+                level: Math.max(0, Math.min(100, level)),
+                isCharging,
+                hasBattery: true,
+                source: 'hardware'
+              };
+              lastBatteryFetch = now;
+              return resolve(batteryCache);
+            } catch {}
+          }
+
+          batteryCache = {
+            success: true,
+            level: 100,
+            isCharging: true,
+            hasBattery: false,
+            source: 'system'
+          };
+          lastBatteryFetch = now;
+          return resolve(batteryCache);
+        });
+      });
+      return;
+    }
+
+    // 2. macOS: pmset -g batt
+    if (process.platform === 'darwin') {
+      exec('pmset -g batt', { timeout: 2000 }, (error, stdout) => {
+        if (!error && stdout) {
+          const matchPercent = stdout.match(/(\d+)%/);
+          const isCharging = stdout.includes('charging') || stdout.includes('AC Power');
+          if (matchPercent) {
+            batteryCache = {
+              success: true,
+              level: parseInt(matchPercent[1], 10),
+              isCharging,
+              hasBattery: true,
+              source: 'hardware'
+            };
+            lastBatteryFetch = now;
+            return resolve(batteryCache);
+          }
+        }
+        resolve({ success: true, level: 100, isCharging: true, hasBattery: false, source: 'system' });
+      });
+      return;
+    }
+
+    // 3. Linux / Lainnya
+    batteryCache = {
+      success: true,
+      level: 100,
+      isCharging: true,
+      hasBattery: false,
+      source: 'system'
+    };
+    lastBatteryFetch = now;
+    resolve(batteryCache);
   });
 }
 

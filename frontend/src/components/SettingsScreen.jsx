@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { translations } from '../utils/translations';
 import { getDeviceId, resetDeviceSettings, clearGallery } from '../services/storageService';
+import ConfirmModal from './ConfirmModal';
 
 export default function SettingsScreen({ 
   settings, 
@@ -33,6 +34,7 @@ export default function SettingsScreen({
   const [searchQuery, setSearchQuery] = useState('');
   const [activeSectionId, setActiveSectionId] = useState(null);
   const [copiedDeviceId, setCopiedDeviceId] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState(null);
 
   const lang = settings.language || 'id';
   const isEn = lang === 'en';
@@ -132,22 +134,36 @@ export default function SettingsScreen({
   };
 
   const handleClearGallery = () => {
-    if (window.confirm(st.clearGalleryConfirm)) {
-      clearGallery();
-      if (onShowToast) {
-        onShowToast(st.galleryClearedMsg);
+    setConfirmDialog({
+      title: isEn ? 'Clear Gallery' : 'Kosongkan Galeri',
+      message: st.clearGalleryConfirm,
+      confirmText: isEn ? 'Yes, Delete All' : 'Ya, Hapus Semua',
+      type: 'danger',
+      onConfirm: () => {
+        clearGallery();
+        setConfirmDialog(null);
+        if (onShowToast) {
+          onShowToast(st.galleryClearedMsg);
+        }
       }
-    }
+    });
   };
 
   const handleFactoryReset = () => {
-    if (window.confirm(st.factoryResetConfirm)) {
-      const defaults = resetDeviceSettings();
-      onUpdateSettings(defaults);
-      if (onShowToast) {
-        onShowToast(st.factoryResetSuccessMsg);
+    setConfirmDialog({
+      title: isEn ? 'Factory Reset' : 'Reset ke Setelan Pabrik',
+      message: st.factoryResetConfirm,
+      confirmText: isEn ? 'Yes, Reset Now' : 'Ya, Reset Sekarang',
+      type: 'danger',
+      onConfirm: () => {
+        const defaults = resetDeviceSettings();
+        onUpdateSettings(defaults);
+        setConfirmDialog(null);
+        if (onShowToast) {
+          onShowToast(st.factoryResetSuccessMsg);
+        }
       }
-    }
+    });
   };
 
   // Definisi 6 Kartu Utama (Sesuai Struktur Visual Foto 2)
@@ -1105,6 +1121,19 @@ export default function SettingsScreen({
         )}
 
       </div>
+
+      {confirmDialog && (
+        <ConfirmModal
+          isOpen={Boolean(confirmDialog)}
+          title={confirmDialog.title}
+          message={confirmDialog.message}
+          confirmText={confirmDialog.confirmText}
+          cancelText={isEn ? 'Cancel' : 'Batal'}
+          type={confirmDialog.type || 'danger'}
+          onConfirm={confirmDialog.onConfirm}
+          onCancel={() => setConfirmDialog(null)}
+        />
+      )}
     </main>
   );
 }

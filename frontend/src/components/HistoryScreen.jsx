@@ -19,10 +19,12 @@ import {
 } from 'lucide-react';
 import { getHistoryItems, clearHistory } from '../services/storageService';
 import { translations } from '../utils/translations';
+import ConfirmModal from './ConfirmModal';
 
 export default function HistoryScreen({ onBack, onOpenTool, lang = 'id', onShowToast }) {
   const [historyList, setHistoryList] = useState([]);
   const [filter, setFilter] = useState('all'); // 'all' | 'today' | 'older'
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
   const t = translations[lang] || translations.id;
 
   useEffect(() => {
@@ -30,12 +32,15 @@ export default function HistoryScreen({ onBack, onOpenTool, lang = 'id', onShowT
   }, []);
 
   const handleClear = () => {
-    if (window.confirm(t.history.clearConfirm)) {
-      clearHistory();
-      setHistoryList([]);
-      if (onShowToast) {
-        onShowToast(t.history.cleared);
-      }
+    setShowClearConfirm(true);
+  };
+
+  const executeClear = () => {
+    clearHistory();
+    setHistoryList([]);
+    setShowClearConfirm(false);
+    if (onShowToast) {
+      onShowToast(t.history.cleared);
     }
   };
 
@@ -221,6 +226,17 @@ export default function HistoryScreen({ onBack, onOpenTool, lang = 'id', onShowT
         )}
 
       </div>
+
+      <ConfirmModal
+        isOpen={showClearConfirm}
+        title={t.history.clear}
+        message={t.history.clearConfirm}
+        confirmText={lang === 'en' ? 'Yes, Clear All' : 'Ya, Bersihkan'}
+        cancelText={lang === 'en' ? 'Cancel' : 'Batal'}
+        type="danger"
+        onConfirm={executeClear}
+        onCancel={() => setShowClearConfirm(false)}
+      />
     </main>
   );
 }
