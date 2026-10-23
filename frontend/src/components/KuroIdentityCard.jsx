@@ -452,15 +452,16 @@ export default function KuroIdentityCard({
       <div className="rounded-xl border-2 border-black p-4 sm:p-5 bg-white shadow-[4px_4px_0px_#000000]">
         <div className="flex flex-col md:flex-row items-center md:items-stretch gap-5 sm:gap-6">
           
-          {/* Sisi Kiri: Anime Live Wallpaper (Proporsi Asli 9:16 Full Frame Murni Tanpa Crop & Tanpa AI Slop) */}
+          {/* Sisi Kiri: Anime Live Wallpaper (Proporsi Asli 9:16 Full Frame HD) */}
           <div className="w-full md:w-auto flex justify-center shrink-0">
             <div 
               ref={bannerContainerRef}
-              className="relative w-[190px] sm:w-[205px] md:w-[195px] lg:w-[210px] aspect-[9/16] rounded-xl overflow-hidden bg-black border-2 border-black shadow-[3px_3px_0px_#000000] select-none"
+              className="relative w-[190px] sm:w-[205px] md:w-[195px] lg:w-[210px] aspect-[9/16] rounded-xl overflow-hidden bg-neutral-100 border-2 border-black shadow-[3px_3px_0px_#000000] select-none"
             >
               <video 
                 ref={videoRef}
                 src="/videos/wpanime.mp4"
+                poster="/videos/wpanime-poster.webp"
                 preload="auto"
                 autoPlay 
                 loop 

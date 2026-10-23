@@ -5,16 +5,19 @@ import { downloadTikTok } from '../services/tiktok.service.js';
 import { downloadInstagram } from '../services/instagram.service.js';
 import { downloadTwitter } from '../services/twitter.service.js';
 import { downloadYouTube } from '../services/youtube.service.js';
-import {
-  downloadWithYtDlp,
-  downloadSpotify,
-  downloadAppleMusic,
-  downloadThreads,
-  downloadReddit,
-  downloadPixiv,
-  downloadRednote,
-  downloadTerabox
-} from '../services/allmedia.service.js';
+import { downloadWithYtDlp } from '../services/ytdlp.service.js';
+import { downloadSpotify } from '../services/spotify.service.js';
+import { downloadAppleMusic } from '../services/applemusic.service.js';
+import { downloadThreads } from '../services/threads.service.js';
+import { downloadReddit } from '../services/reddit.service.js';
+import { downloadPixiv } from '../services/pixiv.service.js';
+import { downloadRednote } from '../services/rednote.service.js';
+import { downloadTerabox } from '../services/terabox.service.js';
+import { downloadFacebook } from '../services/facebook.service.js';
+import { downloadPinterest } from '../services/pinterest.service.js';
+import { downloadBilibili } from '../services/bilibili.service.js';
+import { downloadDouyin } from '../services/douyin.service.js';
+import { downloadBandcamp } from '../services/bandcamp.service.js';
 
 const router = express.Router();
 
@@ -72,7 +75,7 @@ router.post('/download', async (req, res) => {
         break;
 
       case 'facebook':
-        mediaData = await downloadWithYtDlp(detection.cleanedUrl, 'Facebook');
+        mediaData = await downloadFacebook(detection.cleanedUrl);
         break;
 
       case 'reddit':
@@ -80,19 +83,19 @@ router.post('/download', async (req, res) => {
         break;
 
       case 'pinterest':
-        mediaData = await downloadWithYtDlp(detection.cleanedUrl, 'Pinterest');
+        mediaData = await downloadPinterest(detection.cleanedUrl);
         break;
 
       case 'bilibili':
-        mediaData = await downloadWithYtDlp(detection.cleanedUrl, 'Bilibili');
+        mediaData = await downloadBilibili(detection.cleanedUrl);
         break;
 
       case 'douyin':
-        mediaData = await downloadWithYtDlp(detection.cleanedUrl, 'Douyin');
+        mediaData = await downloadDouyin(detection.cleanedUrl);
         break;
 
       case 'bandcamp':
-        mediaData = await downloadWithYtDlp(detection.cleanedUrl, 'Bandcamp');
+        mediaData = await downloadBandcamp(detection.cleanedUrl);
         break;
 
       case 'threads':

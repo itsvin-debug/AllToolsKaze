@@ -158,34 +158,34 @@ export const translations = {
       daysAgo: 'hari lalu'
     },
     settings: {
-      title: 'SETTINGS',
-      subtitle: 'Configure your experience',
+      title: 'PENGATURAN',
+      subtitle: 'Sesuaikan preferensi dan pengalaman Anda',
       searchPlaceholder: 'Temukan konten terkait & preferensi...',
       
-      // 6 Kartu Kategori Utama (Terinspirasi Foto 2)
+      // 6 Kartu Kategori Utama
       secGeneral: {
-        title: 'GENERAL',
-        subtitle: 'Language, Input Automation & App Security'
+        title: 'UMUM',
+        subtitle: 'Bahasa, Otomasi Input & Keamanan Aplikasi'
       },
       secLookFeel: {
-        title: 'LOOK & FEEL',
-        subtitle: 'Theme, Fonts, Animations & Visual FX'
+        title: 'TAMPILAN & TEMA',
+        subtitle: 'Tema, Font, Animasi & Efek Visual'
       },
       secStorage: {
-        title: 'STORAGE & DOWNLOAD',
-        subtitle: 'Save Paths, Filenames & Data Isolation'
+        title: 'PENYIMPANAN & UNDUHAN',
+        subtitle: 'Lokasi Simpan, Penamaan File & Isolasi Data'
       },
       secNetwork: {
-        title: 'NETWORK & PERFORMANCE',
-        subtitle: 'Servers, Connections, Latency & Retries'
+        title: 'JARINGAN & PERFORMA',
+        subtitle: 'Server, Koneksi, Latensi & Percobaan Ulang'
       },
       secAdvanced: {
-        title: 'ADVANCED',
-        subtitle: 'History Retention, Media Player & Reset'
+        title: 'LANJUTAN',
+        subtitle: 'Retensi Riwayat, Pemutar Media & Reset'
       },
       secAbout: {
-        title: 'ABOUT & HELP',
-        subtitle: 'Version, Help, Developer links'
+        title: 'TENTANG & BANTUAN',
+        subtitle: 'Versi, Bantuan, dan Tautan Pengembang'
       },
 
       // Konten General

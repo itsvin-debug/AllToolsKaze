@@ -234,7 +234,7 @@ export default function SettingsScreen({
                 <CosmicBackButton onClick={onBack} label={t.nav.backToHome} />
 
                 <span className="text-[10px] font-mono font-bold px-2.5 py-1 rounded border-2 border-black bg-neutral-100 text-black uppercase">
-                  KURO • PREFERENCES
+                  {isEn ? 'KURO • PREFERENCES' : 'KURO • PREFERENSI'}
                 </span>
               </div>
 

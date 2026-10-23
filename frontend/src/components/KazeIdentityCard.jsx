@@ -309,11 +309,12 @@ function detectUserDevice() {
           <div className="w-full md:w-auto flex justify-center shrink-0">
             <div 
               ref={bannerContainerRef}
-              className="relative w-[190px] sm:w-[205px] md:w-[195px] lg:w-[210px] aspect-[9/16] rounded-xl overflow-hidden bg-black border-2 border-black shadow-[3px_3px_0px_#000000] select-none"
+              className="relative w-[190px] sm:w-[205px] md:w-[195px] lg:w-[210px] aspect-[9/16] rounded-xl overflow-hidden bg-neutral-100 border-2 border-black shadow-[3px_3px_0px_#000000] select-none"
             >
               <video 
                 ref={videoRef}
                 src="/videos/wpanime.mp4"
+                poster="/videos/wpanime-poster.webp"
                 preload="auto"
                 autoPlay 
                 loop 

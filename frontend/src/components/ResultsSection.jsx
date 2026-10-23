@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import confetti from 'canvas-confetti';
 import JSZip from 'jszip';
 import CosmicBackButton from './CosmicBackButton';
 import {
@@ -122,7 +121,8 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
   }, [contentTypeFilter, photoSlides, videoSlidesList, liveWallpaperList, allCombinedSlides, hasPhotos, hasVideoSlides, hasLiveWallpapers]);
 
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
-  const [downloading, setDownloading] = useState(false);
+  const [downloadingId, setDownloadingId] = useState(null);
+  const [downloadProgress, setDownloadProgress] = useState({});
   const [downloadingAllPhotos, setDownloadingAllPhotos] = useState(false);
   const [downloadAllProgressText, setDownloadAllProgressText] = useState('');
   const [detectedDuration, setDetectedDuration] = useState('');
@@ -211,11 +211,12 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
   const activeRegularVideo = regularVideoLinks[selectedQualityIndex] || regularVideoLinks[0];
   const activeSlide = activeSlideList[currentSlideIndex] || activeSlideList[0];
 
-  const downloadToDevice = async (mediaItem, customFilename = null, triggerCelebration = true) => {
-    setDownloading(true);
-    if (triggerCelebration) {
-      confetti({ particleCount: 40, spread: 50, origin: { y: 0.7 } });
-    }
+  // Mengunduh media ke perangkat dengan indikator progres real-time jaringan (1-100%)
+  const downloadToDevice = (mediaItem, customFilename = null, explicitId = null) => {
+    if (!mediaItem) return;
+    const mediaId = explicitId || mediaItem.id || mediaItem.type || 'media';
+    setDownloadingId(mediaId);
+    setDownloadProgress(prev => ({ ...prev, [mediaId]: 1 }));
 
     const filename = customFilename || mediaItem.filename || (
       mediaItem.type === 'image' || mediaItem.type === 'photo'
@@ -230,24 +231,65 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
     const proxyUrl = mediaItem.proxyUrl 
       || `/api/proxy-download?url=${encodeURIComponent(mediaItem.url)}&filename=${encodeURIComponent(filename)}`;
 
-    try {
-      const response = await fetch(proxyUrl, { method: 'GET' });
-      if (!response.ok) throw new Error('Proxy unduh gagal');
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', proxyUrl, true);
+    xhr.responseType = 'blob';
 
-      const blob = await response.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
+    xhr.onprogress = (event) => {
+      if (event.lengthComputable && event.total > 0) {
+        const percent = Math.min(99, Math.max(1, Math.round((event.loaded / event.total) * 100)));
+        setDownloadProgress(prev => ({ ...prev, [mediaId]: percent }));
+      } else {
+        const loadedKb = event.loaded / 1024;
+        const approx = Math.min(96, Math.max(5, Math.round((loadedKb / 6000) * 100)));
+        setDownloadProgress(prev => ({ ...prev, [mediaId]: approx }));
+      }
+    };
+
+    const cleanup = () => {
+      setTimeout(() => {
+        setDownloadingId(null);
+        setDownloadProgress(prev => {
+          const next = { ...prev };
+          delete next[mediaId];
+          return next;
+        });
+      }, 700);
+    };
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300 && xhr.response) {
+        setDownloadProgress(prev => ({ ...prev, [mediaId]: 100 }));
+        const blob = xhr.response;
+        const blobUrl = window.URL.createObjectURL(blob);
+        const tempLink = document.createElement('a');
+        tempLink.style.display = 'none';
+        tempLink.href = blobUrl;
+        tempLink.download = filename;
+        document.body.appendChild(tempLink);
+        tempLink.click();
+        document.body.removeChild(tempLink);
+        setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1500);
+        cleanup();
+      } else {
+        fallbackDownload();
+      }
+    };
+
+    const fallbackDownload = () => {
+      setDownloadProgress(prev => ({ ...prev, [mediaId]: 100 }));
       const tempLink = document.createElement('a');
-      tempLink.href = blobUrl;
+      tempLink.href = proxyUrl;
       tempLink.download = filename;
+      tempLink.target = '_blank';
       document.body.appendChild(tempLink);
       tempLink.click();
       document.body.removeChild(tempLink);
-      window.URL.revokeObjectURL(blobUrl);
-    } catch {
-      window.open(mediaItem.url, '_blank');
-    } finally {
-      setDownloading(false);
-    }
+      cleanup();
+    };
+
+    xhr.onerror = fallbackDownload;
+    xhr.send();
   };
 
   const handleDownloadAllPhotosZip = async () => {
@@ -283,7 +325,6 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(zipUrl);
-      confetti({ particleCount: 50, spread: 60 });
     } catch {
       // ignore
     } finally {
@@ -652,26 +693,41 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row items-center gap-2.5 pt-2 w-full">
-            {activeSlide && (
-              <button
-                onClick={() => downloadToDevice(activeSlide, activeSlide.filename)}
-                disabled={downloading}
-                className="w-full sm:flex-1 bg-black hover:bg-neutral-800 text-white font-extrabold text-xs sm:text-sm rounded-lg py-3 flex items-center justify-center gap-2 border-2 border-black shadow-[2px_2px_0px_#000000] cursor-pointer disabled:opacity-50"
-              >
-                {downloading ? (
-                  <RefreshCw className="w-4 h-4 animate-spin text-white" />
-                ) : (
-                  <Download className="w-4 h-4 stroke-[2.5]" />
-                )}
-                <span>
-                  {activeSlide.type === 'video'
-                    ? (isEn ? `Download Video Slide MP4 (#${currentSlideIndex + 1})` : `Unduh Video Slide MP4 (#${currentSlideIndex + 1})`)
-                    : activeSlide.type === 'live_wallpaper'
-                    ? (isEn ? `Download Live Wallpaper HD (#${currentSlideIndex + 1})` : `Unduh Live Wallpaper HD (#${currentSlideIndex + 1})`)
-                    : (isEn ? `Download This Slide (Photo #${currentSlideIndex + 1})` : `Unduh Slide Ini (Foto #${currentSlideIndex + 1})`)}
-                </span>
-              </button>
-            )}
+            {activeSlide && (() => {
+              const slideId = `slide_${activeSlide.id || currentSlideIndex}`;
+              const isSlideDownloading = downloadingId === slideId;
+              const slidePercent = downloadProgress[slideId] || 0;
+
+              return (
+                <button
+                  type="button"
+                  onClick={() => downloadToDevice(activeSlide, activeSlide.filename, slideId)}
+                  disabled={isSlideDownloading}
+                  className="w-full sm:flex-1 relative overflow-hidden bg-black hover:bg-neutral-800 text-white font-extrabold text-xs sm:text-sm rounded-lg py-3 flex items-center justify-center gap-2 border-2 border-black shadow-[2px_2px_0px_#000000] cursor-pointer disabled:opacity-85 min-h-[44px]"
+                >
+                  {isSlideDownloading && (
+                    <div 
+                      className="absolute left-0 top-0 bottom-0 bg-neutral-700/60 transition-all duration-150 pointer-events-none"
+                      style={{ width: `${slidePercent}%` }}
+                    />
+                  )}
+                  {isSlideDownloading ? (
+                    <RefreshCw className="w-4 h-4 animate-spin text-white relative z-10" />
+                  ) : (
+                    <Download className="w-4 h-4 stroke-[2.5] relative z-10" />
+                  )}
+                  <span className="relative z-10 font-bold">
+                    {isSlideDownloading ? (
+                      `Mengunduh... ${slidePercent}%`
+                    ) : activeSlide.type === 'video'
+                      ? (isEn ? `Download Video Slide MP4 (#${currentSlideIndex + 1})` : `Unduh Video Slide MP4 (#${currentSlideIndex + 1})`)
+                      : activeSlide.type === 'live_wallpaper'
+                      ? (isEn ? `Download Live Wallpaper HD (#${currentSlideIndex + 1})` : `Unduh Live Wallpaper HD (#${currentSlideIndex + 1})`)
+                      : (isEn ? `Download This Slide (Photo #${currentSlideIndex + 1})` : `Unduh Slide Ini (Foto #${currentSlideIndex + 1})`)}
+                  </span>
+                </button>
+              );
+            })()}
 
             {photoSlides.length > 1 && (
               <button
@@ -798,22 +854,37 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
                 ))}
               </div>
 
-              {activeRegularVideo && (
-                <button
-                  onClick={() => downloadToDevice(activeRegularVideo)}
-                  disabled={downloading}
-                  className="w-full bg-black hover:bg-neutral-800 text-white font-extrabold text-xs sm:text-sm rounded-lg py-3 flex items-center justify-center gap-2 border-2 border-black shadow-[3px_3px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all cursor-pointer disabled:opacity-50"
-                >
-                  {downloading ? (
-                    <RefreshCw className="w-4 h-4 animate-spin text-white" />
-                  ) : (
-                    <Download className="w-4 h-4 stroke-[2.5]" />
-                  )}
-                  <span>
-                    {downloading ? (isEn ? 'Saving...' : 'Menyimpan...') : `${isEn ? 'Download Video MP4' : 'Download Video MP4'} (${activeRegularVideo.label || activeRegularVideo.quality})`}
-                  </span>
-                </button>
-              )}
+              {activeRegularVideo && (() => {
+                const videoId = `video_${activeRegularVideo.id || selectedQualityIndex}`;
+                const isVideoDownloading = downloadingId === videoId;
+                const videoPercent = downloadProgress[videoId] || 0;
+
+                return (
+                  <button
+                    type="button"
+                    onClick={() => downloadToDevice(activeRegularVideo, null, videoId)}
+                    disabled={isVideoDownloading}
+                    className="w-full relative overflow-hidden bg-black hover:bg-neutral-800 text-white font-extrabold text-xs sm:text-sm rounded-lg py-3 flex items-center justify-center gap-2 border-2 border-black shadow-[3px_3px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all cursor-pointer disabled:opacity-85 min-h-[44px]"
+                  >
+                    {isVideoDownloading && (
+                      <div 
+                        className="absolute left-0 top-0 bottom-0 bg-neutral-700/60 transition-all duration-150 pointer-events-none"
+                        style={{ width: `${videoPercent}%` }}
+                      />
+                    )}
+                    {isVideoDownloading ? (
+                      <RefreshCw className="w-4 h-4 animate-spin text-white relative z-10" />
+                    ) : (
+                      <Download className="w-4 h-4 stroke-[2.5] relative z-10" />
+                    )}
+                    <span className="relative z-10 font-bold">
+                      {isVideoDownloading 
+                        ? `Mengunduh Video... ${videoPercent}%` 
+                        : `${isEn ? 'Download Video MP4' : 'Download Video MP4'} (${activeRegularVideo.label || activeRegularVideo.quality})`}
+                    </span>
+                  </button>
+                );
+              })()}
             </div>
 
           </div>
@@ -934,18 +1005,37 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
             </div>
           </div>
 
-          <button
-            onClick={() => downloadToDevice(activeAudio, `audio_${Date.now()}.mp3`)}
-            disabled={downloading}
-            className="w-full py-3 rounded-lg border-2 border-black bg-black text-white font-extrabold text-xs sm:text-sm hover:bg-neutral-800 shadow-[3px_3px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-          >
-            {downloading ? (
-              <RefreshCw className="w-4 h-4 animate-spin text-white" />
-            ) : (
-              <Download className="w-4 h-4 stroke-[2.5]" />
-            )}
-            <span>{isEn ? 'Download Audio MP3 File' : 'Download File Audio MP3'}</span>
-          </button>
+          {(() => {
+            const audioId = `audio_${activeAudio.id || 'main'}`;
+            const isAudioDownloading = downloadingId === audioId;
+            const audioPercent = downloadProgress[audioId] || 0;
+
+            return (
+              <button
+                type="button"
+                onClick={() => downloadToDevice(activeAudio, `audio_${Date.now()}.mp3`, audioId)}
+                disabled={isAudioDownloading}
+                className="w-full relative overflow-hidden py-3 rounded-lg border-2 border-black bg-black text-white font-extrabold text-xs sm:text-sm hover:bg-neutral-800 shadow-[3px_3px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-85 min-h-[44px]"
+              >
+                {isAudioDownloading && (
+                  <div 
+                    className="absolute left-0 top-0 bottom-0 bg-neutral-700/60 transition-all duration-150 pointer-events-none"
+                    style={{ width: `${audioPercent}%` }}
+                  />
+                )}
+                {isAudioDownloading ? (
+                  <RefreshCw className="w-4 h-4 animate-spin text-white relative z-10" />
+                ) : (
+                  <Download className="w-4 h-4 stroke-[2.5] relative z-10" />
+                )}
+                <span className="relative z-10 font-bold">
+                  {isAudioDownloading 
+                    ? `Mengunduh Audio... ${audioPercent}%`
+                    : (isEn ? 'Download Audio MP3 File' : 'Download File Audio MP3')}
+                </span>
+              </button>
+            );
+          })()}
 
         </div>
       )}
