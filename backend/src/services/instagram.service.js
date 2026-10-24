@@ -58,28 +58,65 @@ async function extractInstagramViaEmbed(url) {
     }
   }
 
+  const isMultiItem = (uniqueVideos.length + uniqueImages.length) > 1;
+
+  if (isMultiItem) {
+    const photos = uniqueImages.map((imgUrl, idx) => ({
+      id: idx + 1,
+      label: `Foto Slide #${idx + 1}`,
+      quality: 'HD Original',
+      url: imgUrl,
+      type: 'image',
+      extension: 'jpg',
+      filename: `instagram_${shortcode}_foto_${idx + 1}.jpg`
+    }));
+
+    const videoSlides = uniqueVideos.map((vUrl, idx) => ({
+      id: `videoslide_${idx + 1}`,
+      label: `Video Slide #${idx + 1}`,
+      quality: 'HD 1080p Video',
+      url: vUrl,
+      type: 'video',
+      extension: 'mp4',
+      filename: `instagram_${shortcode}_video_${idx + 1}.mp4`
+    }));
+
+    const downloadLinks = [...photos, ...videoSlides];
+    if (uniqueVideos.length > 0) {
+      downloadLinks.push({
+        id: 'audio',
+        label: 'Audio MP3',
+        quality: '128kbps',
+        url: uniqueVideos[0],
+        type: 'audio',
+        extension: 'mp3',
+        filename: `instagram_audio_${shortcode}.mp3`
+      });
+    }
+
+    return {
+      success: true,
+      platform: 'Instagram',
+      title: caption,
+      author: author,
+      thumbnail: uniqueImages[0] || null,
+      mediaType: 'slide',
+      isSlide: true,
+      photos,
+      hasPhotos: photos.length > 0,
+      videoSlides,
+      hasVideoSlides: videoSlides.length > 0,
+      downloadLinks,
+      musicInfo: uniqueVideos.length > 0 ? { title: 'Instagram Audio', author, url: uniqueVideos[0] } : null
+    };
+  }
+
   const downloadLinks = [];
   const photos = [];
-  const videoSlides = [];
 
-  if (uniqueVideos.length > 1) {
-    uniqueVideos.forEach((vUrl, idx) => {
-      const vSlide = {
-        id: `videoslide_${idx + 1}`,
-        label: `Video Slide #${idx + 1}`,
-        quality: 'HD 1080p Video Slide',
-        url: vUrl,
-        type: 'video',
-        extension: 'mp4',
-        filename: `instagram_${shortcode}_video_${idx + 1}.mp4`
-      };
-      videoSlides.push(vSlide);
-      downloadLinks.push(vSlide);
-    });
-  } else if (uniqueVideos.length === 1) {
+  if (uniqueVideos.length > 0) {
     const mainVideo = uniqueVideos[0];
     downloadLinks.push({
-      id: '1080p',
       label: 'Resolusi HD 1080p',
       quality: '1080p (Full HD)',
       url: mainVideo,
@@ -88,7 +125,6 @@ async function extractInstagramViaEmbed(url) {
       filename: `instagram_${shortcode}_1080p.mp4`
     });
     downloadLinks.push({
-      id: '720p',
       label: 'Resolusi HD 720p',
       quality: '720p (Standard HD)',
       url: mainVideo,
@@ -96,14 +132,10 @@ async function extractInstagramViaEmbed(url) {
       extension: 'mp4',
       filename: `instagram_${shortcode}_720p.mp4`
     });
-  }
-
-  if (uniqueVideos.length > 0) {
     downloadLinks.push({
-      id: 'audio',
       label: 'Audio MP3',
       quality: '128kbps',
-      url: uniqueVideos[0],
+      url: mainVideo,
       type: 'audio',
       extension: 'mp3',
       filename: `instagram_audio_${shortcode}.mp3`
@@ -114,7 +146,7 @@ async function extractInstagramViaEmbed(url) {
     uniqueImages.forEach((imgUrl, idx) => {
       const photoObj = {
         id: idx + 1,
-        label: `Foto Slide #${idx + 1}`,
+        label: `Foto HD #${idx + 1}`,
         quality: 'HD Original',
         url: imgUrl,
         type: 'image',
@@ -127,21 +159,15 @@ async function extractInstagramViaEmbed(url) {
   }
 
   if (downloadLinks.length > 0) {
-    const isSlide = photos.length > 1 || videoSlides.length > 1 || (photos.length > 0 && uniqueVideos.length > 0);
     return {
       success: true,
       platform: 'Instagram',
       title: caption,
       author: author,
       thumbnail: uniqueImages[0] || null,
-      mediaType: isSlide ? 'slide' : (uniqueVideos.length > 0 ? 'video' : 'image'),
-      isSlide,
+      mediaType: uniqueVideos.length > 0 ? 'video' : 'image',
+      isSlide: false,
       photos,
-      hasPhotos: photos.length > 0,
-      videoSlides,
-      hasVideoSlides: videoSlides.length > 0,
-      liveWallpapers: [],
-      hasLiveWallpapers: false,
       downloadLinks,
       musicInfo: uniqueVideos.length > 0 ? { title: 'Instagram Audio', author } : null
     };
@@ -201,7 +227,6 @@ async function extractInstagramViaFastDL(url) {
   });
 
   if (downloadLinks.length > 0) {
-    const isSlide = photos.length > 1;
     return {
       success: true,
       platform: 'Instagram',
@@ -209,11 +234,6 @@ async function extractInstagramViaFastDL(url) {
       author: 'Instagram User',
       thumbnail: photos[0]?.url || $('img').first().attr('src') || null,
       photos,
-      hasPhotos: photos.length > 0,
-      videoSlides: [],
-      hasVideoSlides: false,
-      isSlide,
-      mediaType: isSlide ? 'slide' : (photos.length > 0 ? 'image' : 'video'),
       downloadLinks
     };
   }
@@ -227,9 +247,7 @@ async function extractInstagramViaSnapSave(url) {
   if (res && res.success && res.data && res.data.media && res.data.media.length > 0) {
     const downloadLinks = [];
     const photos = [];
-    const videoSlides = [];
     let pCount = 1;
-    let vCount = 1;
 
     res.data.media.forEach((item) => {
       if (item.type === 'image' || !item.resolution) {
@@ -246,23 +264,18 @@ async function extractInstagramViaSnapSave(url) {
         downloadLinks.push(photoObj);
         pCount++;
       } else {
-        const vSlide = {
-          id: `videoslide_${vCount}`,
-          label: `Video Slide #${vCount}`,
+        downloadLinks.push({
+          label: `Resolusi HD ${item.resolution || '1080p'}`,
           quality: item.resolution || '1080p (Full HD)',
           url: item.url,
           type: 'video',
           extension: 'mp4',
-          filename: `instagram_${Date.now()}_video_${vCount}.mp4`
-        };
-        videoSlides.push(vSlide);
-        downloadLinks.push(vSlide);
-        vCount++;
+          filename: `instagram_${Date.now()}_video.mp4`
+        });
       }
     });
 
     if (downloadLinks.length > 0) {
-      const isSlide = photos.length > 1 || videoSlides.length > 1 || (photos.length > 0 && videoSlides.length > 0);
       return {
         success: true,
         platform: 'Instagram',
@@ -270,11 +283,6 @@ async function extractInstagramViaSnapSave(url) {
         author: 'Instagram Creator',
         thumbnail: res.data.preview || photos[0]?.url || null,
         photos,
-        hasPhotos: photos.length > 0,
-        videoSlides,
-        hasVideoSlides: videoSlides.length > 0,
-        isSlide,
-        mediaType: isSlide ? 'slide' : (videoSlides.length > 0 ? 'video' : 'image'),
         downloadLinks
       };
     }

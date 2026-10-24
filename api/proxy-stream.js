@@ -1,10 +1,9 @@
 import axios from 'axios';
 
 export default async function handler(req, res) {
-  // CORS headers
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  // CORS headers yang valid
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Range, Content-Type, Accept');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -16,16 +15,41 @@ export default async function handler(req, res) {
   const range = req.headers.range;
 
   let referer = undefined;
-  if (targetUrl.includes('tikwm.com')) {
+  const lowerUrl = targetUrl.toLowerCase();
+  if (lowerUrl.includes('tikwm.com')) {
     referer = 'https://www.tikwm.com/';
-  } else if (targetUrl.includes('tiktok') || targetUrl.includes('tikcdn') || targetUrl.includes('bytegecko') || targetUrl.includes('ibytedtos')) {
+  } else if (lowerUrl.includes('tiktok') || lowerUrl.includes('tikcdn') || lowerUrl.includes('bytegecko') || lowerUrl.includes('ibytedtos')) {
     referer = 'https://www.tiktok.com/';
-  } else if (targetUrl.includes('instagram') || targetUrl.includes('cdninstagram') || targetUrl.includes('fbcdn')) {
+  } else if (lowerUrl.includes('instagram') || lowerUrl.includes('cdninstagram') || lowerUrl.includes('fbcdn')) {
     referer = 'https://www.instagram.com/';
-  } else if (targetUrl.includes('twimg') || targetUrl.includes('twitter') || targetUrl.includes('x.com')) {
+  } else if (lowerUrl.includes('twimg') || lowerUrl.includes('twitter') || lowerUrl.includes('x.com')) {
     referer = 'https://twitter.com/';
-  } else if (targetUrl.includes('googlevideo') || targetUrl.includes('youtube') || targetUrl.includes('ytimg')) {
+  } else if (lowerUrl.includes('googlevideo') || lowerUrl.includes('youtube') || lowerUrl.includes('ytimg')) {
     referer = 'https://www.youtube.com/';
+  } else if (lowerUrl.includes('bilibili') || lowerUrl.includes('bilivideo') || lowerUrl.includes('hdslb')) {
+    referer = 'https://www.bilibili.com/';
+  } else if (lowerUrl.includes('douyin') || lowerUrl.includes('iesdouyin') || lowerUrl.includes('zijieapi')) {
+    referer = 'https://www.douyin.com/';
+  } else if (lowerUrl.includes('pixiv') || lowerUrl.includes('phixiv') || lowerUrl.includes('pximg')) {
+    referer = 'https://www.pixiv.net/';
+  } else if (lowerUrl.includes('reddit') || lowerUrl.includes('redd.it')) {
+    referer = 'https://www.reddit.com/';
+  } else if (lowerUrl.includes('facebook') || lowerUrl.includes('fb.watch')) {
+    referer = 'https://www.facebook.com/';
+  } else if (lowerUrl.includes('spotify') || lowerUrl.includes('scdn.co')) {
+    referer = 'https://open.spotify.com/';
+  } else if (lowerUrl.includes('apple.com') || lowerUrl.includes('mzstatic')) {
+    referer = 'https://music.apple.com/';
+  } else if (lowerUrl.includes('pinterest') || lowerUrl.includes('pinimg')) {
+    referer = 'https://www.pinterest.com/';
+  } else if (lowerUrl.includes('bandcamp') || lowerUrl.includes('bcbits')) {
+    referer = 'https://bandcamp.com/';
+  } else if (lowerUrl.includes('xiaohongshu') || lowerUrl.includes('xhscdn') || lowerUrl.includes('rednote')) {
+    referer = 'https://www.xiaohongshu.com/';
+  } else if (lowerUrl.includes('threads.net')) {
+    referer = 'https://www.threads.net/';
+  } else if (lowerUrl.includes('terabox')) {
+    referer = 'https://www.terabox.com/';
   }
 
   const headers = {
@@ -66,7 +90,7 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error('Proxy stream error:', error.message);
     if (!res.headersSent) {
-      return res.redirect(302, targetUrl);
+      return res.status(502).send('Gagal memutar stream media.');
     }
   }
 }

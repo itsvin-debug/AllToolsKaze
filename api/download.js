@@ -163,7 +163,49 @@ async function downloadTikTok(rawUrl) {
           };
         });
 
-        const downloadLinks = [...photos];
+        // Ekstraksi video slide (video kompilasi slideshow) jika tersedia
+        const rawSlideVideo = item.play || item.hdplay || null;
+        let fullSlideVideo = null;
+        const videoSlides = [];
+        if (rawSlideVideo) {
+          fullSlideVideo = rawSlideVideo.startsWith('http') ? rawSlideVideo : `${base}${rawSlideVideo}`;
+          videoSlides.push({
+            id: 'video_slide_1',
+            label: 'Video Slideshow (Full Motion)',
+            quality: 'HD 1080p Video Slide',
+            url: fullSlideVideo,
+            type: 'video',
+            extension: 'mp4',
+            filename: `tiktok_slideshow_${item.id || Date.now()}.mp4`
+          });
+        }
+
+        const rawDynamicCover = item.dynamic_cover || null;
+        const liveWallpapers = [];
+        if (rawDynamicCover) {
+          const fullDynamic = rawDynamicCover.startsWith('http') ? rawDynamicCover : `${base}${rawDynamicCover}`;
+          liveWallpapers.push({
+            id: 'live_wallpaper_1',
+            label: 'Live Wallpaper (Loop Animasi)',
+            quality: 'Animated Live Loop',
+            url: fullDynamic,
+            type: 'live_wallpaper',
+            extension: fullDynamic.endsWith('.mp4') ? 'mp4' : 'webp',
+            filename: `tiktok_live_wallpaper_${item.id || Date.now()}.${fullDynamic.endsWith('.mp4') ? 'mp4' : 'webp'}`
+          });
+        } else if (fullSlideVideo) {
+          liveWallpapers.push({
+            id: 'live_wallpaper_1',
+            label: 'Live Wallpaper HD (Video Loop)',
+            quality: 'Dynamic Motion Loop',
+            url: fullSlideVideo,
+            type: 'live_wallpaper',
+            extension: 'mp4',
+            filename: `tiktok_live_wallpaper_${item.id || Date.now()}.mp4`
+          });
+        }
+
+        const downloadLinks = [...photos, ...videoSlides, ...liveWallpapers];
 
         const rawMusic = item.music_info?.play || item.music;
         let fullMusic = null;
@@ -191,8 +233,10 @@ async function downloadTikTok(rawUrl) {
           thumbnail: photos[0]?.url || item.cover || null,
           photos,
           hasPhotos: true,
-          videoSlides: [],
-          hasVideoSlides: false,
+          videoSlides,
+          hasVideoSlides: videoSlides.length > 0,
+          liveWallpapers,
+          hasLiveWallpapers: liveWallpapers.length > 0,
           downloadLinks,
           musicInfo: {
             title: item.music_info?.title || item.title || 'Original Sound',
@@ -458,6 +502,59 @@ async function downloadInstagram(rawUrl) {
     const caption = $('.Caption').text().trim() || $('div.Caption').text().trim() || `Instagram Media (${shortcode})`;
     const author = $('.Avatar img').attr('alt') || 'Instagram User';
 
+    const isMultiItem = (videoUrls.length + imageUrls.length) > 1;
+
+    if (isMultiItem) {
+      const photos = imageUrls.map((imgUrl, idx) => ({
+        id: idx + 1,
+        label: `Foto Slide #${idx + 1}`,
+        quality: 'HD Original',
+        url: imgUrl,
+        type: 'image',
+        extension: 'jpg',
+        filename: `instagram_${shortcode}_foto_${idx + 1}.jpg`
+      }));
+
+      const videoSlides = videoUrls.map((vUrl, idx) => ({
+        id: `videoslide_${idx + 1}`,
+        label: `Video Slide #${idx + 1}`,
+        quality: 'HD 1080p Video',
+        url: vUrl,
+        type: 'video',
+        extension: 'mp4',
+        filename: `instagram_${shortcode}_video_${idx + 1}.mp4`
+      }));
+
+      const downloadLinks = [...photos, ...videoSlides];
+      if (videoUrls.length > 0) {
+        downloadLinks.push({
+          id: 'audio',
+          label: 'Audio MP3',
+          quality: '128kbps',
+          url: videoUrls[0],
+          type: 'audio',
+          extension: 'mp3',
+          filename: `instagram_audio_${shortcode}.mp3`
+        });
+      }
+
+      return {
+        success: true,
+        platform: 'Instagram',
+        title: caption,
+        author: author,
+        thumbnail: imageUrls[0] || null,
+        mediaType: 'slide',
+        isSlide: true,
+        photos,
+        hasPhotos: photos.length > 0,
+        videoSlides,
+        hasVideoSlides: videoSlides.length > 0,
+        downloadLinks,
+        musicInfo: videoUrls.length > 0 ? { title: 'Instagram Audio Track', author, url: videoUrls[0] } : null
+      };
+    }
+
     if (videoUrls.length > 0) {
       const primaryVideo = videoUrls[0];
       return {
@@ -513,8 +610,8 @@ async function downloadInstagram(rawUrl) {
         title: caption,
         author: author,
         thumbnail: imageUrls[0],
-        mediaType: photos.length > 1 ? 'slide' : 'image',
-        isSlide: photos.length > 1,
+        mediaType: 'image',
+        isSlide: false,
         photos,
         downloadLinks: photos
       };
@@ -871,7 +968,25 @@ export default async function handler(req, res) {
     if (data?.photos && Array.isArray(data.photos)) {
       data.photos = data.photos.map((item, idx) => ({
         ...item,
-        proxyUrl: `/api/proxy-download?url=${encodeURIComponent(item.url)}&filename=${encodeURIComponent(item.filename || `kaze_photo_${idx + 1}.jpg`)}`
+        proxyUrl: `/api/proxy-download?url=${encodeURIComponent(item.url)}&filename=${encodeURIComponent(item.filename || `kuro_photo_${idx + 1}.jpg`)}`
+      }));
+    }
+
+    if (data?.videoSlides && Array.isArray(data.videoSlides)) {
+      data.videoSlides = data.videoSlides.map((item, idx) => ({
+        ...item,
+        proxyUrl: `/api/proxy-download?url=${encodeURIComponent(item.url)}&filename=${encodeURIComponent(item.filename || `kuro_videoslide_${idx + 1}.mp4`)}`,
+        streamUrl: `/api/proxy-stream?url=${encodeURIComponent(item.url)}&type=video`
+      }));
+    }
+
+    if (data?.liveWallpapers && Array.isArray(data.liveWallpapers)) {
+      data.liveWallpapers = data.liveWallpapers.map((item, idx) => ({
+        ...item,
+        proxyUrl: `/api/proxy-download?url=${encodeURIComponent(item.url)}&filename=${encodeURIComponent(item.filename || `kuro_live_wallpaper_${idx + 1}.${item.extension || 'mp4'}`)}`,
+        streamUrl: (item.url?.endsWith('.mp4') || item.extension === 'mp4')
+          ? `/api/proxy-stream?url=${encodeURIComponent(item.url)}&type=video`
+          : undefined
       }));
     }
 

@@ -1,6 +1,5 @@
 import express from 'express';
 import axios from 'axios';
-import https from 'https';
 import { detectPlatform, PLATFORM_NAMES } from '../services/detector.service.js';
 import { downloadTikTok } from '../services/tiktok.service.js';
 import { downloadInstagram } from '../services/instagram.service.js';
@@ -265,10 +264,8 @@ router.get('/proxy-stream', async (req, res) => {
   }
 });
 
-const httpsAgent = new https.Agent({ rejectUnauthorized: false });
-
 // Endpoint Proxy Download: GET /api/proxy-download
-// Mengalirkan file video/foto langsung ke browser agar otomatis terdownload ke disk/galeri tanpa membuka halaman kosong
+// Mengalirkan file video/foto langsung ke browser agar otomatis terdownload ke disk/galeri
 router.get('/proxy-download', async (req, res) => {
   try {
     const { url, filename } = req.query;
@@ -281,44 +278,23 @@ router.get('/proxy-download', async (req, res) => {
     let targetUrl = decodeURIComponent(url);
     const referer = getRefererForUrl(targetUrl);
 
-    let response = null;
-    const userAgents = [
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-      'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1'
-    ];
+    const headers = {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+    };
+    if (referer) headers['Referer'] = referer;
 
-    // Strategi bertingkat: coba dengan referer, tanpa referer, dan user agent mobile
-    const attempts = [
-      { headers: { 'User-Agent': userAgents[0], ...(referer ? { 'Referer': referer } : {}) } },
-      { headers: { 'User-Agent': userAgents[0] } },
-      { headers: { 'User-Agent': userAgents[1] } }
-    ];
+    // ambil stream file dari server sumber CDN
+    const response = await axios({
+      method: 'GET',
+      url: targetUrl,
+      responseType: 'stream',
+      headers,
+      timeout: 30000
+    });
 
-    for (const attempt of attempts) {
-      try {
-        response = await axios({
-          method: 'GET',
-          url: targetUrl,
-          responseType: 'stream',
-          headers: attempt.headers,
-          httpsAgent,
-          timeout: 25000,
-          maxRedirects: 5
-        });
-        if (response && response.status >= 200 && response.status < 300) {
-          break;
-        }
-      } catch (e) {
-        // Coba metode berikutnya jika terkena blokir hotlink CDN
-      }
-    }
-
-    if (!response || !response.data) {
-      throw new Error('Gagal mengambil stream file dari server CDN sumber.');
-    }
-
-    // Set header buat trigger download file langsung di browser
+    // set header buat trigger download file di browser
     res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition, Content-Length');
     res.setHeader('Content-Disposition', `attachment; filename="${safeFilename}"`);
     res.setHeader('Content-Type', response.headers['content-type'] || 'application/octet-stream');
     if (response.headers['content-length']) {
@@ -333,7 +309,7 @@ router.get('/proxy-download', async (req, res) => {
     if (!res.headersSent) {
       return res.status(502).json({
         success: false,
-        message: 'Gagal mengunduh berkas media dari server sumber CDN.'
+        message: 'Gagal mengunduh berkas dari CDN server sumber.'
       });
     }
   }

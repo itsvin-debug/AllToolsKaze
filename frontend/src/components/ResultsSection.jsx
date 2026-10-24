@@ -96,15 +96,7 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
   const hasVideo = regularVideoLinks.length > 0;
 
   const audioLinks = result.downloadLinks?.filter((l) => l.type === 'audio') || [];
-  const activeAudio = audioLinks[0] || (result.musicInfo?.url ? {
-    id: 'audio',
-    type: 'audio',
-    url: result.musicInfo.url,
-    label: result.musicInfo.title || 'Audio MP3',
-    quality: '128kbps (Original Sound)',
-    filename: `kuro_audio_${Date.now()}.mp3`,
-    proxyUrl: `/api/proxy-download?url=${encodeURIComponent(result.musicInfo.url)}&filename=kuro_audio.mp3`
-  } : null);
+  const activeAudio = audioLinks[0] || null;
 
   const [selectedQualityIndex, setSelectedQualityIndex] = useState(0);
 
@@ -128,12 +120,23 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
     return photoSlides.length > 0 ? photoSlides : allCombinedSlides;
   }, [contentTypeFilter, photoSlides, videoSlidesList, liveWallpaperList, allCombinedSlides, hasPhotos, hasVideoSlides, hasLiveWallpapers]);
 
+  const allSlidesToDownload = useMemo(() => {
+    const list = [];
+    const seen = new Set();
+    [...photoSlides, ...videoSlidesList, ...liveWallpaperList].forEach(item => {
+      if (item && item.url && !seen.has(item.url)) {
+        seen.add(item.url);
+        list.push(item);
+      }
+    });
+    return list.length > 0 ? list : allCombinedSlides;
+  }, [photoSlides, videoSlidesList, liveWallpaperList, allCombinedSlides]);
+
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [downloadingId, setDownloadingId] = useState(null);
   const [downloadProgress, setDownloadProgress] = useState({});
   const [downloadingAllSlides, setDownloadingAllSlides] = useState(false);
   const [downloadAllProgressText, setDownloadAllProgressText] = useState('');
-  const [downloadAllPercent, setDownloadAllPercent] = useState(0);
   const [detectedDuration, setDetectedDuration] = useState('');
 
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
@@ -227,14 +230,19 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
     setDownloadingId(mediaId);
     setDownloadProgress(prev => ({ ...prev, [mediaId]: 1 }));
 
+    const ext = mediaItem.extension || (
+      mediaItem.type === 'image' || mediaItem.type === 'photo' ? 'jpg' :
+      mediaItem.type === 'audio' ? 'mp3' : 'mp4'
+    );
+
     const filename = customFilename || mediaItem.filename || (
       mediaItem.type === 'image' || mediaItem.type === 'photo'
-        ? `kuro_photo_${Date.now()}.jpg` 
+        ? `kuro_photo_${Date.now()}.${ext}` 
         : mediaItem.type === 'audio' 
         ? `kuro_audio_${Date.now()}.mp3` 
         : mediaItem.type === 'live_wallpaper'
-        ? `kuro_live_wallpaper_${Date.now()}.${mediaItem.extension || 'mp4'}`
-        : `kuro_video_${Date.now()}.mp4`
+        ? `kuro_live_wallpaper_${Date.now()}.${ext}`
+        : `kuro_video_${Date.now()}.${ext}`
     );
 
     const proxyUrl = mediaItem.proxyUrl 
@@ -278,7 +286,7 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
         document.body.appendChild(tempLink);
         tempLink.click();
         document.body.removeChild(tempLink);
-        setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1500);
+        setTimeout(() => window.URL.revokeObjectURL(blobUrl), 2000);
         cleanup();
       } else {
         fallbackDownload();
@@ -287,7 +295,7 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
 
     const fallbackDownload = () => {
       setDownloadProgress(prev => ({ ...prev, [mediaId]: 100 }));
-      // Hindari target="_blank" agar browser tidak membuka tab kosong putih jika terjadi kendala CDN
+      // Gunakan trigger link tersembunyi tanpa target='_blank' agar tidak membuka tab putih
       const tempLink = document.createElement('a');
       tempLink.style.display = 'none';
       tempLink.href = proxyUrl;
@@ -302,34 +310,30 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
     xhr.send();
   };
 
-  // Mengunduh semua slide (foto & video) menjadi satu arsip ZIP praktis
-  const handleDownloadAllSlides = async () => {
-    const slidesToDownload = activeSlideList && activeSlideList.length > 0 ? activeSlideList : allCombinedSlides;
-    if (!slidesToDownload || slidesToDownload.length === 0) return;
-
+  // Mengunduh seluruh slide sekaligus (foto, video slide, dan musik) ke dalam 1 arsip ZIP
+  const handleDownloadAllSlidesZip = async () => {
+    if (!allSlidesToDownload || allSlidesToDownload.length === 0) return;
     setDownloadingAllSlides(true);
-    setDownloadAllProgressText(isEn ? 'Preparing ZIP download...' : 'Menyiapkan unduhan slide...');
-    setDownloadAllPercent(5);
+    setDownloadAllProgressText(isEn ? 'Preparing ZIP...' : 'Menyiapkan ZIP...');
 
     const zip = new JSZip();
-    const folder = zip.folder('kuro_slides');
-    let successCount = 0;
+    const folder = zip.folder('slides');
 
     try {
-      for (let i = 0; i < slidesToDownload.length; i++) {
-        const item = slidesToDownload[i];
-        const stepPercent = Math.round(((i + 1) / (slidesToDownload.length + (activeAudio ? 1 : 0))) * 85);
-        setDownloadAllPercent(stepPercent);
+      const totalItems = allSlidesToDownload.length;
+      for (let i = 0; i < totalItems; i++) {
+        const item = allSlidesToDownload[i];
+        const isVid = item.type === 'video' || item.type === 'live_wallpaper';
         setDownloadAllProgressText(
           isEn 
-            ? `Downloading slide ${i + 1} of ${slidesToDownload.length} (${stepPercent}%)...`
-            : `Mengunduh slide ${i + 1} dari ${slidesToDownload.length} (${stepPercent}%)...`
+            ? `Downloading ${isVid ? 'video' : 'photo'} ${i + 1} of ${totalItems}...` 
+            : `Mengunduh ${isVid ? 'video slide' : 'foto slide'} ${i + 1} dari ${totalItems}...`
         );
 
-        const isVideo = item.type === 'video';
-        const isLiveWp = item.type === 'live_wallpaper';
-        const ext = isVideo ? 'mp4' : isLiveWp ? (item.extension || 'mp4') : (item.extension || 'jpg');
-        const filename = item.filename || `slide_${i + 1}.${ext}`;
+        const ext = item.extension || (isVid ? 'mp4' : 'jpg');
+        const filename = item.filename || (
+          isVid ? `video_slide_${i + 1}.${ext}` : `slide_${i + 1}.${ext}`
+        );
         const proxyUrl = item.proxyUrl || `/api/proxy-download?url=${encodeURIComponent(item.url)}&filename=${encodeURIComponent(filename)}`;
 
         try {
@@ -337,65 +341,42 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
           if (res.ok) {
             const blob = await res.blob();
             folder.file(filename, blob);
-            successCount++;
-          } else {
-            const directRes = await fetch(item.url);
-            if (directRes.ok) {
-              const directBlob = await directRes.blob();
-              folder.file(filename, directBlob);
-              successCount++;
-            }
           }
         } catch {
-          // Abaikan kegagalan satu file agar tidak merusak seluruh zip
+          // Abaikan kegagalan individual agar proses batch tetap berlanjut
         }
       }
 
-      // Masukkan trek audio latar ke zip jika tersedia
+      // Pastikan audio trek dari postingan tetap disertakan di dalam arsip ZIP
       if (activeAudio && activeAudio.url) {
-        setDownloadAllProgressText(isEn ? 'Adding audio track...' : 'Menyertakan trek audio...');
+        setDownloadAllProgressText(isEn ? 'Including audio track...' : 'Menyertakan trek audio...');
+        const audioFilename = activeAudio.filename || 'audio.mp3';
+        const audioProxyUrl = activeAudio.proxyUrl || `/api/proxy-download?url=${encodeURIComponent(activeAudio.url)}&filename=${encodeURIComponent(audioFilename)}`;
         try {
-          const audioProxy = activeAudio.proxyUrl || `/api/proxy-download?url=${encodeURIComponent(activeAudio.url)}&filename=audio.mp3`;
-          const audioRes = await fetch(audioProxy);
-          if (audioRes.ok) {
-            const audioBlob = await audioRes.blob();
-            folder.file('audio.mp3', audioBlob);
+          const aRes = await fetch(audioProxyUrl);
+          if (aRes.ok) {
+            const aBlob = await aRes.blob();
+            folder.file(audioFilename, aBlob);
           }
         } catch {}
       }
 
       setDownloadAllProgressText(isEn ? 'Compressing ZIP archive...' : 'Mengompres arsip ZIP...');
-      setDownloadAllPercent(90);
-
-      const zipBlob = await zip.generateAsync({ type: 'blob' }, (metadata) => {
-        setDownloadAllPercent(90 + Math.round(metadata.percent * 0.1));
-      });
-
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
       const zipUrl = window.URL.createObjectURL(zipBlob);
       const a = document.createElement('a');
       a.style.display = 'none';
       a.href = zipUrl;
-      a.download = `kuro_slides_${result.platform?.toLowerCase() || 'media'}_${Date.now()}.zip`;
+      a.download = `kuro_slides_${Date.now()}.zip`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      setTimeout(() => window.URL.revokeObjectURL(zipUrl), 2000);
-
-      setDownloadAllPercent(100);
-      setDownloadAllProgressText(isEn ? 'Download complete!' : 'Selesai diunduh!');
-    } catch (err) {
-      console.warn('ZIP download error, fallback ke unduhan berkala:', err.message);
-      slidesToDownload.forEach((item, idx) => {
-        setTimeout(() => {
-          downloadToDevice(item, item.filename, `batch_${idx}`);
-        }, idx * 600);
-      });
+      setTimeout(() => window.URL.revokeObjectURL(zipUrl), 3000);
+    } catch (e) {
+      console.error('Error generating zip:', e);
     } finally {
-      setTimeout(() => {
-        setDownloadingAllSlides(false);
-        setDownloadAllProgressText('');
-        setDownloadAllPercent(0);
-      }, 1200);
+      setDownloadingAllSlides(false);
+      setDownloadAllProgressText('');
     }
   };
 
@@ -757,7 +738,7 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
             </div>
           )}
 
-          {/* Action Buttons Khusus Fitur Slide */}
+          {/* Action Buttons: Unduh Slide Ini & Unduh Semua Slide */}
           <div className="flex flex-col sm:flex-row items-center gap-2.5 pt-2 w-full">
             {activeSlide && (() => {
               const slideId = `slide_${activeSlide.id || currentSlideIndex}`;
@@ -769,7 +750,7 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
                   type="button"
                   onClick={() => downloadToDevice(activeSlide, activeSlide.filename, slideId)}
                   disabled={isSlideDownloading}
-                  className="w-full sm:flex-1 relative overflow-hidden bg-black hover:bg-neutral-800 text-white font-extrabold text-xs sm:text-sm rounded-lg py-3.5 px-4 flex items-center justify-center gap-2 border-2 border-black shadow-[2px_2px_0px_#000000] cursor-pointer disabled:opacity-85 min-h-[48px] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all"
+                  className="w-full sm:flex-1 relative overflow-hidden bg-black hover:bg-neutral-800 text-white font-extrabold text-xs sm:text-sm rounded-lg py-3 flex items-center justify-center gap-2 border-2 border-black shadow-[2px_2px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all cursor-pointer disabled:opacity-85 min-h-[44px]"
                 >
                   {isSlideDownloading && (
                     <div 
@@ -785,41 +766,35 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
                   <span className="relative z-10 font-bold">
                     {isSlideDownloading ? (
                       `Mengunduh... ${slidePercent}%`
-                    ) : (
-                      isEn 
-                        ? `Download This Slide (#${currentSlideIndex + 1})` 
-                        : `Download Slide Ini (#${currentSlideIndex + 1})`
-                    )}
+                    ) : activeSlide.type === 'video'
+                      ? (isEn ? `Download Slide Ini (Video #${currentSlideIndex + 1})` : `Unduh Slide Ini (Video #${currentSlideIndex + 1})`)
+                      : activeSlide.type === 'live_wallpaper'
+                      ? (isEn ? `Download Slide Ini (Live Wallpaper #${currentSlideIndex + 1})` : `Unduh Slide Ini (Live Wallpaper #${currentSlideIndex + 1})`)
+                      : (isEn ? `Download Slide Ini (Foto #${currentSlideIndex + 1})` : `Unduh Slide Ini (Foto #${currentSlideIndex + 1})`)}
                   </span>
                 </button>
               );
             })()}
 
-            {activeSlideList.length > 1 && (
+            {allSlidesToDownload.length > 1 && (
               <button
                 type="button"
-                onClick={handleDownloadAllSlides}
+                onClick={handleDownloadAllSlidesZip}
                 disabled={downloadingAllSlides}
-                className="w-full sm:flex-1 relative overflow-hidden bg-white hover:bg-neutral-100 text-black font-extrabold text-xs sm:text-sm rounded-lg py-3.5 px-4 flex items-center justify-center gap-2 border-2 border-black shadow-[2px_2px_0px_#000000] cursor-pointer disabled:opacity-75 min-h-[48px] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all"
+                className="w-full sm:flex-1 bg-white hover:bg-neutral-100 text-black font-extrabold text-xs sm:text-sm rounded-lg py-3 flex items-center justify-center gap-2 border-2 border-black shadow-[2px_2px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all cursor-pointer disabled:opacity-50 min-h-[44px]"
               >
-                {downloadingAllSlides && (
-                  <div 
-                    className="absolute left-0 top-0 bottom-0 bg-neutral-200 transition-all duration-150 pointer-events-none"
-                    style={{ width: `${downloadAllPercent}%` }}
-                  />
-                )}
                 {downloadingAllSlides ? (
                   <>
-                    <RefreshCw className="w-4 h-4 animate-spin text-black relative z-10" />
-                    <span className="relative z-10">{downloadAllProgressText || (isEn ? 'Preparing ZIP...' : 'Menyiapkan ZIP...')}</span>
+                    <RefreshCw className="w-4 h-4 animate-spin text-black" />
+                    <span>{downloadAllProgressText || (isEn ? 'Preparing ZIP...' : 'Menyiapkan Semua Slide...')}</span>
                   </>
                 ) : (
                   <>
-                    <FileArchive className="w-4 h-4 stroke-[2.5] text-black relative z-10" />
-                    <span className="relative z-10">
+                    <FileArchive className="w-4 h-4 stroke-[2.5]" />
+                    <span>
                       {isEn 
-                        ? `Download All Slides (${activeSlideList.length} Slides ZIP)` 
-                        : `Download Semua Slide (${activeSlideList.length} Slide ZIP)`}
+                        ? `Download Semua Slide (${allSlidesToDownload.length} Items + Audio)` 
+                        : `Unduh Semua Slide (${allSlidesToDownload.length} Slide + Audio)`}
                     </span>
                   </>
                 )}
