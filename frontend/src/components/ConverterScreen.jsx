@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import CosmicBackButton from './CosmicBackButton';
-import { addGalleryItem } from '../services/storageService';
 import { 
   Link2, 
   Clipboard, 
@@ -322,33 +321,6 @@ export default function ConverterScreen({ activePlatform: initialPlatform = 'tik
           setResultData(media);
           setLoading(false);
           setDownloadProgress(0);
-
-          // Ekstraksi tautan media yang valid untuk galeri
-          const videoDl = media.downloadLinks?.find(l => l.type === 'video');
-          const audioDl = media.downloadLinks?.find(l => l.type === 'audio') || media.musicInfo;
-          const photoDl = media.downloadLinks?.find(l => l.type === 'image') || (media.photos && media.photos[0]);
-
-          const isAudioOnly = media.type === 'audio' || (!videoDl && !photoDl && audioDl);
-          const isPhotoOnly = (media.type === 'image' || media.isSlide) && !videoDl;
-          const isVideo = !isAudioOnly && !isPhotoOnly;
-
-          const activeVideoUrl = videoDl?.streamUrl || videoDl?.proxyUrl || videoDl?.url || media.videoUrl || null;
-          const activeAudioUrl = audioDl?.streamUrl || audioDl?.proxyUrl || audioDl?.url || media.audioUrl || null;
-          const activePhotoUrl = photoDl?.url || (typeof photoDl === 'string' ? photoDl : null) || media.thumbnail || media.cover || null;
-          const activeThumbnail = media.thumbnail || media.cover || photoDl?.url || (typeof photoDl === 'string' ? photoDl : null) || null;
-
-          // Otomatis simpan ke galeri perangkat pengguna
-          addGalleryItem({
-            title: media.title || `Media ${currentMeta.name} Download`,
-            type: isAudioOnly ? 'audio' : isPhotoOnly ? 'image' : 'video',
-            category: `Downloader (${currentMeta.name})`,
-            extension: isAudioOnly ? 'MP3' : isPhotoOnly ? 'JPG' : 'MP4',
-            size: media.size || (videoDl?.quality || 'HD'),
-            thumbnail: activeThumbnail,
-            previewUrl: isVideo ? activeVideoUrl : isAudioOnly ? activeAudioUrl : activePhotoUrl,
-            downloadData: isVideo ? (videoDl?.proxyUrl || activeVideoUrl) : isAudioOnly ? (audioDl?.proxyUrl || activeAudioUrl) : activePhotoUrl,
-            filename: `kuro_${activePlatform}_${Date.now()}.${isAudioOnly ? 'mp3' : isPhotoOnly ? 'jpg' : 'mp4'}`
-          });
         }, 400);
       } else {
         throw new Error(response.data?.message || (isEn ? 'Failed to process media link.' : 'Gagal memproses tautan media.'));

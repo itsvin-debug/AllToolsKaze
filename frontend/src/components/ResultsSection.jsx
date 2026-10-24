@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import JSZip from 'jszip';
 import CosmicBackButton from './CosmicBackButton';
+import { addGalleryItem } from '../services/storageService';
 import {
   Download,
   ChevronLeft,
@@ -223,6 +224,39 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
   const activeRegularVideo = regularVideoLinks[selectedQualityIndex] || regularVideoLinks[0];
   const activeSlide = activeSlideList[currentSlideIndex] || activeSlideList[0];
 
+  // Simpan media tunggal ke Galeri pengguna sesuai format aslinya (foto slide, video slide, video reguler, audio)
+  const recordMediaInGallery = (mediaItem, finalFilename, explicitId) => {
+    try {
+      const isVid = mediaItem.type === 'video' || mediaItem.type === 'live_wallpaper';
+      const isAud = mediaItem.type === 'audio';
+      const isSlideItem = Boolean(
+        explicitId?.toString().includes('slide') || 
+        mediaItem.id?.toString().includes('slide') || 
+        result.isSlide
+      );
+
+      const ext = mediaItem.extension || (isAud ? 'mp3' : isVid ? 'mp4' : 'jpg');
+
+      const title = isSlideItem 
+        ? `${result.title || 'Slide Post'} (${isVid ? (isEn ? 'Video Slide' : 'Slide Video') : (isEn ? 'Photo Slide' : 'Slide Foto')} #${currentSlideIndex + 1})`
+        : (mediaItem.label || result.title || `Media ${result.platform || ''}`);
+
+      addGalleryItem({
+        title,
+        type: isAud ? 'audio' : isVid ? 'video' : 'image',
+        category: `Downloader (${result.platform || (isVid ? 'Video' : 'Foto')})`,
+        extension: ext.toUpperCase(),
+        size: mediaItem.quality || (isVid ? 'HD Video' : isAud ? '128kbps' : 'HD Foto'),
+        thumbnail: mediaItem.thumbnail || (mediaItem.type === 'image' || mediaItem.type === 'photo' ? mediaItem.url : result.thumbnail),
+        previewUrl: isVid ? (mediaItem.streamUrl || mediaItem.url) : mediaItem.url,
+        downloadData: mediaItem.proxyUrl || mediaItem.url,
+        filename: finalFilename
+      });
+    } catch (e) {
+      console.error('Gagal mencatat unduhan ke galeri:', e);
+    }
+  };
+
   // Mengunduh media ke perangkat dengan indikator progres real-time jaringan (1-100%)
   const downloadToDevice = (mediaItem, customFilename = null, explicitId = null) => {
     if (!mediaItem) return;
@@ -247,6 +281,9 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
 
     const proxyUrl = mediaItem.proxyUrl 
       || `/api/proxy-download?url=${encodeURIComponent(mediaItem.url)}&filename=${encodeURIComponent(filename)}`;
+
+    // Catat ke Galeri perangkat lokal
+    recordMediaInGallery(mediaItem, filename, mediaId);
 
     const xhr = new XMLHttpRequest();
     xhr.open('GET', proxyUrl, true);
@@ -364,10 +401,49 @@ export default function ResultsSection({ result, preferredFormat = '1080p', onRe
       setDownloadAllProgressText(isEn ? 'Compressing ZIP archive...' : 'Mengompres arsip ZIP...');
       const zipBlob = await zip.generateAsync({ type: 'blob' });
       const zipUrl = window.URL.createObjectURL(zipBlob);
+      const zipFilename = `kuro_slides_${Date.now()}.zip`;
+
+      // Simpan seluruh album koleksi slide ke Galeri pengguna agar bisa digeser di galeri
+      try {
+        addGalleryItem({
+          title: result.title || `Koleksi Slide ${result.platform || ''}`,
+          type: 'slide',
+          category: `Downloader (${result.platform || 'Slide'})`,
+          extension: 'SLIDES',
+          size: `${totalItems} Slide`,
+          thumbnail: allSlidesToDownload[0]?.thumbnail || allSlidesToDownload[0]?.url || result.thumbnail,
+          previewUrl: allSlidesToDownload[0]?.url || result.thumbnail,
+          downloadData: zipUrl,
+          filename: zipFilename,
+          slides: allSlidesToDownload.map((item, idx) => {
+            const isVid = item.type === 'video' || item.type === 'live_wallpaper';
+            const sExt = item.extension || (isVid ? 'mp4' : 'jpg');
+            return {
+              id: item.id || idx + 1,
+              type: isVid ? 'video' : 'image',
+              url: item.url,
+              streamUrl: item.streamUrl || (isVid ? `/api/proxy-stream?url=${encodeURIComponent(item.url)}&type=video` : undefined),
+              proxyUrl: item.proxyUrl || `/api/proxy-download?url=${encodeURIComponent(item.url)}&filename=${encodeURIComponent(item.filename || `slide_${idx + 1}.${sExt}`)}`,
+              filename: item.filename || `slide_${idx + 1}.${sExt}`,
+              thumbnail: item.thumbnail || (item.type === 'image' || item.type === 'photo' ? item.url : result.thumbnail)
+            };
+          }),
+          audio: (activeAudio && activeAudio.url) ? {
+            url: activeAudio.url,
+            streamUrl: activeAudio.streamUrl || `/api/proxy-stream?url=${encodeURIComponent(activeAudio.url)}&type=audio`,
+            proxyUrl: activeAudio.proxyUrl || `/api/proxy-download?url=${encodeURIComponent(activeAudio.url)}&filename=audio.mp3`,
+            title: result.musicInfo?.title || 'Trek Audio',
+            filename: activeAudio.filename || 'audio.mp3'
+          } : null
+        });
+      } catch (err) {
+        console.error('Gagal menyimpan koleksi slide ke galeri:', err);
+      }
+
       const a = document.createElement('a');
       a.style.display = 'none';
       a.href = zipUrl;
-      a.download = `kuro_slides_${Date.now()}.zip`;
+      a.download = zipFilename;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);

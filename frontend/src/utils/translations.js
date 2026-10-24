@@ -127,6 +127,7 @@ export const translations = {
       title: 'Galeri Hasil Karya',
       subtitle: 'Semua berkas, hasil unduhan, dan kreasi Anda tersimpan secara lokal di sini.',
       filterAll: 'Semua Berkas',
+      filterSlide: 'Slide Media',
       filterImage: 'Gambar & QR',
       filterVideo: 'Video & JJ',
       filterDoc: 'Dokumen',
@@ -138,7 +139,9 @@ export const translations = {
       delete: 'Hapus',
       downloadSuccess: 'Mulai mengunduh berkas...',
       itemDeleted: 'Berkas dihapus dari galeri.',
-      itemsCount: 'berkas tersimpan'
+      itemsCount: 'berkas tersimpan',
+      downloadCurrentSlide: 'Unduh Slide Ini',
+      downloadAllSlides: 'Unduh Semua Slide (ZIP)'
     },
     history: {
       title: 'Riwayat Penggunaan',
@@ -615,6 +618,7 @@ export const translations = {
       title: 'Creation Gallery',
       subtitle: 'All files, downloads, and creations you produced are stored locally here.',
       filterAll: 'All Files',
+      filterSlide: 'Media Slides',
       filterImage: 'Images & QR',
       filterVideo: 'Video & JJ',
       filterDoc: 'Documents',
@@ -626,7 +630,9 @@ export const translations = {
       delete: 'Delete',
       downloadSuccess: 'Starting file download...',
       itemDeleted: 'File removed from gallery.',
-      itemsCount: 'saved files'
+      itemsCount: 'saved files',
+      downloadCurrentSlide: 'Download This Slide',
+      downloadAllSlides: 'Download All Slides (ZIP)'
     },
     history: {
       title: 'Usage History',
